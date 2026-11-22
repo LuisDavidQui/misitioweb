@@ -1422,7 +1422,7 @@ h4 {
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 21 / 9;
   object-fit: cover;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -1438,5 +1438,11 @@ h4 {
 @media (max-width: 560px) {
   .hero__portrait img {
     height: 260px;
+  }
+}
+
+@media (max-width: 700px) {
+  .figure img {
+    aspect-ratio: 16 / 9;
   }
 }
