@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Docencia · Hidráulica digital</title>
+  <meta name="description" content="Cursos de física de fluidos, hidráulica y laboratorios, con enfoque en medición, verificación y documentación.">
+  <meta name="author" content="[Nombre completo]">
+  <meta name="theme-color" content="#fbfaf6">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_CO">
+  <meta property="og:site_name" content="Hidráulica digital">
+  <meta property="og:title" content="Docencia · Hidráulica digital">
+  <meta property="og:description" content="Cursos de física de fluidos, hidráulica y laboratorios, con enfoque en medición, verificación y documentación.">
+  <meta property="og:image" content="assets/img/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<svg class="visually-hidden" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-drop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7c3.4 3.7 6 6.9 6 10.1a6 6 0 0 1-12 0c0-3.2 2.6-6.4 6-10.1Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3Z"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.6 18a2 2 0 0 0 1.7 3h11.4a2 2 0 0 0 1.7-3L14 9.5V3"/><path d="M7.5 15h9"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 3-4 3 3 5-7"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/></symbol>
+    <symbol id="i-graduation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2M2 16c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></symbol>
+  </defs>
+</svg>
+
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="index.html" aria-label="Hidráulica digital, inicio">
+      <span class="brand__mark"><svg aria-hidden="true"><use href="#i-drop"></use></svg></span>
+      <span class="brand__text">
+        <span class="brand__name">Hidráulica digital</span>
+        <span class="brand__role">Sitio personal</span>
+      </span>
+    </a>
+
+    <nav aria-label="Navegación principal">
+      <ul class="nav__links" id="menu-principal">
+        <li><a href="sobre-mi.html">Perfil</a></li>
+<li><a href="investigacion.html">Investigación</a></li>
+<li><a href="docencia.html" aria-current="page">Docencia</a></li>
+<li><a href="hidraulica-digital.html">Hidráulica digital</a></li>
+<li><a href="publicaciones.html">Publicaciones</a></li>
+<li><a href="recursos.html">Recursos</a></li>
+<li><a href="contacto.html">Contacto</a></li>
+      </ul>
+    </nav>
+
+    <div class="nav__actions">
+      <button class="icon-btn theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Activar tema oscuro" title="Tema oscuro">
+        <svg class="icon-sun" aria-hidden="true"><use href="#i-sun"></use></svg>
+        <svg class="icon-moon" aria-hidden="true"><use href="#i-moon"></use></svg>
+      </button>
+      <button class="icon-btn nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="menu-principal" aria-label="Abrir menú">
+        <svg aria-hidden="true"><use href="#i-menu"></use></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="contenido">
+
+<section class="page-head">
+  <div class="wrap">
+    <ol class="breadcrumb">
+      <li><a href="index.html">Inicio</a></li>
+      <li aria-hidden="true">/</li>
+      <li>Docencia</li>
+    </ol>
+    <p class="eyebrow">Docencia</p>
+    <h1>Física de fluidos, hidráulica y laboratorio</h1>
+    <p class="lead">Enseñar hidráulica es enseñar a mirar el agua: qué fuerza actúa, qué escala domina y qué tan lejos está el cálculo de la medición.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Cursos</p>
+      <h2>Qué enseño</h2>
+    </div>
+
+    <div class="grid grid--3">
+      <article class="card">
+        <span class="card__icon"><svg aria-hidden="true"><use href="#i-wave"></use></svg></span>
+        <h3>Física de fluidos</h3>
+        <p>Hidrostática, cinemática, conservación de masa y energía, cantidad de movimiento y análisis dimensional. El curso insiste en el significado físico de cada ecuación.</p>
+      </article>
+
+      <article class="card">
+        <span class="card__icon"><svg aria-hidden="true"><use href="#i-layers"></use></svg></span>
+        <h3>Hidráulica</h3>
+        <p>Flujo en conductos y canales, pérdidas, bombas y redes. Se resuelven problemas con cálculo manual y con software, comparando ambos resultados.</p>
+      </article>
+
+      <article class="card">
+        <span class="card__icon"><svg aria-hidden="true"><use href="#i-flask"></use></svg></span>
+        <h3>Laboratorios de hidráulica</h3>
+        <p>Prácticas de medición de caudal, presión, pérdidas y perfiles de flujo. Énfasis en incertidumbre, registro de datos y presentación de resultados.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section--soft">
+  <div class="wrap split">
+    <div class="sticky-col">
+      <p class="eyebrow">Método</p>
+      <h2>Cómo enseño</h2>
+      <p class="muted">Menos fórmulas memorizadas, más criterio para decidir cuál aplicar.</p>
+    </div>
+    <div>
+      <ol class="steps">
+        <li>
+          <h3>Partir del fenómeno</h3>
+          <p>Antes de la ecuación, una observación o un experimento simple. La fórmula llega cuando ya hay una pregunta que la justifica.</p>
+        </li>
+        <li>
+          <h3>Estimar antes de calcular</h3>
+          <p>Órdenes de magnitud y verificación de unidades. Un resultado que no se puede anticipar suele esconder un error.</p>
+        </li>
+        <li>
+          <h3>Medir y comparar</h3>
+          <p>El laboratorio no confirma la teoría: la pone a prueba. Se reportan discrepancias y se discuten sus causas.</p>
+        </li>
+        <li>
+          <h3>Documentar el procedimiento</h3>
+          <p>Datos, supuestos y pasos quedan registrados para que el ejercicio se pueda repetir y revisar.</p>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap split">
+    <div>
+      <p class="eyebrow">Estudiantes</p>
+      <h2>Materiales y guías</h2>
+    </div>
+    <div class="prose">
+      <p>En la sección de <a href="recursos.html">recursos</a> se irán publicando guías de laboratorio, plantillas de informe y scripts de apoyo. La idea es que el material quede disponible fuera del horario de clase y con instrucciones explícitas.</p>
+      <div class="note">
+        <p><strong>Mientras tanto:</strong> si necesitas una guía o un conjunto de datos de un curso, escríbeme y lo comparto directamente.</p>
+      </div>
+      <p class="mt-2"><a class="btn btn--ghost" href="contacto.html">Solicitar material <svg aria-hidden="true"><use href="#i-arrow"></use></svg></a></p>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap">
+    <h2>¿Coordinar una práctica o una charla?</h2>
+    <p>Para actividades de laboratorio, seminarios o apoyo a cursos de hidráulica, escríbeme.</p>
+    <a class="btn btn--primary" href="contacto.html">Escribir <svg aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <h2>Hidráulica digital</h2>
+        <p>Física de fluidos, hidráulica y calidad del agua, con herramientas computacionales al servicio de la ingeniería.</p>
+      </div>
+      <div>
+        <h2>Secciones</h2>
+        <ul><li><a href="index.html">Inicio</a></li>
+<li><a href="sobre-mi.html">Perfil</a></li>
+<li><a href="investigacion.html">Investigación</a></li>
+<li><a href="docencia.html">Docencia</a></li>
+<li><a href="hidraulica-digital.html">Hidráulica digital</a></li></ul>
+      </div>
+      <div>
+        <h2>Más</h2>
+        <ul>
+          <li><a href="publicaciones.html">Publicaciones</a></li>
+<li><a href="recursos.html">Recursos</a></li>
+<li><a href="contacto.html">Contacto</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> · <span class="todo">[Nombre completo]</span></p>
+      <p>Sitio estático en HTML y CSS · Desplegado en Vercel</p>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>
