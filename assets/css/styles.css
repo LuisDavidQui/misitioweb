@@ -1264,3 +1264,136 @@ strong {
     border-color: #ccc;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Tema académico sobrio · 22 nov 2026
+   Paleta de papel, tinta y bronce; menos decoración y más tipografía.
+   -------------------------------------------------------------------------- */
+
+:root {
+  --bg: #f7f6f2;
+  --bg-soft: #eeece5;
+  --surface: #ffffff;
+  --surface-2: #f2f0e9;
+  --text: #1b2227;
+  --text-soft: #3e4950;
+  --text-mute: #6b767c;
+  --line: #d8d7cf;
+  --line-strong: #bfc1b8;
+
+  --brand: #1e3a4c;
+  --brand-deep: #152b39;
+  --aqua: #5d7079;
+  --aqua-soft: #e6e9e7;
+  --sand: #8a6a3f;
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --shadow-sm: 0 1px 0 rgba(20, 30, 35, 0.04);
+  --shadow-md: 0 1px 0 rgba(20, 30, 35, 0.06);
+}
+
+[data-theme="dark"] {
+  --bg: #15191c;
+  --bg-soft: #1a1f22;
+  --surface: #1d2327;
+  --surface-2: #222a2e;
+  --text: #e9e7e0;
+  --text-soft: #c4c5bf;
+  --text-mute: #969b97;
+  --line: #2f373b;
+  --line-strong: #414a4f;
+
+  --brand: #b9cbd6;
+  --brand-deep: #d6e2e8;
+  --aqua: #9fb2bb;
+  --aqua-soft: #26323a;
+  --sand: #c0a176;
+}
+
+.hero {
+  background: var(--bg);
+  padding-block: clamp(3rem, 8vw, 5.5rem) clamp(2.5rem, 6vw, 4rem);
+}
+
+.hero::after {
+  display: none;
+}
+
+.hero__aside {
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+.hero__aside h2 {
+  letter-spacing: 0.12em;
+}
+
+.btn {
+  border-radius: 3px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn--primary {
+  box-shadow: none;
+}
+
+.btn--primary:hover {
+  background: var(--brand);
+  transform: none;
+}
+
+[data-theme="dark"] .btn--primary {
+  background: var(--aqua);
+  color: #101b21;
+}
+
+[data-theme="dark"] .btn--primary:hover {
+  background: #b3c4cc;
+  color: #101b21;
+}
+
+.btn--ghost:hover {
+  transform: none;
+}
+
+.card {
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  transition: border-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--line-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+.card__icon {
+  border-radius: 4px;
+}
+
+.card--accent {
+  background: var(--brand-deep);
+}
+
+[data-theme="dark"] .card--accent {
+  background: #22323a;
+}
+
+.site-header.is-stuck {
+  box-shadow: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.profile-line svg {
+  border-radius: 4px;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.005em;
+}
