@@ -65,5 +65,17 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/herramientas/ejercicios",
+      "destination": "/herramientas/ejercicios/cartilla",
+      "permanent": false
+    },
+    {
+      "source": "/herramientas/ejercicios/",
+      "destination": "/herramientas/ejercicios/cartilla",
+      "permanent": false
+    }
   ]
 }
