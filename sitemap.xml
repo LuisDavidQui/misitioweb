@@ -1,42 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://tu-dominio.vercel.app/</loc>
+    <loc>https://misitioweb-sigma.vercel.app/</loc>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://tu-dominio.vercel.app/sobre-mi</loc>
+    <loc>https://misitioweb-sigma.vercel.app/sobre-mi</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tu-dominio.vercel.app/investigacion</loc>
+    <loc>https://misitioweb-sigma.vercel.app/investigacion</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tu-dominio.vercel.app/docencia</loc>
+    <loc>https://misitioweb-sigma.vercel.app/calidad-del-agua</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tu-dominio.vercel.app/hidraulica-digital</loc>
+    <loc>https://misitioweb-sigma.vercel.app/docencia</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tu-dominio.vercel.app/publicaciones</loc>
+    <loc>https://misitioweb-sigma.vercel.app/hidraulica-digital</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tu-dominio.vercel.app/recursos</loc>
+    <loc>https://misitioweb-sigma.vercel.app/publicaciones</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tu-dominio.vercel.app/contacto</loc>
+    <loc>https://misitioweb-sigma.vercel.app/recursos</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://misitioweb-sigma.vercel.app/contacto</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
