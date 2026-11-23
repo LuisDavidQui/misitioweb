@@ -18,6 +18,10 @@
   <meta property="og:description" content="Enfoque de hidráulica digital: Python, EPANET, iRIC, QGIS, DualSPHysics y ParaView en flujos de trabajo reproducibles.">
   <meta property="og:image" content="assets/img/og.png">
   <meta name="twitter:card" content="summary_large_image">
+  <style>
+    .figure svg{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#fffdf8}
+    .figure figcaption{margin-top:.6rem}
+  </style>
 </head>
 <body>
 <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -182,12 +186,59 @@
 <section class="section section--soft">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">En desarrollo</p>
+      <p class="eyebrow">Herramientas</p>
       <h2>Herramientas propias</h2>
+      <p class="lead">Programas y calculadoras que uso en clase y en el trabajo aplicado. Cada uno se publica con su propósito, sus requisitos y un ejemplo de uso.</p>
     </div>
-    <div class="empty-state">
-      <h3>Próximamente</h3>
-      <p>Esta sección reunirá scripts, utilidades y programas aplicados a hidráulica. Cada herramienta se publicará con su propósito, requisitos y un ejemplo de uso.</p>
+    <div class="split">
+      <div class="prose">
+        <p class="eyebrow">Herramienta 01</p>
+        <h3>Simulador de perfiles FGV</h3>
+        <p>Una guía interactiva para calcular perfiles de flujo gradualmente variado. Reúne la teoría, el método tramo por tramo, la integración gráfica y un simulador que clasifica el perfil y arma la tabla de cálculos.</p>
+        <ul>
+          <li>Hipótesis, ecuación dinámica y los 12 perfiles de flujo.</li>
+          <li>Ejercicios resueltos con los dos métodos.</li>
+          <li>Simulador con datos del canal, diagnóstico y sección longitudinal.</li>
+        </ul>
+        <p class="mt-2"><a class="btn btn--primary" href="herramientas/fgv">Abrir simulador <svg aria-hidden="true"><use href="#i-arrow"></use></svg></a></p>
+        <p class="small muted mt-2"><a href="herramientas/fgv.html" download>Descargar HTML</a> · funciona sin instalación</p>
+      </div>
+      <figure class="figure">
+        <svg viewBox="0 0 640 380" role="img" aria-label="Esquema de un perfil de flujo gradualmente variado tipo M2.">
+          <rect width="640" height="380" fill="#fffdf8"/>
+          <g stroke="#e8e2d4" stroke-width="1">
+            <path d="M60 60V320M60 320H600"/>
+            <path d="M60 100H600M60 140H600M60 180H600M60 220H600M60 260H600M60 300H600" opacity=".6"/>
+            <path d="M160 60V320M260 60V320M360 60V320M460 60V320M560 60V320" opacity=".6"/>
+          </g>
+          <path d="M70 305 L590 235" stroke="#9a6b3f" stroke-width="4" fill="none"/>
+          <path d="M70 195 C170 185 250 170 340 160 S480 150 590 155" stroke="#1f4e79" stroke-width="4" fill="none"/>
+          <path d="M70 250 L590 180" stroke="#1f4e79" stroke-width="1.6" stroke-dasharray="7 6" opacity=".65"/>
+          <path d="M70 220 L590 150" stroke="#9a6b3f" stroke-width="1.6" stroke-dasharray="3 5" opacity=".7"/>
+          <g font-family="Georgia, serif" font-size="13" fill="#5d686f">
+            <text x="82" y="188" fill="#1f4e79">Superficie</text>
+            <text x="82" y="330" fill="#9a6b3f">Fondo</text>
+            <text x="548" y="174" fill="#1f4e79">y_c</text>
+            <text x="548" y="144" fill="#9a6b3f">y_n</text>
+            <text x="592" y="360">x</text>
+            <text x="42" y="72">z</text>
+          </g>
+          <g>
+            <rect x="492" y="58" width="78" height="34" rx="17" fill="#0d3b66"/>
+            <text x="531" y="80" text-anchor="middle" font-family="Georgia, serif" font-size="15" fill="#ffffff">M2</text>
+          </g>
+          <g stroke="#1f4e79" stroke-width="1.8" fill="none" marker-end="url(#arrow)">
+            <path d="M470 110 H300" stroke-dasharray="5 5" opacity=".7"/>
+          </g>
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 z" fill="#1f4e79"/>
+            </marker>
+          </defs>
+          <text x="310" y="102" font-family="Georgia, serif" font-size="12" fill="#5d686f">sentido del cálculo</text>
+        </svg>
+        <figcaption>Esquema de un perfil M2. La herramienta calcula la curva y la tabla de tirantes.</figcaption>
+      </figure>
     </div>
   </div>
 </section>

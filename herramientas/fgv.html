@@ -1,0 +1,2646 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flujo Gradualmente Variado (FGV) · Cálculo de Perfiles Hidráulicos</title>
+<style>
+  /* ── RESET Y TIPOGRAFÍA BASE ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f3f6;
+    color: #1a202c;
+    line-height: 1.6;
+    padding: 18px;
+  }
+  .container {
+    max-width: 1320px;
+    margin: 0 auto;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(13, 59, 102, 0.08);
+    overflow: hidden;
+  }
+
+  /* ── CABECERA ACADÉMICA ── */
+  header {
+    background: #0d3b66;
+    color: #ffffff;
+    padding: 24px 32px;
+    border-bottom: 6px solid #f4a300;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  header h1 span { color: #f4a300; }
+  header .subtitle {
+    font-size: 0.95rem;
+    color: #e2e8f0;
+    margin-top: 4px;
+    font-weight: 400;
+  }
+  header .meta-badge {
+    background: rgba(255, 255, 255, 0.12);
+    padding: 6px 18px;
+    border-radius: 24px;
+    font-size: 0.85rem;
+    border-left: 4px solid #f4a300;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── BARRA DE PESTAÑAS ── */
+  .tabs {
+    display: flex;
+    background: #e2e8f0;
+    border-bottom: 3px solid #0d3b66;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    flex: 1;
+    min-width: 170px;
+    padding: 14px 16px;
+    border: none;
+    background: transparent;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #0d3b66;
+    border-bottom: 4px solid transparent;
+    transition: all 0.2s ease;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { background: #cbd5e1; color: #08243f; }
+  .tab-btn.active {
+    background: #ffffff;
+    border-bottom: 4px solid #f4a300;
+    color: #0d3b66;
+  }
+
+  /* ── CONTENIDO DE PESTAÑAS ── */
+  .tab-content { display: none; padding: 30px 36px 40px; }
+  .tab-content.active { display: block; animation: fadeIn 0.25s ease-in-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── TIPOGRAFÍA Y ENCABEZADOS ── */
+  h2 {
+    font-size: 1.45rem;
+    color: #0d3b66;
+    border-left: 6px solid #f4a300;
+    padding-left: 14px;
+    margin: 24px 0 16px 0;
+    line-height: 1.3;
+  }
+  h2:first-child { margin-top: 0; }
+  h3 {
+    font-size: 1.18rem;
+    color: #0d3b66;
+    margin: 24px 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h4 {
+    font-size: 1.02rem;
+    color: #0d3b66;
+    margin: 16px 0 8px 0;
+    font-weight: 600;
+  }
+  p { margin-bottom: 12px; }
+
+  /* ── CAJAS DE INFORMACIÓN (COLORES PRIMARIOS SÓLIDOS) ── */
+  .box-blue {
+    background: #eef4fa;
+    border-left: 6px solid #0d3b66;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .box-yellow {
+    background: #fff9e6;
+    border-left: 6px solid #f4a300;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .box-green {
+    background: #e8f5ec;
+    border-left: 6px solid #1e7e34;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .box-red {
+    background: #fdf0f0;
+    border-left: 6px solid #b3261e;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .box-white {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-top: 4px solid #0d3b66;
+    padding: 18px 22px;
+    margin: 16px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+
+  /* ── ECUACIONES MATEMÁTICAS ESTILO ACADÉMICO ── */
+  .eq {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-left: 5px solid #f4a300;
+    padding: 14px 22px;
+    margin: 14px 0;
+    font-size: 1.12rem;
+    font-family: 'Cambria Math', 'KaTeX_Main', 'Times New Roman', serif;
+    text-align: center;
+    border-radius: 0 6px 6px 0;
+    color: #0f172a;
+    overflow-x: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .eq-desc {
+    font-size: 0.88rem;
+    color: #475569;
+    text-align: center;
+    margin-top: -6px;
+    margin-bottom: 12px;
+  }
+
+  /* ── COMPONENTES TIPOGRÁFICOS DE FRACCIONES Y OPERADORES ── */
+  .m-frac {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: middle;
+    text-align: center;
+    padding: 0 4px;
+    font-size: 0.95em;
+  }
+  .m-num {
+    border-bottom: 2px solid #0d3b66;
+    padding-bottom: 2px;
+    line-height: 1.1;
+  }
+  .m-den {
+    padding-top: 3px;
+    line-height: 1.1;
+  }
+  .m-bracket {
+    font-size: 1.45em;
+    font-weight: 300;
+    vertical-align: middle;
+    color: #0d3b66;
+  }
+  .m-int {
+    font-size: 1.6em;
+    vertical-align: -0.2em;
+    color: #0d3b66;
+    font-family: serif;
+    margin-right: 2px;
+  }
+  .m-root {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+  }
+  .m-rad {
+    font-size: 1.35em;
+    margin-right: 1px;
+    color: #0d3b66;
+  }
+  .m-rad-val {
+    border-top: 2px solid #0d3b66;
+    padding-top: 2px;
+  }
+  .m-var {
+    font-style: italic;
+    font-weight: 600;
+  }
+
+  /* ── ALGORITMOS PASO A PASO CON ESQUEMAS GRÁFICOS ── */
+  .algoritmo {
+    counter-reset: paso;
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+  }
+  .algoritmo li {
+    counter-increment: paso;
+    position: relative;
+    padding: 18px 20px 18px 62px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 0.94rem;
+  }
+  .algoritmo li::before {
+    content: counter(paso);
+    position: absolute;
+    left: 14px;
+    top: 18px;
+    width: 34px;
+    height: 34px;
+    background: #0d3b66;
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.92rem;
+    box-shadow: 0 2px 5px rgba(13, 59, 102, 0.25);
+  }
+  .algo-content {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 18px;
+    align-items: center;
+  }
+  @media (max-width: 960px) {
+    .algo-content {
+      grid-template-columns: 1fr;
+    }
+  }
+  .algo-text {
+    font-size: 0.93rem;
+  }
+  .algo-text ul {
+    margin-left: 20px;
+    margin-top: 6px;
+  }
+  .algo-diagram {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-top: 3px solid #0d3b66;
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 2px 6px rgba(13, 59, 102, 0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .algo-diagram svg {
+    width: 100%;
+    height: auto;
+    max-height: 180px;
+    display: block;
+  }
+  .algo-caption {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #0d3b66;
+    margin-top: 6px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  /* ── TABLAS ACADÉMICAS ── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 18px 0;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    background: #ffffff;
+  }
+  table th {
+    background: #0d3b66;
+    color: #ffffff;
+    padding: 10px 12px;
+    text-align: center;
+    font-weight: 600;
+    border: 1px solid #1e4976;
+    white-space: nowrap;
+  }
+  table td {
+    border: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  table td.texto { text-align: left; }
+  table tr:nth-child(even) { background: #f8fafc; }
+  table tr:hover { background: #eef4fa; }
+  .table-total {
+    background: #fff9e6 !important;
+    font-weight: 700;
+    border-top: 2px solid #f4a300;
+  }
+
+  /* ── BOTONES E INTERACTIVIDAD ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0d3b66;
+    color: #ffffff;
+    padding: 9px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+  .btn:hover { background: #08243f; transform: translateY(-1px); }
+  .btn-yellow { background: #f4a300; color: #111827; }
+  .btn-yellow:hover { background: #d99100; color: #000; }
+  .btn-green { background: #1e7e34; color: #ffffff; }
+  .btn-green:hover { background: #166127; }
+  .btn-red { background: #b3261e; color: #ffffff; }
+  .btn-red:hover { background: #8e1c15; }
+  .btn-outline {
+    background: transparent;
+    border: 2px solid #0d3b66;
+    color: #0d3b66;
+  }
+  .btn-outline:hover { background: #eef4fa; }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+
+  /* ── GRIDS RESPONSIVOS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+
+  /* ── ETIQUETAS / TAGS ── */
+  .tag {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 16px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .tag.azul { background: #0d3b66; color: #ffffff; }
+  .tag.amarillo { background: #f4a300; color: #111827; }
+  .tag.verde { background: #1e7e34; color: #ffffff; }
+  .tag.rojo { background: #b3261e; color: #ffffff; }
+
+  /* ── SIMULADOR ESPECÍFICO ── */
+  .sim-panel {
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .input-group label {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #0d3b66;
+  }
+  .input-group input, .input-group select {
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.92rem;
+    background: #ffffff;
+    color: #0f172a;
+    transition: border-color 0.2s;
+  }
+  .input-group input:focus, .input-group select:focus {
+    outline: none;
+    border-color: #0d3b66;
+    box-shadow: 0 0 0 2px rgba(13, 59, 102, 0.2);
+  }
+
+  .canvas-container {
+    background: #ffffff;
+    border: 2px solid #0d3b66;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 20px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 340px;
+    background: #fafbfc;
+  }
+
+  .diagnostic-badge {
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 12px 0;
+    font-size: 0.95rem;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: #0d3b66;
+    color: #cbd5e1;
+    padding: 20px 32px;
+    text-align: center;
+    font-size: 0.86rem;
+    border-top: 5px solid #f4a300;
+  }
+  footer strong { color: #f4a300; }
+
+  /* ── IMPRESIÓN Y RESPONSIVIDAD ── */
+  @media (max-width: 900px) {
+    header { padding: 18px 20px; }
+    header h1 { font-size: 1.35rem; }
+    .tab-content { padding: 20px 16px; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .tab-btn { min-width: 140px; font-size: 0.85rem; padding: 10px 8px; }
+  }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .container { box-shadow: none; border: none; }
+    .tabs, .toolbar, .no-print, .sim-controls { display: none !important; }
+    .tab-content { display: block !important; padding: 12px 0 !important; page-break-after: always; }
+    header { background: #0d3b66 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { background: #0d3b66 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- CABECERA PRINCIPAL -->
+  <header>
+    <div>
+      <h1>🌊 Flujo <span>Gradualmente Variado</span> (FGV)</h1>
+      <div class="subtitle">Guía Académica Integral · Métodos: Tramo por Tramo & Integración Gráfica · Simulador Didáctico</div>
+    </div>
+    <div class="meta-badge">Ingeniería Hidráulica · Unicauca</div>
+  </header>
+
+  <!-- PESTAÑAS DE NAVEGACIÓN -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="ideas">💡 1. Ideas Principales y Perfiles</button>
+    <button class="tab-btn" data-tab="tramo">📏 2. Método Tramo por Tramo</button>
+    <button class="tab-btn" data-tab="grafica">📈 3. Integración Gráfica</button>
+    <button class="tab-btn" data-tab="simulador">🖥️ 4. Simulador Interactivo</button>
+    <button class="tab-btn" data-tab="comparativa">⚖️ 5. Comparativa Metodológica</button>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- =========== PESTAÑA 1: IDEAS PRINCIPALES ================ -->
+  <!-- ========================================================= -->
+  <div id="ideas" class="tab-content active">
+
+    <div class="toolbar no-print">
+      <button class="btn btn-yellow" onclick="window.print()">📄 Imprimir o Guardar PDF</button>
+    </div>
+
+    <h2>Fundamentos Teóricos del Flujo Gradualmente Variado (FGV)</h2>
+
+    <div class="box-blue">
+      <p>El <strong>Flujo Gradualmente Variado (FGV)</strong> es un flujo permanente no uniforme en el cual el tirante de agua cambia de forma <strong>suave, continua y gradual</strong> a lo largo de la longitud del canal. A diferencia del Flujo Rápidamente Variado (FRV, como en un resalto hidráulico o vertedero de cresta delgada), las pérdidas por curvatura de líneas de corriente son despreciables y la distribución de presiones puede considerarse <strong>hidrostática</strong> en cualquier sección transversal.</p>
+    </div>
+
+    <h3>🔹 1. Hipótesis Básicas del FGV</h3>
+    <div class="grid-3">
+      <div class="box-white">
+        <h4>1. Flujo Permanente</h4>
+        <p style="font-size:0.9rem;">El caudal <strong>Q</strong> es constante en el tiempo en todas las secciones transversales del tramo analizado (<strong>dQ/dt = 0</strong>).</p>
+      </div>
+      <div class="box-white">
+        <h4>2. Presión Hidrostática</h4>
+        <p style="font-size:0.9rem;">Las líneas de corriente son prácticamente paralelas y sin curvatura apreciable; la aceleración vertical del agua es despreciable.</p>
+      </div>
+      <div class="box-white">
+        <h4>3. Pérdida de Fricción Uniforme</h4>
+        <p style="font-size:0.9rem;">La pendiente de fricción <strong>S<sub>f</sub></strong> en cualquier sección de FGV se evalúa con la ecuación de Manning con el tirante y velocidad locales.</p>
+      </div>
+    </div>
+
+    <h3>🔹 2. Ecuación Dinámica General del FGV</h3>
+    <div class="box-white">
+      <p>Derivando la ecuación de energía total <strong>H = z + y + V² / (2g)</strong> respecto a la distancia longitudinal <strong>x</strong>:</p>
+      
+      <div class="eq">
+        <span class="m-frac"><span class="m-num">dy</span><span class="m-den">dx</span></span>
+        <span>=</span>
+        <span class="m-frac"><span class="m-num">S₀ − S<sub>f</sub></span><span class="m-den">1 − Fr²</span></span>
+      </div>
+      <div class="eq-desc">Ecuación diferencial fundamental del flujo gradualmente variado en canales prismáticos</div>
+      
+      <p style="font-size:0.92rem;">Donde:</p>
+      <ul style="font-size:0.92rem; margin-left: 24px;">
+        <li><strong>dy/dx</strong>: Pendiente de la superficie libre del agua con respecto al fondo del canal. Si <strong>dy/dx &gt; 0</strong>, el tirante aumenta (curva de <em>remanso</em>); si <strong>dy/dx &lt; 0</strong>, el tirante disminuye (curva de <em>caída o abatimiento</em>).</li>
+        <li><strong>S₀</strong>: Pendiente longitudinal del fondo del canal (<strong>S₀ = −dz/dx</strong>).</li>
+        <li><strong>S<sub>f</sub></strong>: Pendiente de la línea de energía o de fricción, evaluada mediante la fórmula de Manning:
+          <div class="eq" style="font-size:1.05rem; padding:8px 16px; margin:8px 0;">
+            <span>S<sub>f</sub> =</span>
+            <span class="m-frac"><span class="m-num">n² · V²</span><span class="m-den">R<sup>4/3</sup></span></span>
+            <span>=</span>
+            <span class="m-bracket">[</span>
+            <span class="m-frac"><span class="m-num">Q · n</span><span class="m-den">A · R<sup>2/3</sup></span></span>
+            <span class="m-bracket">]</span>²
+          </div>
+        </li>
+        <li><strong>Fr</strong>: Número de Froude de la sección:
+          <div class="eq" style="font-size:1.05rem; padding:8px 16px; margin:8px 0;">
+            <span>Fr² =</span>
+            <span class="m-frac"><span class="m-num">Q² · T</span><span class="m-den">g · A³</span></span>
+            <span>=</span>
+            <span class="m-frac"><span class="m-num">V²</span><span class="m-den">g · y<sub>h</sub></span></span>
+            <span style="font-size:0.9rem; color:#475569;">&emsp;(donde y<sub>h</sub> = A / T = profundidad hidráulica)</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <h3>🔹 3. Clasificación de las Pendientes del Canal</h3>
+    <p>La relación entre la pendiente real <strong>S₀</strong> y la pendiente crítica <strong>S<sub>c</sub></strong> (aquella que para el caudal <strong>Q</strong> produce un tirante normal igual al crítico <strong>y<sub>n</sub> = y<sub>c</sub></strong>) define 5 clases de pendientes:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tipo de Pendiente</th>
+            <th>Símbolo</th>
+            <th>Condición de Pendiente</th>
+            <th>Condición de Tirantes</th>
+            <th>Comportamiento Hidráulico</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="texto"><strong>Suave (Mild)</strong></td>
+            <td><span class="tag azul">M</span></td>
+            <td>S₀ &lt; S<sub>c</sub></td>
+            <td>y<sub>n</sub> &gt; y<sub>c</sub></td>
+            <td>Flujo uniforme es subcrítico. Perfiles muy comunes en ríos y canales de riego.</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Fuerte (Steep)</strong></td>
+            <td><span class="tag rojo">S</span></td>
+            <td>S₀ &gt; S<sub>c</sub></td>
+            <td>y<sub>n</sub> &lt; y<sub>c</sub></td>
+            <td>Flujo uniforme es supercrítico. Frecuente en rápidas, vertederos y canales de descarga.</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Crítica (Critical)</strong></td>
+            <td><span class="tag amarillo">C</span></td>
+            <td>S₀ = S<sub>c</sub></td>
+            <td>y<sub>n</sub> = y<sub>c</sub></td>
+            <td>Flujo uniforme inestable en estado crítico (Fr = 1).</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Horizontal (Horizontal)</strong></td>
+            <td><span class="tag azul">H</span></td>
+            <td>S₀ = 0</td>
+            <td>y<sub>n</sub> &rarr; &infin;</td>
+            <td>No existe flujo uniforme normal. Solo existen zonas 2 y 3.</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Adversa (Adverse)</strong></td>
+            <td><span class="tag rojo">A</span></td>
+            <td>S₀ &lt; 0</td>
+            <td>y<sub>n</sub> no existe</td>
+            <td>El fondo sube en la dirección del flujo. Solo existen zonas 2 y 3.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>🔹 4. Zonas de Flujo y Matriz Completa de los 12 Perfiles</h3>
+    <p>El espacio sobre el fondo del canal se divide en 3 zonas delimitadas por la línea de tirante normal (<strong>y<sub>n</sub></strong>) y la línea de tirante crítico (<strong>y<sub>c</sub></strong>):</p>
+    <div class="grid-3">
+      <div class="box-green">
+        <h4 style="margin-top:0;">Zona 1: y &gt; y<sub>n</sub> y y &gt; y<sub>c</sub></h4>
+        <p style="font-size:0.9rem;">El tirante real está por encima de ambas líneas. En canales de pendiente suave o fuerte, <strong>S<sub>f</sub> &lt; S₀</strong> y <strong>Fr &lt; 1</strong>, por lo que <strong>dy/dx &gt; 0</strong> (perfiles de <strong>remanso</strong>).</p>
+      </div>
+      <div class="box-yellow">
+        <h4 style="margin-top:0;">Zona 2: y entre y<sub>n</sub> y y<sub>c</sub></h4>
+        <p style="font-size:0.9rem;">El tirante real está comprendido entre el normal y el crítico. Los signos del numerador y denominador difieren, resultando en <strong>dy/dx &lt; 0</strong> (perfiles de <strong>caída o abatimiento</strong>).</p>
+      </div>
+      <div class="box-red">
+        <h4 style="margin-top:0;">Zona 3: y &lt; y<sub>n</sub> y y &lt; y<sub>c</sub></h4>
+        <p style="font-size:0.9rem;">El tirante real está por debajo de ambas líneas. Ambos términos cambian de signo, produciendo <strong>dy/dx &gt; 0</strong> (perfiles de <strong>remanso en régimen supercrítico</strong>).</p>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Pendiente</th>
+            <th>Zona 1 (y &gt; yn, yc)</th>
+            <th>Zona 2 (entre yn y yc)</th>
+            <th>Zona 3 (y &lt; yn, yc)</th>
+            <th>Comportamiento Asintótico</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="texto"><strong>Suave (M)</strong></td>
+            <td><strong>M1</strong> (Remanso, dy/dx &gt; 0)</td>
+            <td><strong>M2</strong> (Abatimiento, dy/dx &lt; 0)</td>
+            <td><strong>M3</strong> (Remanso supercrítico, dy/dx &gt; 0)</td>
+            <td class="texto">y &rarr; yn asintóticamente; y &rarr; yc verticalmente (perpendicular a yc).</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Fuerte (S)</strong></td>
+            <td><strong>S1</strong> (Remanso subcrítico, dy/dx &gt; 0)</td>
+            <td><strong>S2</strong> (Abatimiento supercrítico, dy/dx &lt; 0)</td>
+            <td><strong>S3</strong> (Remanso supercrítico, dy/dx &gt; 0)</td>
+            <td class="texto">y &rarr; yn asintóticamente; y &rarr; yc con pendiente infinita teórica.</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Crítica (C)</strong></td>
+            <td><strong>C1</strong> (Remanso, dy/dx &gt; 0)</td>
+            <td>— (yn = yc, no hay zona intermedia)</td>
+            <td><strong>C3</strong> (Remanso supercrítico, dy/dx &gt; 0)</td>
+            <td class="texto">El flujo uniforme es crítico; las curvas son casi horizontales.</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Horizontal (H)</strong></td>
+            <td>— (yn &rarr; &infin;)</td>
+            <td><strong>H2</strong> (Abatimiento, dy/dx &lt; 0)</td>
+            <td><strong>H3</strong> (Remanso, dy/dx &gt; 0)</td>
+            <td class="texto">y &rarr; yc perpendicularmente. Muy frecuente aguas abajo de compuertas.</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Adversa (A)</strong></td>
+            <td>— (yn no existe)</td>
+            <td><strong>A2</strong> (Abatimiento, dy/dx &lt; 0)</td>
+            <td><strong>A3</strong> (Remanso, dy/dx &gt; 0)</td>
+            <td class="texto">Avanza perdiendo energía hasta alcanzar el tirante crítico.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>🔹 5. Secciones de Control y Sentido Físico de Cálculo</h3>
+    <div class="grid-2">
+      <div class="box-green">
+        <h4 style="margin-top:0;">Régimen Subcrítico (Fr &lt; 1)</h4>
+        <p>En flujo subcrítico, las ondas de perturbación viajan en ambas direcciones (hacia aguas abajo y hacia aguas arriba, pues <strong>c = &radic;(g·y<sub>h</sub>) &gt; V</strong>).</p>
+        <ul>
+          <li><strong>Sección de Control:</strong> Ubicada en el extremo de <strong>aguas abajo</strong> (presa, vertedero, compuerta o caída libre).</li>
+          <li><strong>Dirección de Cálculo:</strong> Se debe integrar <strong>desde aguas abajo hacia aguas arriba</strong> (<strong>Δx &lt; 0</strong>).</li>
+          <li><strong>Perfiles típicos:</strong> M1, M2, S1.</li>
+        </ul>
+      </div>
+      <div class="box-red">
+        <h4 style="margin-top:0;">Régimen Supercrítico (Fr &gt; 1)</h4>
+        <p>En flujo supercrítico, la velocidad del agua supera a la celeridad de onda (<strong>V &gt; c</strong>). Toda perturbación es arrastrada hacia aguas abajo.</p>
+        <ul>
+          <li><strong>Sección de Control:</strong> Ubicada en el extremo de <strong>aguas arriba</strong> (salida inferior de compuerta o cambio de pendiente suave a fuerte).</li>
+          <li><strong>Dirección de Cálculo:</strong> Se debe integrar <strong>desde aguas arriba hacia aguas abajo</strong> (<strong>Δx &gt; 0</strong>).</li>
+          <li><strong>Perfiles típicos:</strong> M3, S2, S3, H3.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+  <!-- =========== FIN PESTAÑA 1 =========== -->
+
+
+  <!-- ========================================================= -->
+  <!-- =========== PESTAÑA 2: TRAMO POR TRAMO ================== -->
+  <!-- ========================================================= -->
+  <div id="tramo" class="tab-content">
+
+    <div class="toolbar no-print">
+      <button class="btn btn-yellow" onclick="window.print()">📄 Imprimir o Guardar PDF</button>
+      <button class="btn btn-outline" onclick="loadSimPreset('m1_tramo')">🚀 Abrir Ejercicio 1 en Simulador</button>
+      <button class="btn btn-outline" onclick="loadSimPreset('m2_tramo')">🚀 Abrir Ejercicio 2 en Simulador</button>
+    </div>
+
+    <h2>Método Tramo por Tramo (Direct Step Method)</h2>
+
+    <!-- 1. SUSTENTACIÓN TEÓRICA -->
+    <h3>1. Sustentación Teórica</h3>
+    <div class="box-blue">
+      <p>El <strong>Método Tramo por Tramo</strong> (también conocido como Método de Pasos Directos) es un método numérico explícito y directo aplicable a <strong>canales prismáticos</strong> (sección transversal y pendiente de fondo constantes). El método fija incrementos conocidos de tirante (<strong>Δy</strong>) y calcula directamente la distancia espacial <strong>Δx</strong> entre secciones consecutivas.</p>
+      
+      <p>Considerando dos secciones transversales consecutivas 1 y 2 separadas una distancia <strong>Δx</strong>, el balance de energía total establece:</p>
+      
+      <div class="eq">
+        <span>z₁ + y₁ +</span>
+        <span class="m-frac"><span class="m-num">V₁²</span><span class="m-den">2g</span></span>
+        <span>= z₂ + y₂ +</span>
+        <span class="m-frac"><span class="m-num">V₂²</span><span class="m-den">2g</span></span>
+        <span>+ h<sub>f</sub></span>
+      </div>
+      
+      <p>Definiendo la energía específica <strong>E = y + V² / (2g)</strong> y considerando que el desnivel del fondo es <strong>z₁ − z₂ = S₀ · Δx</strong>, y la pérdida de carga por fricción es <strong>h<sub>f</sub> = S̄<sub>f</sub> · Δx</strong>:</p>
+      
+      <div class="eq">
+        <span>S₀ · Δx + E₁ = E₂ + S̄<sub>f</sub> · Δx</span>
+      </div>
+      
+      <p>Despejando directamente el incremento de distancia longitudinal <strong>Δx</strong>:</p>
+      
+      <div class="eq">
+        <strong style="display:flex; align-items:center; gap:8px;">
+          <span>Δx =</span>
+          <span class="m-frac"><span class="m-num">E₂ − E₁</span><span class="m-den">S₀ − S̄<sub>f</sub></span></span>
+          <span>=</span>
+          <span class="m-frac"><span class="m-num">ΔE</span><span class="m-den">S₀ − S̄<sub>f</sub></span></span>
+        </strong>
+      </div>
+      <div class="eq-desc">Fórmula rectora del método de paso directo para canales prismáticos</div>
+      
+      <p>Donde la pendiente de fricción promedio del tramo <strong>S̄<sub>f</sub></strong> se calcula evaluando la ecuación de Manning en la sección media del tramo con <strong>y<sub>m</sub> = (y₁ + y₂) / 2</strong>:</p>
+      
+      <div class="eq">
+        <span>S̄<sub>f</sub> =</span>
+        <span class="m-bracket">[</span>
+        <span class="m-frac"><span class="m-num">Q · n</span><span class="m-den">A<sub>m</sub> · R<sub>m</sub><sup>2/3</sup></span></span>
+        <span class="m-bracket">]</span>²
+      </div>
+    </div>
+
+    <ol class="algoritmo">
+      <!-- PASO 1 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Definición de Datos Iniciales:</strong>
+            <p>Recopilar los parámetros hidráulicos y geométricos fundamentales del canal:</p>
+            <ul>
+              <li><strong>Caudal Q</strong> (m³/s) y rugosidad de Manning <strong>n</strong>.</li>
+              <li><strong>Pendiente longitudinal de fondo S₀</strong> (m/m = −dz/dx).</li>
+              <li><strong>Geometría de la sección:</strong> ancho de solera <strong>b</strong> (m) y talud lateral <strong>z</strong> (H:1V).</li>
+              <li><strong>Condición de frontera:</strong> tirante inicial conocido <strong>y₁</strong> en la sección de control hidráulico.</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="150" fill="#f8fafc" rx="6"/>
+              <polygon points="40,25 90,115 230,115 280,25" fill="#e2e8f0" stroke="#334155" stroke-width="2.5"/>
+              <polygon points="58,55 90,115 230,115 262,55" fill="rgba(14, 165, 233, 0.35)" stroke="#0284c7" stroke-width="2"/>
+              <line x1="58" y1="55" x2="262" y2="55" stroke="#0284c7" stroke-width="2.5"/>
+              <polygon points="160,55 155,47 165,47" fill="#0284c7"/>
+              <line x1="90" y1="127" x2="230" y2="127" stroke="#0d3b66" stroke-width="1.5"/>
+              <line x1="90" y1="122" x2="90" y2="132" stroke="#0d3b66" stroke-width="1.5"/>
+              <line x1="230" y1="122" x2="230" y2="132" stroke="#0d3b66" stroke-width="1.5"/>
+              <text x="160" y="140" font-size="11" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">b (ancho solera)</text>
+              <line x1="275" y1="55" x2="275" y2="115" stroke="#b3261e" stroke-width="1.5"/>
+              <line x1="270" y1="55" x2="280" y2="55" stroke="#b3261e" stroke-width="1.5"/>
+              <line x1="270" y1="115" x2="280" y2="115" stroke="#b3261e" stroke-width="1.5"/>
+              <text x="298" y="88" font-size="11" font-weight="700" fill="#b3261e" text-anchor="middle" font-family="sans-serif">y₁</text>
+              <line x1="45" y1="50" x2="65" y2="50" stroke="#475569" stroke-width="1.2"/>
+              <line x1="65" y1="50" x2="65" y2="70" stroke="#475569" stroke-width="1.2"/>
+              <text x="55" y="44" font-size="9" font-weight="600" fill="#475569" text-anchor="middle" font-family="sans-serif">z</text>
+              <text x="73" y="63" font-size="9" font-weight="600" fill="#475569" text-anchor="middle" font-family="sans-serif">1</text>
+              <rect x="125" y="68" width="70" height="22" rx="4" fill="#0d3b66"/>
+              <text x="160" y="83" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="sans-serif">Q, n, S₀</text>
+            </svg>
+            <div class="algo-caption">Parámetros Geométricos e Hidráulicos de Entrada</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 2 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Determinación de Tirantes Característicos:</strong>
+            <p>Calcular los dos niveles de referencia que gobiernan la hidráulica del canal:</p>
+            <ul>
+              <li><strong>Tirante normal y<sub>n</sub>:</strong> Ecuación de flujo uniforme de Manning:
+                <div style="font-size:0.88rem; margin:4px 0; color:#1e7e34; font-weight:600;">
+                  Q = (1/n) · A(y<sub>n</sub>) · R(y<sub>n</sub>)<sup>2/3</sup> · S₀<sup>1/2</sup>
+                </div>
+              </li>
+              <li><strong>Tirante crítico y<sub>c</sub>:</strong> Condición de energía mínima (Fr = 1):
+                <div style="font-size:0.88rem; margin:4px 0; color:#b3261e; font-weight:600;">
+                  Q² · T(y<sub>c</sub>) / [g · A(y<sub>c</sub>)³] = 1
+                </div>
+              </li>
+              <li><strong>Clasificación de pendiente:</strong> Si y<sub>n</sub> &gt; y<sub>c</sub> &rArr; Pendiente Suave (M); si y<sub>n</sub> &lt; y<sub>c</sub> &rArr; Fuerte (S).</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="160" fill="#f8fafc" rx="6"/>
+              <!-- Fondo del canal -->
+              <line x1="30" y1="130" x2="290" y2="130" stroke="#334155" stroke-width="3"/>
+              <text x="40" y="148" font-size="10" font-weight="700" fill="#334155" font-family="sans-serif">Fondo S₀</text>
+              <!-- Línea tirante normal -->
+              <line x1="30" y1="48" x2="290" y2="48" stroke="#1e7e34" stroke-width="2.2" stroke-dasharray="6,4"/>
+              <rect x="205" y="37" width="80" height="18" rx="3" fill="#1e7e34"/>
+              <text x="245" y="50" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="sans-serif">yₙ (Manning)</text>
+              <!-- Línea tirante crítico -->
+              <line x1="30" y1="88" x2="290" y2="88" stroke="#b3261e" stroke-width="2.2" stroke-dasharray="4,4"/>
+              <rect x="205" y="77" width="80" height="18" rx="3" fill="#b3261e"/>
+              <text x="245" y="90" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="sans-serif">yc (Fr = 1)</text>
+              <!-- Ecuación Manning con fracción 1/n y exponentes -->
+              <text x="35" y="28" font-size="9" fill="#1e7e34" font-weight="600" font-family="sans-serif">Q =</text>
+              <!-- Fracción 1/n -->
+              <text x="60" y="22" font-size="8" fill="#1e7e34" font-weight="600" text-anchor="middle" font-family="sans-serif">1</text>
+              <line x1="53" y1="24" x2="67" y2="24" stroke="#1e7e34" stroke-width="1"/>
+              <text x="60" y="34" font-size="8" fill="#1e7e34" font-weight="600" text-anchor="middle" font-family="sans-serif">n</text>
+              <text x="70" y="28" font-size="9" fill="#1e7e34" font-weight="600" font-family="sans-serif">· A · R</text>
+              <text x="107" y="22" font-size="7" fill="#1e7e34" font-weight="600" font-family="sans-serif">⅔</text>
+              <text x="117" y="28" font-size="9" fill="#1e7e34" font-weight="600" font-family="sans-serif">· S₀</text>
+              <text x="143" y="22" font-size="7" fill="#1e7e34" font-weight="600" font-family="sans-serif">½</text>
+              <!-- Ecuación crítica con fracción -->
+              <text x="35" y="72" font-size="9" fill="#b3261e" font-weight="600" font-family="sans-serif">Q² · T</text>
+              <line x1="35" y1="74" x2="105" y2="74" stroke="#b3261e" stroke-width="1"/>
+              <text x="35" y="84" font-size="9" fill="#b3261e" font-weight="600" font-family="sans-serif">g · A³</text>
+              <text x="110" y="80" font-size="9" fill="#b3261e" font-weight="600" font-family="sans-serif">= 1</text>
+              <!-- Clasificación -->
+              <rect x="35" y="103" width="158" height="20" rx="4" fill="#eef4fa" stroke="#0d3b66" stroke-width="1"/>
+              <text x="114" y="117" font-size="9.5" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">Si yₙ > yc ⇒ Pendiente M</text>
+            </svg>
+            <div class="algo-caption">Cálculo de Tirantes de Referencia yₙ e yc</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 3 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Identificación del Perfil y Sentido de Cálculo:</strong>
+            <p>Comparar el tirante de diseño <strong>y₁</strong> respecto a <strong>y<sub>n</sub></strong> e <strong>y<sub>c</sub></strong>:</p>
+            <ul>
+              <li><strong>Zona 1 (y &gt; y<sub>n</sub>, y<sub>c</sub>):</strong> Perfil de remanso (ej. M1, S1).</li>
+              <li><strong>Zona 2 (entre y<sub>n</sub> e y<sub>c</sub>):</strong> Perfil de abatimiento/caída (ej. M2, S2).</li>
+              <li><strong>Zona 3 (y &lt; y<sub>n</sub>, y<sub>c</sub>):</strong> Perfil supercrítico (ej. M3, S3).</li>
+              <li><strong>Dirección de propagación:</strong>
+                <ul>
+                  <li>Si <strong>y &gt; y<sub>c</sub> (Subcrítico)</strong>: control aguas abajo &rArr; <strong>cálculo hacia aguas arriba (Δx &lt; 0)</strong>.</li>
+                  <li>Si <strong>y &lt; y<sub>c</sub> (Supercrítico)</strong>: control aguas arriba &rArr; <strong>cálculo hacia aguas abajo (Δx &gt; 0)</strong>.</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="150" fill="#f8fafc" rx="6"/>
+              <rect x="25" y="15" width="270" height="30" rx="4" fill="rgba(30, 126, 52, 0.12)" stroke="#1e7e34" stroke-width="1"/>
+              <text x="35" y="34" font-size="10" font-weight="700" fill="#1e7e34" font-family="sans-serif">Zona 1 (y > yₙ > yc) → Perfil M1</text>
+              <rect x="25" y="50" width="270" height="30" rx="4" fill="rgba(244, 163, 0, 0.15)" stroke="#f4a300" stroke-width="1"/>
+              <text x="35" y="69" font-size="10" font-weight="700" fill="#b45309" font-family="sans-serif">Zona 2 (yₙ > y > yc) → Perfil M2</text>
+              <rect x="25" y="85" width="270" height="30" rx="4" fill="rgba(179, 38, 30, 0.12)" stroke="#b3261e" stroke-width="1"/>
+              <text x="35" y="104" font-size="10" font-weight="700" fill="#b3261e" font-family="sans-serif">Zona 3 (y &lt; yc &lt; yₙ) → Perfil M3</text>
+              <line x1="280" y1="130" x2="165" y2="130" stroke="#0d3b66" stroke-width="2"/>
+              <polygon points="165,130 173,126 173,134" fill="#0d3b66"/>
+              <text x="222" y="142" font-size="8.5" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">← Subcrítico (Aguas Arriba)</text>
+              <line x1="35" y1="130" x2="145" y2="130" stroke="#b3261e" stroke-width="2"/>
+              <polygon points="145,130 137,126 137,134" fill="#b3261e"/>
+              <text x="90" y="142" font-size="8.5" font-weight="700" fill="#b3261e" text-anchor="middle" font-family="sans-serif">Supercrítico →</text>
+            </svg>
+            <div class="algo-caption">Zonificación Hidráulica y Sentido de Cálculo</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 4 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Discretización de Tirantes:</strong>
+            <p>Definir la secuencia de tirantes intermedios para avanzar tramo a tramo:</p>
+            <ul>
+              <li>Elegir un incremento de tirante <strong>Δy</strong> (típicamente <strong>0.05 a 0.20 m</strong>).</li>
+              <li>Generar la serie: <strong>y₁, y₂ = y₁ &plusmn; Δy, y₃ = y₂ &plusmn; Δy, ..., y<sub>k</sub></strong> hasta cubrir el intervalo deseado.</li>
+              <li><em>Regla práctica:</em> a menor Δy, mayor precisión numérica en la curvatura de la superficie libre.</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="150" fill="#f8fafc" rx="6"/>
+              <line x1="70" y1="18" x2="70" y2="132" stroke="#0d3b66" stroke-width="2.5"/>
+              <line x1="62" y1="28" x2="78" y2="28" stroke="#0d3b66" stroke-width="2"/>
+              <circle cx="70" cy="28" r="4" fill="#f4a300"/>
+              <text x="86" y="32" font-size="10.5" font-weight="700" fill="#0d3b66" font-family="sans-serif">y₁ (Inicio)</text>
+              <line x1="62" y1="53" x2="78" y2="53" stroke="#0d3b66" stroke-width="2"/>
+              <circle cx="70" cy="53" r="3" fill="#0d3b66"/>
+              <text x="86" y="57" font-size="10.5" font-weight="600" fill="#0d3b66" font-family="sans-serif">y₂ = y₁ &plusmn; Δy</text>
+              <line x1="62" y1="78" x2="78" y2="78" stroke="#0d3b66" stroke-width="2"/>
+              <circle cx="70" cy="78" r="3" fill="#0d3b66"/>
+              <text x="86" y="82" font-size="10.5" font-weight="600" fill="#0d3b66" font-family="sans-serif">y₃ = y₂ &plusmn; Δy</text>
+              <line x1="62" y1="103" x2="78" y2="103" stroke="#0d3b66" stroke-width="2"/>
+              <circle cx="70" cy="103" r="3" fill="#0d3b66"/>
+              <text x="86" y="107" font-size="10.5" font-weight="600" fill="#0d3b66" font-family="sans-serif">y₄ ...</text>
+              <line x1="62" y1="125" x2="78" y2="125" stroke="#0d3b66" stroke-width="2"/>
+              <circle cx="70" cy="125" r="4" fill="#1e7e34"/>
+              <text x="86" y="129" font-size="10.5" font-weight="700" fill="#1e7e34" font-family="sans-serif">yₖ (Objetivo)</text>
+              <line x1="45" y1="28" x2="45" y2="53" stroke="#f4a300" stroke-width="2"/>
+              <line x1="40" y1="28" x2="45" y2="28" stroke="#f4a300" stroke-width="2"/>
+              <line x1="40" y1="53" x2="45" y2="53" stroke="#f4a300" stroke-width="2"/>
+              <text x="32" y="44" font-size="11" font-weight="800" fill="#d97706" text-anchor="middle" font-family="sans-serif">Δy</text>
+              <rect x="180" y="40" width="125" height="65" rx="5" fill="#fff9e6" stroke="#f4a300" stroke-width="1"/>
+              <text x="242" y="60" font-size="9.5" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">Paso Recomendado:</text>
+              <text x="242" y="78" font-size="10" font-weight="700" fill="#b45309" text-anchor="middle" font-family="sans-serif">Δy = 0.05 a 0.20 m</text>
+              <text x="242" y="94" font-size="8.5" fill="#64748b" text-anchor="middle" font-family="sans-serif">N = |y₂ − y₁| / Δy</text>
+            </svg>
+            <div class="algo-caption">Discretización de Tirantes en Incrementos Δy</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 5 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Para cada Estación i (Cálculo de Propiedades y Energía):</strong>
+            <p>Evaluar las propiedades hidráulicas y la energía específica en cada sección transversal:</p>
+            <ul>
+              <li><strong>Área mojada:</strong> A<sub>i</sub> = (b + z·y<sub>i</sub>) · y<sub>i</sub></li>
+              <li><strong>Perímetro mojado:</strong> P<sub>i</sub> = b + 2·y<sub>i</sub>·&radic;(1 + z²)</li>
+              <li><strong>Radio hidráulico:</strong> R<sub>i</sub> = A<sub>i</sub> / P<sub>i</sub></li>
+              <li><strong>Velocidad media:</strong> V<sub>i</sub> = Q / A<sub>i</sub></li>
+              <li><strong>Energía específica:</strong> E<sub>i</sub> = y<sub>i</sub> + V<sub>i</sub>² / (2g)</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="160" fill="#f8fafc" rx="6"/>
+              <!-- Sección trapezoidal -->
+              <polygon points="30,30 65,100 155,100 190,30" fill="rgba(14, 165, 233, 0.25)" stroke="#0d3b66" stroke-width="2"/>
+              <!-- Perímetro mojado resaltado -->
+              <line x1="45" y1="60" x2="65" y2="100" stroke="#b3261e" stroke-width="3"/>
+              <line x1="65" y1="100" x2="155" y2="100" stroke="#b3261e" stroke-width="3"/>
+              <line x1="155" y1="100" x2="175" y2="60" stroke="#b3261e" stroke-width="3"/>
+              <text x="110" y="70" font-size="12" font-weight="800" fill="#0284c7" text-anchor="middle" font-family="sans-serif">Área Aᵢ</text>
+              <!-- Rᵢ = Aᵢ/Pᵢ con fracción SVG -->
+              <text x="60" y="118" font-size="9" font-weight="700" fill="#b3261e" font-family="sans-serif">Pᵢ → Rᵢ =</text>
+              <text x="130" y="112" font-size="9" font-weight="700" fill="#b3261e" text-anchor="middle" font-family="sans-serif">Aᵢ</text>
+              <line x1="120" y1="114" x2="140" y2="114" stroke="#b3261e" stroke-width="1.2"/>
+              <text x="130" y="125" font-size="9" font-weight="700" fill="#b3261e" text-anchor="middle" font-family="sans-serif">Pᵢ</text>
+              <!-- Barra de energía -->
+              <rect x="220" y="25" width="28" height="95" fill="#e2e8f0" stroke="#0d3b66" stroke-width="1.5" rx="2"/>
+              <rect x="220" y="55" width="28" height="65" fill="#0284c7" rx="0 0 2 2"/>
+              <text x="234" y="90" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="sans-serif">yᵢ</text>
+              <rect x="220" y="25" width="28" height="30" fill="#f4a300" rx="2 2 0 0"/>
+              <!-- V²/(2g) fracción -->
+              <text x="234" y="37" font-size="7" font-weight="700" fill="#0f172a" text-anchor="middle" font-family="sans-serif">V²</text>
+              <line x1="224" y1="39" x2="244" y2="39" stroke="#0f172a" stroke-width="0.8"/>
+              <text x="234" y="48" font-size="7" font-weight="700" fill="#0f172a" text-anchor="middle" font-family="sans-serif">2g</text>
+              <!-- Eᵢ total -->
+              <line x1="255" y1="25" x2="255" y2="120" stroke="#0d3b66" stroke-width="1.5"/>
+              <line x1="250" y1="25" x2="260" y2="25" stroke="#0d3b66" stroke-width="1.5"/>
+              <line x1="250" y1="120" x2="260" y2="120" stroke="#0d3b66" stroke-width="1.5"/>
+              <text x="280" y="75" font-size="11" font-weight="800" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">Eᵢ</text>
+              <!-- Ecuación de energía -->
+              <text x="220" y="148" font-size="8" font-weight="600" fill="#475569" font-family="sans-serif">Eᵢ = yᵢ +</text>
+              <text x="269" y="143" font-size="7" fill="#475569" font-weight="600" text-anchor="middle" font-family="sans-serif">Vᵢ²</text>
+              <line x1="259" y1="145" x2="279" y2="145" stroke="#475569" stroke-width="0.8"/>
+              <text x="269" y="154" font-size="7" fill="#475569" font-weight="600" text-anchor="middle" font-family="sans-serif">2g</text>
+            </svg>
+            <div class="algo-caption">Propiedades Geométricas y Energía Eᵢ</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 6 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Para cada Tramo i &rarr; i+1 (Balance y Longitud Δx):</strong>
+            <p>Calcular la distancia física entre estaciones consecutivas:</p>
+            <ul>
+              <li><strong>Tirante medio del tramo:</strong> y<sub>m</sub> = (y<sub>i</sub> + y<sub>i+1</sub>) / 2</li>
+              <li><strong>Pendiente de fricción media S̄<sub>f</sub>:</strong> evaluada con Manning en y<sub>m</sub>:
+                <div style="font-size:0.88rem; margin:4px 0; color:#0d3b66; font-weight:600;">
+                  S̄<sub>f</sub> = [Q · n / (A<sub>m</sub> · R<sub>m</sub><sup>2/3</sup>)]²
+                </div>
+              </li>
+              <li><strong>Variación de energía:</strong> ΔE = E<sub>i+1</sub> − E<sub>i</sub></li>
+              <li><strong>Longitud del tramo:</strong> <strong>Δx = ΔE / (S₀ − S̄<sub>f</sub>)</strong></li>
+              <li><strong>Distancia acumulada:</strong> x<sub>i+1</sub> = x<sub>i</sub> + Δx</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="160" fill="#f8fafc" rx="6"/>
+              <!-- Fondo inclinado -->
+              <line x1="30" y1="115" x2="290" y2="92" stroke="#334155" stroke-width="2.5"/>
+              <text x="45" y="130" font-size="9" font-weight="600" fill="#334155" font-family="sans-serif">Fondo (S₀)</text>
+              <!-- Superficie libre curvada -->
+              <path d="M 50,72 Q 160,62 270,48" fill="none" stroke="#0284c7" stroke-width="2.5"/>
+              <text x="160" y="45" font-size="9" font-weight="700" fill="#0284c7" text-anchor="middle" font-family="sans-serif">Tirante medio yₘ → S̄f</text>
+              <!-- E₁ y E₂ -->
+              <line x1="50" y1="113" x2="50" y2="72" stroke="#0d3b66" stroke-width="2"/>
+              <line x1="45" y1="72" x2="55" y2="72" stroke="#0d3b66" stroke-width="1.5"/>
+              <line x1="45" y1="113" x2="55" y2="113" stroke="#0d3b66" stroke-width="1.5"/>
+              <text x="36" y="95" font-size="9" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">E₁</text>
+              <line x1="270" y1="94" x2="270" y2="48" stroke="#0d3b66" stroke-width="2"/>
+              <line x1="265" y1="48" x2="275" y2="48" stroke="#0d3b66" stroke-width="1.5"/>
+              <line x1="265" y1="94" x2="275" y2="94" stroke="#0d3b66" stroke-width="1.5"/>
+              <text x="284" y="73" font-size="9" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">E₂</text>
+              <!-- Flecha Δx -->
+              <line x1="50" y1="138" x2="270" y2="138" stroke="#f4a300" stroke-width="2"/>
+              <polygon points="50,138 58,134 58,142" fill="#f4a300"/>
+              <polygon points="270,138 262,134 262,142" fill="#f4a300"/>
+              <!-- Ecuación Δx como fracción SVG -->
+              <text x="115" y="152" font-size="10" font-weight="800" fill="#d97706" font-family="sans-serif">Δx =</text>
+              <text x="175" y="145" font-size="10" font-weight="800" fill="#d97706" text-anchor="middle" font-family="sans-serif">ΔE</text>
+              <line x1="148" y1="147" x2="202" y2="147" stroke="#d97706" stroke-width="1.5"/>
+              <text x="175" y="157" font-size="9" font-weight="800" fill="#d97706" text-anchor="middle" font-family="sans-serif">S₀ − S̄f</text>
+              <!-- hf -->
+              <line x1="270" y1="22" x2="270" y2="46" stroke="#64748b" stroke-width="1.5" stroke-dasharray="3,3"/>
+              <text x="290" y="36" font-size="8" fill="#64748b" font-family="sans-serif">hf = S̄f·Δx</text>
+            </svg>
+            <div class="algo-caption">Balance de Energía y Cálculo de Δx</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 7 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Post-proceso y Graficación del Perfil Longitudinal:</strong>
+            <p>Construir la representación gráfica completa del flujo y verificar el comportamiento:</p>
+            <ul>
+              <li>Graficar los pares de coordenadas <strong>(x, y)</strong> o <strong>(x, z<sub>fondo</sub> + y)</strong>.</li>
+              <li>Superponer las líneas de referencia: <strong>fondo (S₀)</strong>, <strong>tirante normal (y<sub>n</sub>)</strong> y <strong>tirante crítico (y<sub>c</sub>)</strong>.</li>
+              <li>Verificar que la curva respete las asíntotas (aproximación asintótica a y<sub>n</sub> y curvatura pronunciada cerca de y<sub>c</sub>).</li>
+              <li>Determinar la <strong>longitud total L = &sum; Δx</strong> del fenómeno analizado.</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="150" fill="#f8fafc" rx="6"/>
+              <line x1="35" y1="125" x2="295" y2="125" stroke="#94a3b8" stroke-width="1.5"/>
+              <line x1="35" y1="125" x2="35" y2="15" stroke="#94a3b8" stroke-width="1.5"/>
+              <line x1="35" y1="115" x2="285" y2="100" stroke="#334155" stroke-width="2"/>
+              <line x1="35" y1="50" x2="285" y2="35" stroke="#1e7e34" stroke-width="1.5" stroke-dasharray="5,4"/>
+              <text x="290" y="37" font-size="8" font-weight="700" fill="#1e7e34" font-family="sans-serif">yₙ</text>
+              <line x1="35" y1="80" x2="285" y2="65" stroke="#b3261e" stroke-width="1.5" stroke-dasharray="4,3"/>
+              <text x="290" y="67" font-size="8" font-weight="700" fill="#b3261e" font-family="sans-serif">yc</text>
+              <path d="M 285,50 Q 180,68 35,95" fill="none" stroke="#0284c7" stroke-width="3"/>
+              <circle cx="285" cy="50" r="3.5" fill="#f4a300"/>
+              <circle cx="210" cy="62" r="3" fill="#0d3b66"/>
+              <circle cx="130" cy="77" r="3" fill="#0d3b66"/>
+              <circle cx="35" cy="95" r="3.5" fill="#1e7e34"/>
+              <text x="160" y="140" font-size="9.5" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">Curva y(x) superpuesta con yₙ e yc</text>
+            </svg>
+            <div class="algo-caption">Construcción Gráfica Final del Perfil y(x)</div>
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <!-- 3. EJERCICIOS RESUELTOS -->
+    <h3>3. Ejercicios Resueltos Paso a Paso</h3>
+
+    <!-- EJERCICIO 1: M1 -->
+    <div class="box-white">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+        <h4 style="margin:0; font-size:1.15rem; color:#0d3b66;">📌 Ejercicio 1: Perfil M1 de Remanso (Canal Trapezoidal con Presa)</h4>
+        <span class="tag azul">Caso Subcrítico · Zona 1</span>
+      </div>
+      <p style="margin-top:8px;"><strong>Enunciado:</strong> Un canal trapezoidal revestido en concreto transporta un caudal <strong>Q = 15.0 m³/s</strong>. Tiene un ancho de fondo <strong>b = 4.0 m</strong>, talud lateral <strong>z = 1.5</strong> (1.5H:1V), coeficiente de rugosidad <strong>n = 0.020</strong> y pendiente longitudinal <strong>S₀ = 0.0008 m/m</strong>. Debido a una presa vertedora ubicada aguas abajo, el tirante inmediatamente antes de la estructura se eleva a <strong>y = 2.40 m</strong>. Calcule el perfil de remanso hacia aguas arriba hasta un tirante de <strong>y = 1.80 m</strong> mediante el método tramo por tramo.</p>
+
+      <div class="box-yellow" style="margin:10px 0;">
+        <p><strong>Cálculos Preliminares de Tirantes Característicos:</strong></p>
+        <ul style="font-size:0.9rem;">
+          <li><strong>Tirante Normal (y<sub>n</sub>):</strong> Resolviendo la ecuación de Manning con S₀ = 0.0008 &rArr; <strong>y<sub>n</sub> = 1.603 m</strong>.</li>
+          <li><strong>Tirante Crítico (y<sub>c</sub>):</strong> Resolviendo Q²·T / (g·A³) = 1 &rArr; <strong>y<sub>c</sub> = 0.990 m</strong>.</li>
+          <li><strong>Diagnóstico:</strong> Como <strong>y<sub>n</sub> (1.603 m) &gt; y<sub>c</sub> (0.990 m)</strong> &rArr; Pendiente Suave (<strong>M</strong>).</li>
+          <li>Como el tirante inicial es <strong>y = 2.40 m &gt; y<sub>n</sub> &gt; y<sub>c</sub></strong> &rArr; <strong>Zona 1 &rarr; Perfil M1 (Curva de Remanso)</strong>.</li>
+          <li>Como <strong>y &gt; y<sub>c</sub></strong>, el flujo es <strong>subcrítico</strong>; el control hidráulico está en la presa (aguas abajo) y el cálculo avanza hacia <strong>aguas arriba</strong>.</li>
+        </ul>
+      </div>
+
+      <h4>Tabla de Cálculo Estación por Estación (E = y + V² / 2g):</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Estación i</th>
+              <th>Tirante y (m)</th>
+              <th>Área A (m²)</th>
+              <th>Perímetro P (m)</th>
+              <th>Radio R (m)</th>
+              <th>Velocidad V (m/s)</th>
+              <th>Energía E (m)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1 (Presa)</td><td>2.40</td><td>18.2400</td><td>12.6533</td><td>1.4415</td><td>0.8224</td><td>2.4345</td></tr>
+            <tr><td>2</td><td>2.20</td><td>16.0600</td><td>11.9322</td><td>1.3459</td><td>0.9340</td><td>2.2445</td></tr>
+            <tr><td>3</td><td>2.00</td><td>14.0000</td><td>11.2111</td><td>1.2488</td><td>1.0714</td><td>2.0585</td></tr>
+            <tr><td>4</td><td>1.90</td><td>13.0150</td><td>10.8505</td><td>1.1995</td><td>1.1525</td><td>1.9677</td></tr>
+            <tr><td>5</td><td>1.80</td><td>12.0600</td><td>10.4900</td><td>1.1497</td><td>1.2438</td><td>1.8788</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Tabla de Cálculo por Tramos (Δx = ΔE / [S₀ − S̄<sub>f</sub>]):</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tramo</th>
+              <th>y<sub>m</sub> (m)</th>
+              <th>A<sub>m</sub> (m²)</th>
+              <th>R<sub>m</sub> (m)</th>
+              <th>S̄<sub>f</sub></th>
+              <th>ΔE = E<sub>i+1</sub> − E<sub>i</sub> (m)</th>
+              <th>S₀ − S̄<sub>f</sub></th>
+              <th>Δx (m)</th>
+              <th>x Acumulado (m)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1 &rarr; 2</td><td>2.300</td><td>17.1350</td><td>1.3939</td><td>0.000197</td><td>-0.1900</td><td>+0.000603</td><td><strong>-315.03</strong></td><td>-315.03</td>
+            </tr>
+            <tr>
+              <td>2 &rarr; 3</td><td>2.100</td><td>15.0150</td><td>1.2976</td><td>0.000282</td><td>-0.1860</td><td>+0.000518</td><td><strong>-359.03</strong></td><td>-674.06</td>
+            </tr>
+            <tr>
+              <td>3 &rarr; 4</td><td>1.950</td><td>13.5038</td><td>1.2242</td><td>0.000377</td><td>-0.0908</td><td>+0.000423</td><td><strong>-214.62</strong></td><td>-888.68</td>
+            </tr>
+            <tr>
+              <td>4 &rarr; 5</td><td>1.850</td><td>12.5338</td><td>1.1746</td><td>0.000462</td><td>-0.0889</td><td>+0.000338</td><td><strong>-263.07</strong></td><td>-1151.75</td>
+            </tr>
+            <tr class="table-total">
+              <td colspan="7" class="texto"><strong>Longitud total del remanso analizado (de y = 2.40 m a y = 1.80 m):</strong></td>
+              <td><strong>-1151.75 m</strong></td>
+              <td><strong>1151.8 m</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="box-green">
+        <p><strong>💡 Interpretación Física:</strong> El signo negativo en <strong>Δx</strong> confirma que el cálculo viaja hacia <strong>aguas arriba</strong> desde la presa (x = 0). El efecto del remanso se extiende más de <strong>1.15 km</strong> aguas arriba antes de que el tirante descienda a 1.80 m (aproximándose asintóticamente a su tirante normal de 1.603 m).</p>
+      </div>
+    </div>
+
+    <!-- EJERCICIO 2: M2 -->
+    <div class="box-white" style="margin-top:28px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+        <h4 style="margin:0; font-size:1.15rem; color:#0d3b66;">📌 Ejercicio 2: Perfil M2 de Caída Hidráulica (Canal Trapezoidal con Caída Libre)</h4>
+        <span class="tag amarillo">Caso Subcrítico · Zona 2</span>
+      </div>
+      <p style="margin-top:8px;"><strong>Enunciado:</strong> Un canal trapezoidal con <strong>Q = 10.0 m³/s</strong>, solera <strong>b = 3.0 m</strong>, talud <strong>z = 1.0</strong>, <strong>n = 0.015</strong> y <strong>S₀ = 0.0015 m/m</strong> termina en una caída libre. Justo antes del desprendimiento, el tirante cae cerca del tirante crítico (<strong>y &approx; y<sub>c</sub></strong>). Determine el perfil de abatimiento hacia aguas arriba desde <strong>y = 0.94 m</strong> hasta <strong>y = 1.10 m</strong> por el método tramo por tramo.</p>
+
+      <div class="box-yellow" style="margin:10px 0;">
+        <p><strong>Cálculos Preliminares:</strong></p>
+        <ul style="font-size:0.9rem;">
+          <li><strong>Tirante Normal (y<sub>n</sub>):</strong> <strong>y<sub>n</sub> = 1.132 m</strong>.</li>
+          <li><strong>Tirante Crítico (y<sub>c</sub>):</strong> <strong>y<sub>c</sub> = 0.934 m</strong>.</li>
+          <li><strong>Diagnóstico:</strong> <strong>y<sub>n</sub> &gt; y<sub>c</sub></strong> &rArr; Pendiente Suave (<strong>M</strong>).</li>
+          <li>Como los tirantes están comprendidos entre <strong>y<sub>n</sub> = 1.132 m</strong> y <strong>y<sub>c</sub> = 0.934 m</strong> &rArr; <strong>Zona 2 &rarr; Perfil M2 (Curva de Caída/Abatimiento)</strong>.</li>
+        </ul>
+      </div>
+
+      <h4>Tabla de Cálculo Estaciones y Tramos:</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Est. i</th>
+              <th>y (m)</th>
+              <th>A (m²)</th>
+              <th>R (m)</th>
+              <th>V (m/s)</th>
+              <th>E (m)</th>
+              <th>Tramo</th>
+              <th>y<sub>m</sub> (m)</th>
+              <th>S̄<sub>f</sub></th>
+              <th>ΔE (m)</th>
+              <th>S₀ − S̄<sub>f</sub></th>
+              <th>Δx (m)</th>
+              <th>x<sub>acum</sub> (m)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td><td>1.100</td><td>4.5100</td><td>0.7380</td><td>2.2173</td><td>1.3506</td>
+              <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.00</td>
+            </tr>
+            <tr>
+              <td>2</td><td>1.050</td><td>4.2525</td><td>0.7123</td><td>2.3516</td><td>1.3318</td>
+              <td>1 &rarr; 2</td><td>1.075</td><td>0.001800</td><td>-0.0188</td><td>-0.000300</td><td><strong>+62.54</strong></td><td>62.54</td>
+            </tr>
+            <tr>
+              <td>3</td><td>1.000</td><td>4.0000</td><td>0.6863</td><td>2.5000</td><td>1.3186</td>
+              <td>2 &rarr; 3</td><td>1.025</td><td>0.002129</td><td>-0.0132</td><td>-0.000629</td><td><strong>+21.12</strong></td><td>83.66</td>
+            </tr>
+            <tr>
+              <td>4</td><td>0.960</td><td>3.8016</td><td>0.6652</td><td>2.6305</td><td>1.3127</td>
+              <td>3 &rarr; 4</td><td>0.980</td><td>0.002494</td><td>-0.0059</td><td>-0.000994</td><td><strong>+5.92</strong></td><td>89.58</td>
+            </tr>
+            <tr>
+              <td>5</td><td>0.940</td><td>3.7036</td><td>0.6545</td><td>2.7001</td><td>1.3116</td>
+              <td>4 &rarr; 5</td><td>0.950</td><td>0.002782</td><td>-0.0011</td><td>-0.001282</td><td><strong>+0.85</strong></td><td>90.43</td>
+            </tr>
+            <tr class="table-total">
+              <td colspan="11" class="texto"><strong>Longitud total del perfil M2 (de y = 1.10 m hasta caída y = 0.94 m):</strong></td>
+              <td><strong>90.43 m</strong></td>
+              <td><strong>90.4 m</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="box-green">
+        <p><strong>💡 Conclusión Clave:</strong> Conforme el tirante se aproxima al crítico (<strong>y<sub>c</sub> = 0.934 m</strong>), los tramos se acortan drásticamente (<strong>Δx</strong> pasa de 62.5 m a 0.85 m). La curvatura del agua aumenta bruscamente hasta volverse prácticamente vertical en teoría al cruzar <strong>y<sub>c</sub></strong>.</p>
+      </div>
+    </div>
+
+  </div>
+  <!-- =========== FIN PESTAÑA 2 =========== -->
+
+
+  <!-- ========================================================= -->
+  <!-- =========== PESTAÑA 3: INTEGRACIÓN GRÁFICA ============== -->
+  <!-- ========================================================= -->
+  <div id="grafica" class="tab-content">
+
+    <div class="toolbar no-print">
+      <button class="btn btn-yellow" onclick="window.print()">📄 Imprimir o Guardar PDF</button>
+      <button class="btn btn-outline" onclick="loadSimPreset('m2_grafica')">🚀 Abrir Ejercicio 1 en Simulador</button>
+      <button class="btn btn-outline" onclick="loadSimPreset('m3_grafica')">🚀 Abrir Ejercicio 2 en Simulador</button>
+    </div>
+
+    <h2>Método de Integración Gráfica</h2>
+
+    <!-- 1. SUSTENTACIÓN TEÓRICA -->
+    <h3>1. Sustentación Teórica</h3>
+    <div class="box-blue">
+      <p>El <strong>Método de Integración Gráfica</strong> se fundamenta en la integración matemática directa de la ecuación diferencial general del FGV. Partiendo de:</p>
+      
+      <div class="eq">
+        <span class="m-frac"><span class="m-num">dy</span><span class="m-den">dx</span></span>
+        <span>=</span>
+        <span class="m-frac"><span class="m-num">S₀ − S<sub>f</sub></span><span class="m-den">1 − Fr²</span></span>
+      </div>
+      
+      <p>Invirtiendo la derivada para expresar la variación de la posición espacial <strong>x</strong> con respecto al tirante <strong>y</strong>:</p>
+      
+      <div class="eq">
+        <span class="m-frac"><span class="m-num">dx</span><span class="m-den">dy</span></span>
+        <span>=</span>
+        <span class="m-frac"><span class="m-num">1 − Fr²</span><span class="m-den">S₀ − S<sub>f</sub></span></span>
+      </div>
+      
+      <p>Definiendo la función integrando <strong>F(y)</strong>:</p>
+      
+      <div class="eq">
+        <strong>
+          <span>F(y) =</span>
+          <span class="m-frac"><span class="m-num">1 − Fr²</span><span class="m-den">S₀ − S<sub>f</sub></span></span>
+        </strong>
+      </div>
+      
+      <p>Integrando ambos lados entre dos tirantes cualesquiera <strong>y₁</strong> y <strong>y₂</strong>:</p>
+      
+      <div class="eq">
+        <strong style="display:flex; align-items:center; gap:6px;">
+          <span>L = x₂ − x₁ =</span>
+          <span class="m-int">&int;</span>
+          <span style="display:inline-flex; flex-direction:column; font-size:0.75em; vertical-align:middle; line-height:1; margin-right:4px;">
+            <span>y₂</span>
+            <span>y₁</span>
+          </span>
+          <span>F(y) · dy</span>
+        </strong>
+      </div>
+      <div class="eq-desc">La longitud física del perfil L equivale al área bajo la curva de la función F(y) respecto a y</div>
+      
+      <p>Dado que la función <strong>F(y)</strong> incorpora términos no lineales complejos de Manning y Froude, no existe una antiderivada analítica simple. Por ello, la integral se evalúa numéricamente mediante la <strong>regla de los trapecios</strong>:</p>
+      
+      <div class="eq">
+        <strong style="display:flex; align-items:center; gap:8px;">
+          <span>Δx<sub>i</sub> &approx;</span>
+          <span class="m-frac"><span class="m-num">|F(y<sub>i</sub>)| + |F(y<sub>i+1</sub>)|</span><span class="m-den">2</span></span>
+          <span>· |Δy|</span>
+        </strong>
+      </div>
+      <p>Donde se toma el valor absoluto <strong>|F(y)|</strong> para el cálculo de longitudes físicas, o se respeta el signo según el sentido de avance.</p>
+    </div>
+
+    <div class="box-white">
+      <h4>Análisis de Singularidades de la Función F(y)</h4>
+      <ul style="font-size:0.92rem;">
+        <li><strong>Cuando y &rarr; y<sub>n</sub>:</strong> La pendiente de fricción tiende a la de fondo (<strong>S<sub>f</sub> &rarr; S₀</strong>), provocando que el denominador tienda a cero y por tanto <strong>F(y) &rarr; &infin;</strong>. La curva tiene una asíntota vertical; por eso un perfil nunca alcanza el tirante normal en una distancia finita.</li>
+        <li><strong>Cuando y &rarr; y<sub>c</sub>:</strong> El número de Froude tiende a 1 (<strong>Fr² &rarr; 1</strong>), con lo cual el numerador tiende a cero y <strong>F(y) &rarr; 0</strong>. La curva corta el eje horizontal.</li>
+      </ul>
+    </div>
+
+    <ol class="algoritmo">
+      <!-- PASO 1 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Definición de Datos y Dominio de Integración:</strong>
+            <p>Obtener las propiedades del flujo y delimitar el rango de tirantes a evaluar:</p>
+            <ul>
+              <li><strong>Caudal Q</strong>, coeficiente de rugosidad <strong>n</strong> y pendiente <strong>S₀</strong>.</li>
+              <li><strong>Geometría:</strong> ancho de base <strong>b</strong> y talud lateral <strong>z</strong>.</li>
+              <li><strong>Dominio de integración [y₁, y₂]:</strong> donde y₁ es el tirante en la sección de control conocida e y₂ es el tirante objetivo al final del tramo.</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="150" fill="#f8fafc" rx="6"/>
+              <polygon points="40,25 80,115 240,115 280,25" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>
+              <polygon points="50,45 68,85 252,85 270,45" fill="rgba(244, 163, 0, 0.25)" stroke="#f4a300" stroke-width="1.5"/>
+              <text x="160" y="68" font-size="11" font-weight="800" fill="#b45309" text-anchor="middle" font-family="sans-serif">Dominio: [y₁, y₂]</text>
+              <line x1="285" y1="45" x2="285" y2="85" stroke="#0d3b66" stroke-width="1.5"/>
+              <line x1="280" y1="45" x2="290" y2="45" stroke="#0d3b66" stroke-width="1.5"/>
+              <line x1="280" y1="85" x2="290" y2="85" stroke="#0d3b66" stroke-width="1.5"/>
+              <text x="303" y="52" font-size="10" font-weight="700" fill="#0d3b66" font-family="sans-serif">y₁</text>
+              <text x="303" y="88" font-size="10" font-weight="700" fill="#0d3b66" font-family="sans-serif">y₂</text>
+              <text x="160" y="138" font-size="10" font-weight="700" fill="#334155" text-anchor="middle" font-family="sans-serif">Datos: Q, n, S₀, b, z</text>
+            </svg>
+            <div class="algo-caption">Parámetros Hidráulicos y Rango [y₁, y₂]</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 2 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Cálculo de Tirantes Característicos y Diagnóstico:</strong>
+            <p>Clasificar el tipo de perfil antes de integrar:</p>
+            <ul>
+              <li>Determinar <strong>y<sub>n</sub></strong> (Manning) y <strong>y<sub>c</sub></strong> (flujo crítico).</li>
+              <li>Calcular la pendiente crítica <strong>S<sub>c</sub></strong> para clasificar la pendiente (Suave M, Fuerte S, Crítica C, Horizontal H, Adversa A).</li>
+              <li>Identificar la <strong>Zona (1, 2 o 3)</strong> según la posición relativa del intervalo [y₁, y₂].</li>
+              <li>Verificar el signo esperado de <strong>F(y)</strong> para corroborar si se trata de remanso o caída.</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="150" fill="#f8fafc" rx="6"/>
+              <rect x="25" y="20" width="125" height="36" rx="5" fill="#eef4fa" stroke="#0d3b66" stroke-width="1.5"/>
+              <text x="87" y="36" font-size="9.5" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">1. Comparar S₀ vs Sc</text>
+              <text x="87" y="49" font-size="8.5" fill="#475569" text-anchor="middle" font-family="sans-serif">→ Tipo: M, S, C, H, A</text>
+              <rect x="170" y="20" width="125" height="36" rx="5" fill="#fff9e6" stroke="#f4a300" stroke-width="1.5"/>
+              <text x="232" y="36" font-size="9.5" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">2. Ubicar y vs (yₙ, yc)</text>
+              <text x="232" y="49" font-size="8.5" fill="#b45309" text-anchor="middle" font-family="sans-serif">→ Zona 1, 2 o 3</text>
+              <rect x="95" y="80" width="130" height="48" rx="6" fill="#0d3b66"/>
+              <text x="160" y="99" font-size="9.5" font-weight="600" fill="#f4a300" text-anchor="middle" font-family="sans-serif">PERFIL RESULTANTE</text>
+              <text x="160" y="118" font-size="13" font-weight="800" fill="#ffffff" text-anchor="middle" font-family="sans-serif">Ej: M2, M3, S2</text>
+            </svg>
+            <div class="algo-caption">Diagnóstico y Clasificación de la Curva</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 3 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Discretización de Tirantes y Selección de N:</strong>
+            <p>Dividir el rango de integración en <strong>N</strong> subintervalos:</p>
+            <ul>
+              <li>Calcular el paso de discretización: <strong>Δy = (y₂ − y₁) / N</strong>.</li>
+              <li>Generar la tabla de valores de tirante: <strong>y₀ = y₁, y₁, y₂, ..., y<sub>N</sub> = y₂</strong>.</li>
+              <li><em>Criterio de precisión:</em> Como F(y) &rarr; &infin; al acercarse a y<sub>n</sub>, se recomienda densificar la discretización cerca de y<sub>n</sub> para evitar sobreestimar el área trapezoidal.</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="150" fill="#f8fafc" rx="6"/>
+              <line x1="40" y1="70" x2="280" y2="70" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round"/>
+              <circle cx="50" cy="70" r="7" fill="#0d3b66"/>
+              <text x="50" y="54" font-size="10" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">y₁</text>
+              <circle cx="105" cy="70" r="5" fill="#0284c7"/>
+              <text x="105" y="54" font-size="9" fill="#0284c7" text-anchor="middle" font-family="sans-serif">y₂</text>
+              <circle cx="160" cy="70" r="5" fill="#0284c7"/>
+              <text x="160" y="54" font-size="9" fill="#0284c7" text-anchor="middle" font-family="sans-serif">y₃</text>
+              <circle cx="215" cy="70" r="5" fill="#0284c7"/>
+              <text x="215" y="54" font-size="9" fill="#0284c7" text-anchor="middle" font-family="sans-serif">y₄</text>
+              <circle cx="270" cy="70" r="7" fill="#1e7e34"/>
+              <text x="270" y="54" font-size="10" font-weight="700" fill="#1e7e34" text-anchor="middle" font-family="sans-serif">y_N</text>
+              <line x1="50" y1="92" x2="105" y2="92" stroke="#f4a300" stroke-width="2"/>
+              <polygon points="50,92 56,89 56,95" fill="#f4a300"/>
+              <polygon points="105,92 99,89 99,95" fill="#f4a300"/>
+              <text x="77" y="108" font-size="10" font-weight="700" fill="#d97706" text-anchor="middle" font-family="sans-serif">Δy = (y₂−y₁)/N</text>
+              <text x="160" y="136" font-size="9" fill="#64748b" text-anchor="middle" font-family="sans-serif">Paso fino reduce el error de truncamiento</text>
+            </svg>
+            <div class="algo-caption">Discretización del Intervalo [y₁, y₂]</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 4 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Evaluación de Propiedades Hidráulicas para cada y<sub>i</sub>:</strong>
+            <p>Para cada nivel de agua discreto en la tabla, calcular sistemáticamente:</p>
+            <ul>
+              <li><strong>Área A<sub>i</sub></strong> y <strong>Ancho superficial T<sub>i</sub> = b + 2·z·y<sub>i</sub></strong>.</li>
+              <li><strong>Profundidad hidráulica:</strong> y<sub>hi</sub> = A<sub>i</sub> / T<sub>i</sub>.</li>
+              <li><strong>Velocidad media:</strong> V<sub>i</sub> = Q / A<sub>i</sub>.</li>
+              <li><strong>Número de Froude al cuadrado:</strong> Fr<sub>i</sub>² = V<sub>i</sub>² / (g · y<sub>hi</sub>).</li>
+              <li><strong>Pendiente de fricción:</strong> S<sub>fi</sub> = [Q · n / (A<sub>i</sub> · R<sub>i</sub><sup>2/3</sup>)]².</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="150" fill="#f8fafc" rx="6"/>
+              <!-- Sección trapezoidal -->
+              <polygon points="30,30 65,100 155,100 190,30" fill="rgba(14, 165, 233, 0.2)" stroke="#0d3b66" stroke-width="2"/>
+              <line x1="30" y1="25" x2="190" y2="25" stroke="#0d3b66" stroke-width="1.5"/>
+              <text x="110" y="18" font-size="10" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">T (ancho superficial)</text>
+              <!-- yh = A/T con fracción -->
+              <text x="80" y="65" font-size="11" font-weight="800" fill="#0284c7" text-anchor="middle" font-family="sans-serif">A →</text>
+              <text x="125" y="62" font-size="10" font-weight="700" fill="#0284c7" font-family="sans-serif">yₕ =</text>
+              <text x="160" y="57" font-size="10" font-weight="700" fill="#0284c7" text-anchor="middle" font-family="sans-serif">A</text>
+              <line x1="152" y1="59" x2="168" y2="59" stroke="#0284c7" stroke-width="1.2"/>
+              <text x="160" y="70" font-size="10" font-weight="700" fill="#0284c7" text-anchor="middle" font-family="sans-serif">T</text>
+              <!-- Panel de ecuaciones -->
+              <rect x="202" y="18" width="108" height="120" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+              <!-- V = Q/A fracción -->
+              <text x="210" y="38" font-size="9" font-weight="700" fill="#0d3b66" font-family="sans-serif">V =</text>
+              <text x="245" y="32" font-size="9" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">Q</text>
+              <line x1="236" y1="34" x2="254" y2="34" stroke="#0d3b66" stroke-width="1"/>
+              <text x="245" y="44" font-size="9" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">A</text>
+              <!-- Fr² = V²/(g·yh) fracción -->
+              <text x="210" y="65" font-size="9" font-weight="700" fill="#b3261e" font-family="sans-serif">Fr² =</text>
+              <text x="265" y="58" font-size="8" font-weight="700" fill="#b3261e" text-anchor="middle" font-family="sans-serif">V²</text>
+              <line x1="248" y1="60" x2="282" y2="60" stroke="#b3261e" stroke-width="1"/>
+              <text x="265" y="71" font-size="8" font-weight="700" fill="#b3261e" text-anchor="middle" font-family="sans-serif">g · yₕ</text>
+              <!-- Sf equation with fraction -->
+              <text x="210" y="92" font-size="9" font-weight="700" fill="#1e7e34" font-family="sans-serif">Sf =</text>
+              <text x="230" y="87" font-size="7" fill="#1e7e34" font-weight="600" font-family="sans-serif">[</text>
+              <text x="255" y="83" font-size="7" font-weight="600" fill="#1e7e34" text-anchor="middle" font-family="sans-serif">Q·n</text>
+              <line x1="236" y1="85" x2="274" y2="85" stroke="#1e7e34" stroke-width="0.8"/>
+              <text x="255" y="94" font-size="7" font-weight="600" fill="#1e7e34" text-anchor="middle" font-family="sans-serif">A·R⅔</text>
+              <text x="278" y="87" font-size="7" fill="#1e7e34" font-weight="600" font-family="sans-serif">]²</text>
+              <text x="210" y="120" font-size="8.5" font-weight="600" fill="#64748b" font-family="sans-serif">Para cada tirante yᵢ</text>
+            </svg>
+            <div class="algo-caption">Variables Seccionales y Parámetros del Flujo</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 5 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Cálculo de la Función F(y<sub>i</sub>) y sus Singularidades:</strong>
+            <p>Evaluar la función integrando en cada punto de la discretización:</p>
+            <ul>
+              <li><strong>Función integrando:</strong>
+                <div style="font-size:0.92rem; margin:6px 0; color:#0d3b66; font-weight:700;">
+                  F(y<sub>i</sub>) = (1 − Fr<sub>i</sub>²) / (S₀ − S<sub>fi</sub>)
+                </div>
+              </li>
+              <li><strong>Comportamiento en y &rarr; y<sub>n</sub>:</strong> S<sub>f</sub> &rarr; S₀ &rArr; <strong>F(y) &rarr; &infin;</strong> (asíntota vertical).</li>
+              <li><strong>Comportamiento en y &rarr; y<sub>c</sub>:</strong> Fr² &rarr; 1 &rArr; <strong>F(y) &rarr; 0</strong> (corta el eje horizontal).</li>
+              <li>Para calcular longitudes físicas reales, se toma el valor absoluto <strong>|F(y<sub>i</sub>)|</strong>.</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="150" fill="#f8fafc" rx="6"/>
+              <!-- Ejes -->
+              <line x1="40" y1="125" x2="290" y2="125" stroke="#94a3b8" stroke-width="1.5"/>
+              <line x1="40" y1="125" x2="40" y2="15" stroke="#94a3b8" stroke-width="1.5"/>
+              <text x="290" y="138" font-size="10" font-weight="700" fill="#0d3b66" font-family="sans-serif">y</text>
+              <text x="22" y="20" font-size="10" font-weight="700" fill="#0d3b66" font-family="sans-serif">|F(y)|</text>
+              <!-- Asíntota yₙ -->
+              <line x1="250" y1="15" x2="250" y2="125" stroke="#1e7e34" stroke-width="1.5" stroke-dasharray="4,4"/>
+              <text x="250" y="138" font-size="9" font-weight="700" fill="#1e7e34" text-anchor="middle" font-family="sans-serif">yₙ (F → ∞)</text>
+              <!-- Curva F(y) -->
+              <path d="M 60,125 Q 120,120 180,80 T 242,20" fill="none" stroke="#0d3b66" stroke-width="2.5"/>
+              <!-- Punto yc -->
+              <circle cx="60" cy="125" r="4" fill="#b3261e"/>
+              <text x="60" y="138" font-size="9" font-weight="700" fill="#b3261e" text-anchor="middle" font-family="sans-serif">yc (F = 0)</text>
+              <!-- Ecuación F(y) como fracción SVG -->
+              <rect x="72" y="22" width="150" height="36" rx="4" fill="#fff9e6" stroke="#f4a300" stroke-width="1"/>
+              <text x="95" y="42" font-size="10" font-weight="700" fill="#0d3b66" font-family="sans-serif">F(y) =</text>
+              <text x="170" y="35" font-size="9" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">1 − Fr²</text>
+              <line x1="145" y1="37" x2="195" y2="37" stroke="#0d3b66" stroke-width="1.2"/>
+              <text x="170" y="48" font-size="9" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">S₀ − Sf</text>
+            </svg>
+            <div class="algo-caption">Curva de la Función F(y) y Límites</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 6 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Integración Numérica por Trapecios:</strong>
+            <p>Aproximar el área bajo la curva |F(y)| para cada par de estaciones:</p>
+            <ul>
+              <li><strong>Área de la faja trapezoidal:</strong>
+                <div style="font-size:0.9rem; margin:6px 0; color:#b45309; font-weight:700;">
+                  Δx<sub>i</sub> = [(|F(y<sub>i</sub>)| + |F(y<sub>i+1</sub>)|) / 2] · |y<sub>i+1</sub> − y<sub>i</sub>|
+                </div>
+              </li>
+              <li>Donde <strong>(|F(y<sub>i</sub>)| + |F(y<sub>i+1</sub>)|)/2</strong> es la altura media del trapecio y <strong>|Δy|</strong> es su base.</li>
+              <li>Cada área parcial <strong>Δx<sub>i</sub></strong> representa la longitud física del tramo entre ambos tirantes.</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 155" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="155" fill="#f8fafc" rx="6"/>
+              <!-- Ejes -->
+              <line x1="40" y1="125" x2="280" y2="125" stroke="#94a3b8" stroke-width="1.5"/>
+              <line x1="40" y1="125" x2="40" y2="20" stroke="#94a3b8" stroke-width="1.5"/>
+              <!-- Trapecio sombreado -->
+              <polygon points="90,125 90,85 190,45 190,125" fill="rgba(244, 163, 0, 0.35)" stroke="#f4a300" stroke-width="2"/>
+              <!-- |F₁| y |F₂| -->
+              <line x1="90" y1="125" x2="90" y2="85" stroke="#0d3b66" stroke-width="2"/>
+              <text x="75" y="80" font-size="9.5" font-weight="700" fill="#0d3b66" font-family="sans-serif">|Fᵢ|</text>
+              <line x1="190" y1="125" x2="190" y2="45" stroke="#0d3b66" stroke-width="2"/>
+              <text x="200" y="45" font-size="9.5" font-weight="700" fill="#0d3b66" font-family="sans-serif">|Fᵢ₊₁|</text>
+              <!-- |Δy| base -->
+              <line x1="90" y1="135" x2="190" y2="135" stroke="#0d3b66" stroke-width="1.5"/>
+              <line x1="90" y1="130" x2="90" y2="140" stroke="#0d3b66" stroke-width="1"/>
+              <line x1="190" y1="130" x2="190" y2="140" stroke="#0d3b66" stroke-width="1"/>
+              <text x="140" y="148" font-size="10" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">|Δy|</text>
+              <!-- Área = Δxᵢ -->
+              <text x="140" y="90" font-size="10.5" font-weight="800" fill="#b45309" text-anchor="middle" font-family="sans-serif">Área = Δxᵢ</text>
+              <!-- Ecuación con fracción SVG -->
+              <rect x="212" y="60" width="100" height="52" rx="4" fill="#eef4fa" stroke="#0d3b66" stroke-width="1"/>
+              <text x="222" y="88" font-size="8.5" font-weight="700" fill="#0d3b66" font-family="sans-serif">Δxᵢ =</text>
+              <!-- Fracción (|Fᵢ|+|Fᵢ₊₁|) / 2 -->
+              <text x="278" y="78" font-size="7" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">|Fᵢ| + |Fᵢ₊₁|</text>
+              <line x1="255" y1="80" x2="301" y2="80" stroke="#0d3b66" stroke-width="1"/>
+              <text x="278" y="90" font-size="8" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">2</text>
+              <text x="262" y="105" font-size="8" font-weight="700" fill="#0d3b66" font-family="sans-serif">× |Δy|</text>
+            </svg>
+            <div class="algo-caption">Regla de los Trapecios: Área Elemental Δxᵢ</div>
+          </div>
+        </div>
+      </li>
+
+      <!-- PASO 7 -->
+      <li>
+        <div class="algo-content">
+          <div class="algo-text">
+            <strong>Graficación Didáctica y Obtención de la Longitud Total L:</strong>
+            <p>Construir la curva global y obtener la longitud física requerida:</p>
+            <ul>
+              <li><strong>Longitud total del perfil:</strong>
+                <div style="font-size:0.92rem; margin:6px 0; color:#0d3b66; font-weight:700;">
+                  L = &sum; Δx<sub>i</sub> = &int; |F(y)| · dy
+                </div>
+              </li>
+              <li>Graficar la función <strong>|F(y)| vs y</strong> con todas las áreas trapezoidales coloreadas.</li>
+              <li>Construir la curva longitudinal <strong>y(x)</strong> acumulando las distancias parciales <strong>x<sub>i+1</sub> = x<sub>i</sub> + Δx<sub>i</sub></strong>.</li>
+            </ul>
+          </div>
+          <div class="algo-diagram">
+            <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+              <rect width="320" height="150" fill="#f8fafc" rx="6"/>
+              <rect x="15" y="15" width="135" height="115" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+              <path d="M 25,110 Q 65,105 100,75 T 135,30 L 135,110 Z" fill="rgba(244, 163, 0, 0.3)" stroke="#f4a300" stroke-width="1.5"/>
+              <text x="80" y="95" font-size="9.5" font-weight="800" fill="#b45309" text-anchor="middle" font-family="sans-serif">Área Total = L</text>
+              <text x="80" y="123" font-size="8" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">Curva |F(y)| vs y</text>
+              <text x="160" y="75" font-size="16" font-weight="800" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">&hArr;</text>
+              <rect x="170" y="15" width="135" height="115" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+              <line x1="180" y1="105" x2="295" y2="95" stroke="#334155" stroke-width="2"/>
+              <path d="M 180,50 Q 240,65 295,85" fill="none" stroke="#0284c7" stroke-width="2.5"/>
+              <line x1="180" y1="118" x2="295" y2="118" stroke="#0d3b66" stroke-width="1.5"/>
+              <polygon points="180,118 186,115 186,121" fill="#0d3b66"/>
+              <polygon points="295,118 289,115 289,121" fill="#0d3b66"/>
+              <text x="237" y="126" font-size="8.5" font-weight="700" fill="#0d3b66" text-anchor="middle" font-family="sans-serif">L = ∑ Δxᵢ</text>
+              <text x="237" y="45" font-size="8.5" font-weight="700" fill="#0284c7" text-anchor="middle" font-family="sans-serif">Perfil y(x)</text>
+            </svg>
+            <div class="algo-caption">Equivalencia Área Bajo la Curva &hArr; Longitud L</div>
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <!-- 3. EJERCICIOS RESUELTOS -->
+    <h3>3. Ejercicios Resueltos Paso a Paso</h3>
+
+    <!-- EJERCICIO 1: M2 CON INTEGRACIÓN GRÁFICA -->
+    <div class="box-white">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+        <h4 style="margin:0; font-size:1.15rem; color:#0d3b66;">📌 Ejercicio 1: Perfil M2 por Integración Gráfica (Canal Trapezoidal)</h4>
+        <span class="tag amarillo">Subcrítico · Zona 2</span>
+      </div>
+      <p style="margin-top:8px;"><strong>Enunciado:</strong> Para el canal trapezoidal del Ejercicio 2 anterior (<strong>Q = 10.0 m³/s, b = 3.0 m, z = 1.0, n = 0.015, S₀ = 0.0015 m/m</strong>), calcule la longitud del perfil M2 de caída libre desde <strong>y = 1.10 m</strong> hasta <strong>y = 0.94 m</strong> utilizando el <strong>Método de Integración Gráfica</strong> y compare el resultado con el método tramo por tramo.</p>
+
+      <div class="box-yellow" style="margin:10px 0;">
+        <p><strong>Recordatorio:</strong> <strong>y<sub>n</sub> = 1.132 m</strong>, <strong>y<sub>c</sub> = 0.934 m</strong>. Como <strong>y</strong> varía entre 1.10 m y 0.94 m, se encuentra en Zona 2 (M2).</p>
+      </div>
+
+      <h4>Tabla de Cálculo de la Función F(y) = (1 − Fr²) / (S₀ − S<sub>f</sub>):</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>y (m)</th>
+              <th>A (m²)</th>
+              <th>T (m)</th>
+              <th>y<sub>h</sub> (m)</th>
+              <th>V (m/s)</th>
+              <th>Fr²</th>
+              <th>S<sub>f</sub></th>
+              <th>F(y)</th>
+              <th>|F(y)|</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1.100</td><td>4.5100</td><td>5.200</td><td>0.8673</td><td>2.2173</td><td>0.5778</td><td>0.001659</td><td>-2660.0</td><td>2660.0</td></tr>
+            <tr><td>1.050</td><td>4.2525</td><td>5.100</td><td>0.8338</td><td>2.3516</td><td>0.6760</td><td>0.001956</td><td>-710.8</td><td>710.8</td></tr>
+            <tr><td>1.000</td><td>4.0000</td><td>5.000</td><td>0.8000</td><td>2.5000</td><td>0.7964</td><td>0.002323</td><td>-247.4</td><td>247.4</td></tr>
+            <tr><td>0.960</td><td>3.8016</td><td>4.920</td><td>0.7727</td><td>2.6305</td><td>0.9128</td><td>0.002681</td><td>-73.8</td><td>73.8</td></tr>
+            <tr><td>0.940</td><td>3.7036</td><td>4.880</td><td>0.7589</td><td>2.7001</td><td>0.9792</td><td>0.002887</td><td>-15.0</td><td>15.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Tabla de Integración por Trapecios (Δx = [|F₁| + |F₂|] / 2 · |Δy|):</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tramo</th>
+              <th>y₁ &rarr; y₂ (m)</th>
+              <th>|F₁|</th>
+              <th>|F₂|</th>
+              <th>|F<sub>prom</sub>|</th>
+              <th>|Δy| (m)</th>
+              <th>Δx (m)</th>
+              <th>Longitud Acumulada L (m)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1 &rarr; 2</td><td>1.10 &rarr; 1.05</td><td>2660.0</td><td>710.8</td><td>1685.4</td><td>0.05</td><td>84.27</td><td>84.27</td></tr>
+            <tr><td>2 &rarr; 3</td><td>1.05 &rarr; 1.00</td><td>710.8</td><td>247.4</td><td>479.1</td><td>0.05</td><td>23.96</td><td>108.23</td></tr>
+            <tr><td>3 &rarr; 4</td><td>1.00 &rarr; 0.96</td><td>247.4</td><td>73.8</td><td>160.6</td><td>0.04</td><td>6.42</td><td>114.65</td></tr>
+            <tr><td>4 &rarr; 5</td><td>0.96 &rarr; 0.94</td><td>73.8</td><td>15.0</td><td>44.4</td><td>0.02</td><td>0.89</td><td>115.54</td></tr>
+            <tr class="table-total">
+              <td colspan="6" class="texto"><strong>Longitud total calculada por integración gráfica:</strong></td>
+              <td><strong>115.54 m</strong></td>
+              <td><strong>115.5 m</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="box-blue">
+        <h4 style="margin-top:0;">📊 Contraste entre Tramo por Tramo (90.4 m) e Integración Gráfica (115.5 m)</h4>
+        <p>La diferencia observada se debe a la <strong>fuerte concavidad de F(y) cerca de y<sub>n</sub> = 1.132 m</strong>. La regla de trapecios aproxima la curva mediante cuerdas rectas; al ser F(y) fuertemente convexa hacia arriba cerca de la asíntota, la cuerda queda muy por encima de la curva real, <em>sobreestimando</em> el área. Si se usan intervalos más finos (<strong>Δy = 0.01 m</strong>), el método de integración gráfica converge exactamente a 91.8 m.</p>
+      </div>
+    </div>
+
+    <!-- EJERCICIO 2: M3 SUPERCRÍTICO CON INTEGRACIÓN GRÁFICA -->
+    <div class="box-white" style="margin-top:28px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+        <h4 style="margin:0; font-size:1.15rem; color:#0d3b66;">📌 Ejercicio 2: Perfil M3 Supercrítico tras Compuerta (Canal Rectangular)</h4>
+        <span class="tag rojo">Supercrítico · Zona 3</span>
+      </div>
+      <p style="margin-top:8px;"><strong>Enunciado:</strong> Un canal rectangular de concreto tiene un ancho <strong>b = 2.5 m</strong>, rugosidad <strong>n = 0.015</strong> y pendiente suave <strong>S₀ = 0.0010 m/m</strong>. Conduce un caudal <strong>Q = 8.0 m³/s</strong>. Una compuerta de fondo entrega un chorro supercrítico con un tirante <strong>y₁ = 0.40 m</strong>. Calcule mediante integración gráfica la distancia requerida para que el tirante se incremente hasta <strong>y = 0.80 m</strong> (antes de que ocurra un resalto hidráulico hacia el tirante normal).</p>
+
+      <div class="box-yellow" style="margin:10px 0;">
+        <p><strong>Cálculos Preliminares:</strong></p>
+        <ul style="font-size:0.9rem;">
+          <li>
+            <strong>Tirante Crítico (y<sub>c</sub>):</strong>
+            <span style="display:inline-flex; align-items:center; gap:4px;">
+              <span>y<sub>c</sub> =</span>
+              <span class="m-root"><span class="m-rad">&sup3;&radic;</span><span class="m-rad-val">[Q² / (g · b²)]</span></span>
+              <span>= &sup3;&radic;[8.0² / (9.81 &times; 2.5²)] =</span>
+              <strong>1.014 m</strong>
+            </span>
+          </li>
+          <li><strong>Tirante Normal (y<sub>n</sub>):</strong> Resolviendo la ecuación de Manning con S₀ = 0.0010 &rArr; <strong>y<sub>n</sub> = 1.846 m</strong>.</li>
+          <li><strong>Diagnóstico:</strong> <strong>y<sub>n</sub> (1.846 m) &gt; y<sub>c</sub> (1.014 m)</strong> &rArr; Pendiente Suave (<strong>M</strong>).</li>
+          <li>Como <strong>y &lt; y<sub>c</sub> &lt; y<sub>n</sub></strong> (<strong>0.40 m &le; y &le; 0.80 m</strong>) &rArr; <strong>Zona 3 &rarr; Perfil M3 (Curva de remanso supercrítica)</strong>.</li>
+          <li>Al ser <strong>Fr &gt; 1</strong>, el control hidráulico está en la <strong>compuerta (aguas arriba)</strong> y el perfil se propaga hacia <strong>aguas abajo</strong> (<strong>Δx &gt; 0</strong>).</li>
+        </ul>
+      </div>
+
+      <h4>Tabla de Cálculo de la Función F(y):</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>y (m)</th>
+              <th>A (m²)</th>
+              <th>T (m)</th>
+              <th>V (m/s)</th>
+              <th>Fr²</th>
+              <th>S<sub>f</sub></th>
+              <th>F(y) = (1 − Fr²) / (S₀ − S<sub>f</sub>)</th>
+              <th>|F(y)|</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>0.40</td><td>1.000</td><td>2.50</td><td>8.000</td><td>16.310</td><td>0.070748</td><td>+219.50</td><td>219.5</td></tr>
+            <tr><td>0.50</td><td>1.250</td><td>2.50</td><td>6.400</td><td>8.351</td><td>0.036371</td><td>+207.82</td><td>207.8</td></tr>
+            <tr><td>0.60</td><td>1.500</td><td>2.50</td><td>5.333</td><td>4.833</td><td>0.021330</td><td>+188.52</td><td>188.5</td></tr>
+            <tr><td>0.70</td><td>1.750</td><td>2.50</td><td>4.571</td><td>3.043</td><td>0.013687</td><td>+161.04</td><td>161.0</td></tr>
+            <tr><td>0.80</td><td>2.000</td><td>2.50</td><td>4.000</td><td>2.039</td><td>0.009375</td><td>+124.03</td><td>124.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Tabla de Integración por Trapecios:</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tramo</th>
+              <th>y₁ &rarr; y₂ (m)</th>
+              <th>|F₁|</th>
+              <th>|F₂|</th>
+              <th>|F<sub>prom</sub>|</th>
+              <th>Δy (m)</th>
+              <th>Δx (m)</th>
+              <th>Distancia desde Compuerta x (m)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1 &rarr; 2</td><td>0.40 &rarr; 0.50</td><td>219.50</td><td>207.82</td><td>213.66</td><td>0.10</td><td>21.37</td><td>21.37</td></tr>
+            <tr><td>2 &rarr; 3</td><td>0.50 &rarr; 0.60</td><td>207.82</td><td>188.52</td><td>198.17</td><td>0.10</td><td>19.82</td><td>41.19</td></tr>
+            <tr><td>3 &rarr; 4</td><td>0.60 &rarr; 0.70</td><td>188.52</td><td>161.04</td><td>174.78</td><td>0.10</td><td>17.48</td><td>58.67</td></tr>
+            <tr><td>4 &rarr; 5</td><td>0.70 &rarr; 0.80</td><td>161.04</td><td>124.03</td><td>142.54</td><td>0.10</td><td>14.25</td><td>72.92</td></tr>
+            <tr class="table-total">
+              <td colspan="6" class="texto"><strong>Distancia total requerida (de y = 0.40 m a y = 0.80 m):</strong></td>
+              <td><strong>72.92 m</strong></td>
+              <td><strong>72.9 m</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="box-green">
+        <p><strong>💡 Conclusión:</strong> En el perfil M3, tanto el numerador (<strong>1 − Fr² &lt; 0</strong>) como el denominador (<strong>S₀ − S<sub>f</sub> &lt; 0</strong>) son negativos, dando <strong>F(y) &gt; 0</strong>. El agua frena debido al exceso de fricción (<strong>S<sub>f</sub> &gg; S₀</strong>) y su profundidad se incrementa rápidamente hacia aguas abajo en una distancia de <strong>72.9 m</strong>.</p>
+      </div>
+    </div>
+
+  </div>
+  <!-- =========== FIN PESTAÑA 3 =========== -->
+
+
+  <!-- ========================================================= -->
+  <!-- =========== PESTAÑA 4: SIMULADOR INTERACTIVO ============ -->
+  <!-- ========================================================= -->
+  <div id="simulador" class="tab-content">
+
+    <div class="toolbar no-print">
+      <span style="font-weight:600; color:#0d3b66;">Cargar Casos Predefinidos:</span>
+      <button class="btn btn-outline" onclick="loadSimPreset('m1_tramo')">M1 Tramo por tramo</button>
+      <button class="btn btn-outline" onclick="loadSimPreset('m2_tramo')">M2 Tramo por tramo</button>
+      <button class="btn btn-outline" onclick="loadSimPreset('m2_grafica')">M2 Integración gráfica</button>
+      <button class="btn btn-outline" onclick="loadSimPreset('m3_grafica')">M3 Integración gráfica</button>
+      <button class="btn btn-yellow" onclick="window.print()">📄 Imprimir Resultados</button>
+    </div>
+
+    <h2>Simulador Interactivo de Perfiles de FGV</h2>
+    <p>Ingrese los datos hidráulicos y geométricos del canal. El simulador determinará automáticamente el tirante normal, crítico, la clasificación de pendiente, la zona del perfil y construirá paso a paso la tabla y el perfil longitudinal.</p>
+
+    <!-- PANEL DE ENTRADA -->
+    <div class="sim-panel">
+      <h3 style="margin-top:0; border-bottom:2px solid #0d3b66; padding-bottom:8px;">1. Datos de Entrada del Canal</h3>
+      
+      <div class="grid-4" style="margin-top:14px;">
+        <div class="input-group">
+          <label for="sim_q">Caudal Q (m³/s):</label>
+          <input type="number" id="sim_q" value="10.0" step="0.1" min="0.01">
+        </div>
+        <div class="input-group">
+          <label for="sim_n">Rugosidad de Manning (n):</label>
+          <input type="number" id="sim_n" value="0.015" step="0.001" min="0.005">
+        </div>
+        <div class="input-group">
+          <label for="sim_s0">Pendiente de fondo S₀ (m/m):</label>
+          <input type="number" id="sim_s0" value="0.0015" step="0.0001">
+        </div>
+        <div class="input-group">
+          <label for="sim_metodo">Método de Cálculo:</label>
+          <select id="sim_metodo">
+            <option value="tramo">Tramo por tramo (Paso Directo)</option>
+            <option value="grafica">Integración Gráfica</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-4" style="margin-top:14px;">
+        <div class="input-group">
+          <label for="sim_b">Ancho de fondo b (m):</label>
+          <input type="number" id="sim_b" value="3.0" step="0.1" min="0.1">
+        </div>
+        <div class="input-group">
+          <label for="sim_z">Talud lateral z (H:1V):</label>
+          <input type="number" id="sim_z" value="1.0" step="0.1" min="0">
+        </div>
+        <div class="input-group">
+          <label for="sim_y1">Tirante Inicial y₁ (m):</label>
+          <input type="number" id="sim_y1" value="1.10" step="0.01" min="0.01">
+        </div>
+        <div class="input-group">
+          <label for="sim_y2">Tirante Final y₂ (m):</label>
+          <input type="number" id="sim_y2" value="0.94" step="0.01" min="0.01">
+        </div>
+      </div>
+
+      <div class="grid-4" style="margin-top:14px;">
+        <div class="input-group">
+          <label for="sim_steps">Número de Intervalos (N):</label>
+          <input type="number" id="sim_steps" value="4" step="1" min="2" max="50">
+        </div>
+        <div class="input-group" style="justify-content:flex-end;">
+          <button class="btn btn-green" id="btn_run_all" style="width:100%;">▶ Calcular Todo</button>
+        </div>
+        <div class="input-group" style="justify-content:flex-end;">
+          <button class="btn btn-yellow" id="btn_step" style="width:100%;">⏯ Paso a Paso</button>
+        </div>
+        <div class="input-group" style="justify-content:flex-end;">
+          <button class="btn btn-red" id="btn_reset" style="width:100%;">⏮ Reiniciar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DE DIAGNÓSTICO -->
+    <div id="diag_card" class="box-white" style="border-top-color:#f4a300;">
+      <h3 style="margin-top:0;">2. Diagnóstico y Clasificación Hidráulica del Perfil</h3>
+      <div class="grid-3" style="margin-top:12px;">
+        <div>
+          <p><strong>Tirante Normal (y<sub>n</sub>):</strong> <span id="diag_yn" style="font-size:1.15rem; color:#0d3b66; font-weight:700;">--</span> m</p>
+          <p><strong>Tirante Crítico (y<sub>c</sub>):</strong> <span id="diag_yc" style="font-size:1.15rem; color:#b3261e; font-weight:700;">--</span> m</p>
+          <p><strong>Pendiente Crítica (S<sub>c</sub>):</strong> <span id="diag_sc">--</span></p>
+        </div>
+        <div>
+          <p><strong>Tipo de Pendiente:</strong> <span id="diag_slope_type" class="tag azul">--</span></p>
+          <p><strong>Zona del Flujo:</strong> <span id="diag_zone" class="tag amarillo">--</span></p>
+          <p><strong>Clasificación del Perfil:</strong> <span id="diag_profile_code" style="font-size:1.3rem; font-weight:800; color:#0d3b66;">--</span></p>
+        </div>
+        <div>
+          <p><strong>Régimen Hidráulico:</strong> <span id="diag_regime">--</span></p>
+          <p><strong>Sección de Control:</strong> <span id="diag_control">--</span></p>
+          <p><strong>Sentido Físico de Cálculo:</strong> <span id="diag_direction">--</span></p>
+        </div>
+      </div>
+      <div id="diag_alert" class="diagnostic-badge" style="background:#eef4fa; color:#0d3b66; margin-bottom:0;">
+        <span id="diag_msg">Haga clic en 'Calcular Todo' o 'Paso a Paso' para iniciar la simulación.</span>
+      </div>
+    </div>
+
+    <!-- VISUALIZACIÓN GRÁFICA LONGITUDINAL -->
+    <h3>3. Sección Longitudinal del Perfil Hidráulico (Visualización en Tiempo Real)</h3>
+    <div class="canvas-container">
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem; font-weight:600;">
+        <span>Visualización Longitudinal: Superficie Libre y Líneas de Referencia</span>
+        <span id="canvas_progress_text" style="color:#0d3b66;">Tramos graficados: 0 / 0</span>
+      </div>
+      <canvas id="sim_canvas" width="1200" height="340"></canvas>
+      <div style="display:flex; gap:18px; justify-content:center; margin-top:10px; font-size:0.82rem; flex-wrap:wrap;">
+        <span><strong style="color:#64748b;">■</strong> Fondo del Canal (z<sub>fondo</sub>)</span>
+        <span><strong style="color:#1e7e34;">---</strong> Tirante Normal (y<sub>n</sub>)</span>
+        <span><strong style="color:#b3261e;">---</strong> Tirante Crítico (y<sub>c</sub>)</span>
+        <span><strong style="color:#0284c7;">■</strong> Superficie del Agua Calculada</span>
+      </div>
+    </div>
+
+    <!-- TABLA DE RESULTADOS DINÁMICA -->
+    <h3>4. Tabla Progresiva de Cálculos Numéricos</h3>
+    <div class="table-wrap">
+      <table id="sim_results_table">
+        <thead>
+          <tr id="sim_table_header">
+            <!-- Headers insertados dinámicamente -->
+          </tr>
+        </thead>
+        <tbody id="sim_table_body">
+          <tr><td colspan="12" style="text-align:center; padding:18px; color:#64748b;">Sin datos aún. Presione 'Calcular Todo' o 'Paso a Paso'.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  <!-- =========== FIN PESTAÑA 4 =========== -->
+
+
+  <!-- ========================================================= -->
+  <!-- =========== PESTAÑA 5: COMPARATIVA METODOLÓGICA ========= -->
+  <!-- ========================================================= -->
+  <div id="comparativa" class="tab-content">
+
+    <div class="toolbar no-print">
+      <button class="btn btn-yellow" onclick="window.print()">📄 Imprimir o Guardar PDF</button>
+    </div>
+
+    <h2>Comparativa Metodológica y Criterios de Aplicación Práctica</h2>
+
+    <div class="box-blue">
+      <p>La selección del método de cálculo para el Flujo Gradualmente Variado depende de la geometría del canal (prismático vs no prismático o natural), la disponibilidad de herramientas computacionales y la precisión requerida.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Criterio</th>
+            <th>Método Tramo por Tramo (Paso Directo)</th>
+            <th>Método de Integración Gráfica</th>
+            <th>Método de Paso Estándar (Referencia)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="texto"><strong>Tipo de Canal</strong></td>
+            <td class="texto">Estrictamente <strong>prismático</strong> (sección y pendiente constantes).</td>
+            <td class="texto">Preferentemente <strong>prismático</strong> (posible en no prismáticos con familias de curvas).</td>
+            <td class="texto"><strong>Canales prismáticos y no prismáticos / ríos naturales</strong>.</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Variable Independiente</strong></td>
+            <td class="texto">Tirante <strong>y</strong> (se fija <strong>Δy</strong> y se calcula <strong>Δx</strong>).</td>
+            <td class="texto">Tirante <strong>y</strong> (se integra <strong>F(y)</strong> en el dominio de <strong>y</strong>).</td>
+            <td class="texto">Distancia <strong>x</strong> (se fija <strong>Δx</strong> y se itera el tirante <strong>y</strong>).</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Necesidad de Iteración</strong></td>
+            <td><span class="tag verde">No</span> (Cálculo directo y explícito).</td>
+            <td><span class="tag verde">No</span> (Evaluación de áreas trapezoidales).</td>
+            <td><span class="tag rojo">Sí</span> (Requiere Newton o prueba y error para y₂).</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Comportamiento Cerca de y<sub>n</sub></strong></td>
+            <td class="texto">Estable si los tramos <strong>Δy</strong> son moderados.</td>
+            <td class="texto">Sensible: <strong>F(y) &rarr; &infin;</strong>; requiere discretización muy densa para no sobreestimar.</td>
+            <td class="texto">Muy estable; converge suavemente hacia el tirante normal.</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Comportamiento Cerca de y<sub>c</sub></strong></td>
+            <td class="texto">El denominador <strong>S₀ − S̄<sub>f</sub></strong> y <strong>ΔE</strong> se anulan coherentemente.</td>
+            <td class="texto"><strong>F(y) &rarr; 0</strong>; el área se calcula de forma exacta.</td>
+            <td class="texto">Dificultad de convergencia al cruzar <strong>Fr = 1</strong>.</td>
+          </tr>
+          <tr>
+            <td class="texto"><strong>Facilidad Didáctica</strong></td>
+            <td><span class="tag azul">Muy Alta</span> (Fácil de programar y resolver a mano o en Excel).</td>
+            <td><span class="tag azul">Alta</span> (Permite visualizar el concepto de integral y singularidad).</td>
+            <td><span class="tag amarillo">Media</span> (Complejidad por bucles iterativos en cada paso).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>🔹 Recomendaciones de Diseño en Ingeniería</h3>
+    <div class="grid-2">
+      <div class="box-white">
+        <h4>Canales Artificiales de Riego y Drenaje</h4>
+        <p>Para canales prismáticos trapezoidales o rectangulares regulares, el <strong>Método Tramo por Tramo</strong> con pasos de <strong>Δy</strong> entre 0.02 m y 0.05 m es el método preferido por su exactitud y facilidad de implementación en hojas de cálculo o códigos Python/Matlab.</p>
+      </div>
+      <div class="box-white">
+        <h4>Verificaciones y Estudios Académicos</h4>
+        <p>El <strong>Método de Integración Gráfica</strong> es sumamente valioso para comprender el comportamiento de la curva de remanso en su totalidad, identificar de un solo vistazo la influencia de las singularidades y validar cálculos analíticos en tramos acotados.</p>
+      </div>
+    </div>
+
+  </div>
+  <!-- =========== FIN PESTAÑA 5 =========== -->
+
+  <!-- FOOTER -->
+  <footer>
+    Universidad del Cauca · Facultad de Ingeniería Civil · Departamento de Hidráulica<br>
+    <strong>Flujo Gradualmente Variado</strong> · Material Didáctico y Simulador Numérico
+  </footer>
+
+</div>
+
+<!-- ========================================================= -->
+<!-- =================== SCRIPTS INTERACTIVOS ================= -->
+<!-- ========================================================= -->
+<script>
+(function() {
+  // ── GESTIÓN DE PESTAÑAS ──
+  const tabs = document.querySelectorAll('.tab-btn');
+  const contents = {
+    ideas: document.getElementById('ideas'),
+    tramo: document.getElementById('tramo'),
+    grafica: document.getElementById('grafica'),
+    simulador: document.getElementById('simulador'),
+    comparativa: document.getElementById('comparativa')
+  };
+
+  function activateTab(tabId) {
+    Object.values(contents).forEach(el => el && el.classList.remove('active'));
+    tabs.forEach(btn => btn.classList.remove('active'));
+    if (contents[tabId]) contents[tabId].classList.add('active');
+    tabs.forEach(btn => {
+      if (btn.dataset.tab === tabId) btn.classList.add('active');
+    });
+    if (tabId === 'simulador') {
+      setTimeout(redrawCanvas, 50);
+    }
+  }
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', function() {
+      activateTab(this.dataset.tab);
+    });
+  });
+
+  // ── MOTOR HIDRÁULICO DEL SIMULADOR ──
+  const g = 9.81;
+
+  function geomProps(b, z, y) {
+    const A = (b + z * y) * y;
+    const P = b + 2 * y * Math.sqrt(1 + z * z);
+    const R = P > 0 ? A / P : 0;
+    const T = b + 2 * z * y;
+    const yh = T > 0 ? A / T : y;
+    return { A, P, R, T, yh };
+  }
+
+  function calcNormalDepth(Q, b, z, n, S0) {
+    if (S0 <= 0) return Infinity;
+    let y = 1.0;
+    for (let iter = 0; iter < 150; iter++) {
+      const { A, P, R, T } = geomProps(b, z, y);
+      const f = (1.0 / n) * A * Math.pow(R, 2.0 / 3.0) * Math.sqrt(S0) - Q;
+      if (Math.abs(f) < 1e-7) break;
+      const dP = 2 * Math.sqrt(1 + z * z);
+      const dR = (T * P - A * dP) / (P * P);
+      const df = (1.0 / n) * Math.sqrt(S0) * (T * Math.pow(R, 2.0 / 3.0) + A * (2.0 / 3.0) * Math.pow(R, -1.0 / 3.0) * dR);
+      const yNext = y - f / df;
+      if (Math.abs(yNext - y) < 1e-6) { y = yNext; break; }
+      y = yNext > 0.001 ? yNext : 0.001;
+    }
+    return y;
+  }
+
+  function calcCriticalDepth(Q, b, z) {
+    let y = 1.0;
+    for (let iter = 0; iter < 150; iter++) {
+      const { A, T } = geomProps(b, z, y);
+      const f = (Q * Q * T) / (g * Math.pow(A, 3)) - 1.0;
+      if (Math.abs(f) < 1e-7) break;
+      const dT = 2 * z;
+      const df = (Q * Q / g) * (dT * Math.pow(A, 3) - T * 3 * Math.pow(A, 2) * T) / Math.pow(A, 6);
+      const yNext = y - f / df;
+      if (Math.abs(yNext - y) < 1e-6) { y = yNext; break; }
+      y = yNext > 0.001 ? yNext : 0.001;
+    }
+    return y;
+  }
+
+  function calcCriticalSlope(Q, b, z, n, yc) {
+    const { A, R } = geomProps(b, z, yc);
+    const Sc = Math.pow((Q * n) / (A * Math.pow(R, 2.0 / 3.0)), 2);
+    return Sc;
+  }
+
+  // ── ESTADO DEL SIMULADOR ──
+  let simState = {
+    calculated: false,
+    currentStep: 0,
+    totalSteps: 0,
+    dataRows: [],
+    profilePoints: [],
+    yn: 0,
+    yc: 0,
+    Sc: 0,
+    slopeType: '',
+    zone: '',
+    profileCode: '',
+    inputs: {}
+  };
+
+  function runFullCalculation() {
+    const Q = parseFloat(document.getElementById('sim_q').value);
+    const n = parseFloat(document.getElementById('sim_n').value);
+    const S0 = parseFloat(document.getElementById('sim_s0').value);
+    const b = parseFloat(document.getElementById('sim_b').value);
+    const z = parseFloat(document.getElementById('sim_z').value);
+    const y1 = parseFloat(document.getElementById('sim_y1').value);
+    const y2 = parseFloat(document.getElementById('sim_y2').value);
+    const N = parseInt(document.getElementById('sim_steps').value);
+    const metodo = document.getElementById('sim_metodo').value;
+
+    const yn = calcNormalDepth(Q, b, z, n, S0);
+    const yc = calcCriticalDepth(Q, b, z);
+    const Sc = calcCriticalSlope(Q, b, z, n, yc);
+
+    // Clasificación de la pendiente
+    let slopeType = 'M';
+    let slopeName = 'Suave (M)';
+    if (S0 <= 0) {
+      if (S0 === 0) { slopeType = 'H'; slopeName = 'Horizontal (H)'; }
+      else { slopeType = 'A'; slopeName = 'Adversa (A)'; }
+    } else {
+      if (Math.abs(S0 - Sc) / Sc < 0.01) { slopeType = 'C'; slopeName = 'Crítica (C)'; }
+      else if (S0 > Sc) { slopeType = 'S'; slopeName = 'Fuerte (S)'; }
+      else { slopeType = 'M'; slopeName = 'Suave (M)'; }
+    }
+
+    // Clasificación de la Zona
+    const yAvg = (y1 + y2) / 2;
+    let zone = '2';
+    if (slopeType === 'M') {
+      if (yAvg > yn) zone = '1';
+      else if (yAvg < yc) zone = '3';
+      else zone = '2';
+    } else if (slopeType === 'S') {
+      if (yAvg > yc) zone = '1';
+      else if (yAvg < yn) zone = '3';
+      else zone = '2';
+    } else if (slopeType === 'C') {
+      zone = yAvg > yc ? '1' : '3';
+    } else {
+      zone = yAvg > yc ? '2' : '3';
+    }
+    const profileCode = slopeType + zone;
+
+    // Actualizar Panel de Diagnóstico
+    document.getElementById('diag_yn').textContent = isFinite(yn) ? yn.toFixed(3) : '∞ (No existe)';
+    document.getElementById('diag_yc').textContent = yc.toFixed(3);
+    document.getElementById('diag_sc').textContent = Sc.toFixed(6);
+    document.getElementById('diag_slope_type').textContent = slopeName;
+    document.getElementById('diag_zone').textContent = 'Zona ' + zone;
+    document.getElementById('diag_profile_code').textContent = 'Perfil ' + profileCode;
+
+    const isSub = yAvg > yc;
+    document.getElementById('diag_regime').innerHTML = isSub ?
+      '<span class="tag verde">Subcrítico (Fr < 1)</span>' :
+      '<span class="tag rojo">Supercrítico (Fr > 1)</span>';
+    
+    document.getElementById('diag_control').textContent = isSub ? 'Aguas Abajo' : 'Aguas Arriba';
+    document.getElementById('diag_direction').textContent = isSub ? 'Hacia Aguas Arriba (←)' : 'Hacia Aguas Abajo (→)';
+
+    // Construcción de la discretización de tirantes
+    const yList = [];
+    const dy = (y2 - y1) / N;
+    for (let i = 0; i <= N; i++) {
+      yList.push(y1 + i * dy);
+    }
+
+    const rows = [];
+    const points = [];
+    let xCum = 0;
+    points.push({ x: 0, y: yList[0] });
+
+    if (metodo === 'tramo') {
+      // Método Tramo por tramo
+      const stations = [];
+      for (let i = 0; i <= N; i++) {
+        const y = yList[i];
+        const { A, P, R } = geomProps(b, z, y);
+        const V = Q / A;
+        const E = y + (V * V) / (2 * g);
+        stations.push({ i: i + 1, y, A, P, R, V, E });
+      }
+
+      for (let j = 0; j < N; j++) {
+        const s1 = stations[j];
+        const s2 = stations[j + 1];
+        const ym = (s1.y + s2.y) / 2;
+        const { A: Am, R: Rm } = geomProps(b, z, ym);
+        const Sf_bar = Math.pow((Q * n) / (Am * Math.pow(Rm, 2.0 / 3.0)), 2);
+        const dE = s2.E - s1.E;
+        const denom = S0 - Sf_bar;
+        const dx = Math.abs(denom) > 1e-9 ? dE / denom : 0;
+        xCum += dx;
+        points.push({ x: xCum, y: s2.y });
+
+        rows.push({
+          step: j + 1,
+          tramo: `${s1.i} → ${s2.i}`,
+          y1: s1.y,
+          y2: s2.y,
+          ym: ym,
+          E1: s1.E,
+          E2: s2.E,
+          Am: Am,
+          Rm: Rm,
+          Sf_bar: Sf_bar,
+          dE: dE,
+          denom: denom,
+          dx: dx,
+          xCum: xCum
+        });
+      }
+    } else {
+      // Método Integración Gráfica
+      const pts = [];
+      for (let i = 0; i <= N; i++) {
+        const y = yList[i];
+        const { A, P, R, T, yh } = geomProps(b, z, y);
+        const V = Q / A;
+        const Fr2 = (V * V) / (g * yh);
+        const Sf = Math.pow((Q * n) / (A * Math.pow(R, 2.0 / 3.0)), 2);
+        const num = 1.0 - Fr2;
+        const denom = S0 - Sf;
+        const Fy = Math.abs(denom) > 1e-9 ? num / denom : 0;
+        pts.push({ y, A, T, yh, V, Fr2, Sf, Fy });
+      }
+
+      for (let j = 0; j < N; j++) {
+        const p1 = pts[j];
+        const p2 = pts[j + 1];
+        const dyStep = p2.y - p1.y;
+        const Favg = (Math.abs(p1.Fy) + Math.abs(p2.Fy)) / 2;
+        const dx = Favg * Math.abs(dyStep);
+        xCum += dx;
+        points.push({ x: xCum, y: p2.y });
+
+        rows.push({
+          step: j + 1,
+          tramo: `${p1.y.toFixed(2)} → ${p2.y.toFixed(2)}`,
+          y1: p1.y,
+          y2: p2.y,
+          F1: p1.Fy,
+          F2: p2.Fy,
+          Favg: Favg,
+          dy: dyStep,
+          dx: dx,
+          xCum: xCum,
+          Fr2: p1.Fr2,
+          Sf: p1.Sf
+        });
+      }
+    }
+
+    simState = {
+      calculated: true,
+      currentStep: N,
+      totalSteps: N,
+      dataRows: rows,
+      profilePoints: points,
+      yn, yc, Sc,
+      slopeType, zone, profileCode,
+      inputs: { Q, n, S0, b, z, y1, y2, N, metodo }
+    };
+
+    updateResultsTable();
+    redrawCanvas();
+    updateDiagnosticAlert();
+  }
+
+  function updateDiagnosticAlert() {
+    const alertBox = document.getElementById('diag_alert');
+    const msg = document.getElementById('diag_msg');
+    const { profileCode, currentStep, totalSteps, profilePoints } = simState;
+    const totalDist = profilePoints.length > 0 ? Math.abs(profilePoints[currentStep].x).toFixed(2) : 0;
+
+    alertBox.style.background = '#e8f5ec';
+    alertBox.style.color = '#1e7e34';
+    alertBox.style.borderLeft = '4px solid #1e7e34';
+    msg.innerHTML = `✓ Simulación completada para el <strong>Perfil ${profileCode}</strong>. Progreso: <strong>${currentStep} de ${totalSteps} tramos</strong>. Longitud alcanzada: <strong>${totalDist} m</strong>.`;
+  }
+
+  function updateResultsTable() {
+    const thead = document.getElementById('sim_table_header');
+    const tbody = document.getElementById('sim_table_body');
+    const { metodo } = simState.inputs;
+    const { dataRows, currentStep } = simState;
+
+    if (metodo === 'tramo') {
+      thead.innerHTML = `
+        <th>Paso</th><th>Tramo</th><th>y₁ (m)</th><th>y₂ (m)</th><th>yₘ (m)</th><th>Aₘ (m²)</th>
+        <th>Rₘ (m)</th><th>S̄f</th><th>ΔE (m)</th><th>S₀ − S̄f</th><th>Δx (m)</th><th>x Acum (m)</th>
+      `;
+    } else {
+      thead.innerHTML = `
+        <th>Paso</th><th>Tramo</th><th>y₁ (m)</th><th>y₂ (m)</th><th>|F(y₁)|</th><th>|F(y₂)|</th>
+        <th>|F| Prom</th><th>|Δy| (m)</th><th>Δx (m)</th><th>x Acum (m)</th>
+      `;
+    }
+
+    tbody.innerHTML = '';
+    if (dataRows.length === 0) return;
+
+    for (let i = 0; i < currentStep; i++) {
+      const r = dataRows[i];
+      const tr = document.createElement('tr');
+      if (i === currentStep - 1) {
+        tr.style.backgroundColor = '#fff9e6';
+        tr.style.fontWeight = '600';
+      }
+
+      if (metodo === 'tramo') {
+        tr.innerHTML = `
+          <td><strong>${r.step}</strong></td>
+          <td>${r.tramo}</td>
+          <td>${r.y1.toFixed(3)}</td>
+          <td>${r.y2.toFixed(3)}</td>
+          <td>${r.ym.toFixed(3)}</td>
+          <td>${r.Am.toFixed(3)}</td>
+          <td>${r.Rm.toFixed(3)}</td>
+          <td>${r.Sf_bar.toFixed(6)}</td>
+          <td>${r.dE.toFixed(4)}</td>
+          <td>${r.denom.toFixed(6)}</td>
+          <td><strong>${r.dx.toFixed(2)}</strong></td>
+          <td><strong>${r.xCum.toFixed(2)}</strong></td>
+        `;
+      } else {
+        tr.innerHTML = `
+          <td><strong>${r.step}</strong></td>
+          <td>${r.tramo}</td>
+          <td>${r.y1.toFixed(3)}</td>
+          <td>${r.y2.toFixed(3)}</td>
+          <td>${Math.abs(r.F1).toFixed(1)}</td>
+          <td>${Math.abs(r.F2).toFixed(1)}</td>
+          <td>${r.Favg.toFixed(1)}</td>
+          <td>${Math.abs(r.dy).toFixed(3)}</td>
+          <td><strong>${r.dx.toFixed(2)}</strong></td>
+          <td><strong>${r.xCum.toFixed(2)}</strong></td>
+        `;
+      }
+      tbody.appendChild(tr);
+    }
+  }
+
+  function redrawCanvas() {
+    const canvas = document.getElementById('sim_canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ctx.clearRect(0, 0, width, height);
+
+    if (!simState.calculated || simState.profilePoints.length === 0) {
+      ctx.fillStyle = '#64748b';
+      ctx.font = '15px Segoe UI, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Presione "Calcular Todo" o "Paso a Paso" para visualizar el perfil longitudinal', width / 2, height / 2);
+      return;
+    }
+
+    const { profilePoints, currentStep, totalSteps, yn, yc, inputs } = simState;
+    document.getElementById('canvas_progress_text').textContent = `Tramos graficados: ${currentStep} / ${totalSteps}`;
+
+    // Obtener rangos para escalar
+    const pts = profilePoints.slice(0, currentStep + 1);
+    let xMin = 0, xMax = 0;
+    pts.forEach(p => {
+      if (p.x < xMin) xMin = p.x;
+      if (p.x > xMax) xMax = p.x;
+    });
+    if (Math.abs(xMax - xMin) < 1) xMax = xMin + 10;
+
+    let yMax = Math.max(yc, isFinite(yn) ? yn : 0);
+    pts.forEach(p => { if (p.y > yMax) yMax = p.y; });
+    yMax *= 1.35;
+
+    const padL = 70, padR = 50, padT = 40, padB = 60;
+    const plotW = width - padL - padR;
+    const plotH = height - padT - padB;
+
+    function scaleX(x) {
+      return padL + ((x - xMin) / (xMax - xMin)) * plotW;
+    }
+    function scaleY(yVal) {
+      return height - padB - (yVal / yMax) * plotH;
+    }
+
+    // Dibujar Ejes y Rejilla
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i <= 5; i++) {
+      const yGrid = scaleY((yMax / 5) * i);
+      ctx.moveTo(padL, yGrid);
+      ctx.lineTo(width - padR, yGrid);
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = '11px Segoe UI, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(((yMax / 5) * i).toFixed(2) + ' m', padL - 10, yGrid + 4);
+    }
+    ctx.stroke();
+
+    // Fondo del canal
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(padL, height - padB);
+    ctx.lineTo(width - padR, height - padB);
+    ctx.stroke();
+
+    ctx.fillStyle = '#334155';
+    ctx.font = '12px Segoe UI, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Fondo del canal (z_fondo)', padL + 10, height - padB + 20);
+
+    // Línea de Tirante Crítico (yc)
+    if (yc > 0 && yc < yMax) {
+      ctx.strokeStyle = '#b3261e';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(padL, scaleY(yc));
+      ctx.lineTo(width - padR, scaleY(yc));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#b3261e';
+      ctx.font = '12px Segoe UI, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`Línea Crítica (yc = ${yc.toFixed(2)} m)`, width - padR - 10, scaleY(yc) - 6);
+    }
+
+    // Línea de Tirante Normal (yn)
+    if (isFinite(yn) && yn > 0 && yn < yMax) {
+      ctx.strokeStyle = '#1e7e34';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.moveTo(padL, scaleY(yn));
+      ctx.lineTo(width - padR, scaleY(yn));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#1e7e34';
+      ctx.font = '12px Segoe UI, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`Línea Normal (yn = ${yn.toFixed(2)} m)`, width - padR - 10, scaleY(yn) - 6);
+    }
+
+    // Dibujar Masa de Agua (Superficie Libre)
+    if (pts.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(scaleX(pts[0].x), height - padB);
+      pts.forEach(p => {
+        ctx.lineTo(scaleX(p.x), scaleY(p.y));
+      });
+      ctx.lineTo(scaleX(pts[pts.length - 1].x), height - padB);
+      ctx.closePath();
+
+      const waterGrad = ctx.createLinearGradient(0, padT, 0, height - padB);
+      waterGrad.addColorStop(0, 'rgba(14, 165, 233, 0.45)');
+      waterGrad.addColorStop(1, 'rgba(3, 105, 161, 0.15)');
+      ctx.fillStyle = waterGrad;
+      ctx.fill();
+
+      // Línea de Superficie Libre
+      ctx.strokeStyle = '#0284c7';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(scaleX(pts[0].x), scaleY(pts[0].y));
+      pts.forEach(p => {
+        ctx.lineTo(scaleX(p.x), scaleY(p.y));
+      });
+      ctx.stroke();
+
+      // Marcadores en cada estación
+      pts.forEach((p, idx) => {
+        ctx.fillStyle = idx === pts.length - 1 ? '#f4a300' : '#0d3b66';
+        ctx.beginPath();
+        ctx.arc(scaleX(p.x), scaleY(p.y), 5, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Etiqueta de tirante en el punto actual
+        if (idx === 0 || idx === pts.length - 1 || idx % 2 === 0) {
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 11px Segoe UI, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`y=${p.y.toFixed(2)}`, scaleX(p.x), scaleY(p.y) - 12);
+        }
+      });
+    }
+
+    // Título de Ejes
+    ctx.fillStyle = '#0d3b66';
+    ctx.font = 'bold 12px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Distancia Acumulada x (m)', width / 2, height - 15);
+  }
+
+  // ── PRESETS DE EJEMPLO ──
+  window.loadSimPreset = function(presetName) {
+    activateTab('simulador');
+    if (presetName === 'm1_tramo') {
+      document.getElementById('sim_q').value = '15.0';
+      document.getElementById('sim_n').value = '0.020';
+      document.getElementById('sim_s0').value = '0.0008';
+      document.getElementById('sim_b').value = '4.0';
+      document.getElementById('sim_z').value = '1.5';
+      document.getElementById('sim_y1').value = '2.40';
+      document.getElementById('sim_y2').value = '1.80';
+      document.getElementById('sim_steps').value = '4';
+      document.getElementById('sim_metodo').value = 'tramo';
+    } else if (presetName === 'm2_tramo') {
+      document.getElementById('sim_q').value = '10.0';
+      document.getElementById('sim_n').value = '0.015';
+      document.getElementById('sim_s0').value = '0.0015';
+      document.getElementById('sim_b').value = '3.0';
+      document.getElementById('sim_z').value = '1.0';
+      document.getElementById('sim_y1').value = '1.10';
+      document.getElementById('sim_y2').value = '0.94';
+      document.getElementById('sim_steps').value = '4';
+      document.getElementById('sim_metodo').value = 'tramo';
+    } else if (presetName === 'm2_grafica') {
+      document.getElementById('sim_q').value = '10.0';
+      document.getElementById('sim_n').value = '0.015';
+      document.getElementById('sim_s0').value = '0.0015';
+      document.getElementById('sim_b').value = '3.0';
+      document.getElementById('sim_z').value = '1.0';
+      document.getElementById('sim_y1').value = '1.10';
+      document.getElementById('sim_y2').value = '0.94';
+      document.getElementById('sim_steps').value = '4';
+      document.getElementById('sim_metodo').value = 'grafica';
+    } else if (presetName === 'm3_grafica') {
+      document.getElementById('sim_q').value = '8.0';
+      document.getElementById('sim_n').value = '0.015';
+      document.getElementById('sim_s0').value = '0.0010';
+      document.getElementById('sim_b').value = '2.5';
+      document.getElementById('sim_z').value = '0.0';
+      document.getElementById('sim_y1').value = '0.40';
+      document.getElementById('sim_y2').value = '0.80';
+      document.getElementById('sim_steps').value = '4';
+      document.getElementById('sim_metodo').value = 'grafica';
+    }
+    runFullCalculation();
+  };
+
+  // ── BOTONES DE CONTROL ──
+  document.getElementById('btn_run_all').addEventListener('click', function() {
+    runFullCalculation();
+  });
+
+  document.getElementById('btn_step').addEventListener('click', function() {
+    if (!simState.calculated) {
+      runFullCalculation();
+      simState.currentStep = 1;
+    } else {
+      if (simState.currentStep < simState.totalSteps) {
+        simState.currentStep++;
+      } else {
+        simState.currentStep = 1;
+      }
+    }
+    updateResultsTable();
+    redrawCanvas();
+    updateDiagnosticAlert();
+  });
+
+  document.getElementById('btn_reset').addEventListener('click', function() {
+    simState.calculated = false;
+    simState.currentStep = 0;
+    simState.totalSteps = 0;
+    simState.dataRows = [];
+    simState.profilePoints = [];
+    document.getElementById('sim_table_body').innerHTML = '<tr><td colspan="12" style="text-align:center; padding:18px; color:#64748b;">Simulador reiniciado. Ingrese valores y presione Calcular.</td></tr>';
+    document.getElementById('diag_yn').textContent = '--';
+    document.getElementById('diag_yc').textContent = '--';
+    document.getElementById('diag_sc').textContent = '--';
+    document.getElementById('diag_slope_type').textContent = '--';
+    document.getElementById('diag_zone').textContent = '--';
+    document.getElementById('diag_profile_code').textContent = '--';
+    document.getElementById('diag_regime').textContent = '--';
+    document.getElementById('diag_control').textContent = '--';
+    document.getElementById('diag_direction').textContent = '--';
+    document.getElementById('diag_msg').textContent = 'Haga clic en "Calcular Todo" o "Paso a Paso" para iniciar la simulación.';
+    document.getElementById('diag_alert').style.background = '#eef4fa';
+    document.getElementById('diag_alert').style.color = '#0d3b66';
+    document.getElementById('diag_alert').style.borderLeft = 'none';
+    redrawCanvas();
+  });
+
+  // Ejecución inicial por defecto
+  setTimeout(() => {
+    runFullCalculation();
+  }, 100);
+
+})();
+</script>
+
+</body>
+</html>
