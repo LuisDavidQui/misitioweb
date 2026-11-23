@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Búsqueda Sistemática: Ozonización Solar, Cocoides y Puntos Ciego Normativos en Colombia</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a3c5e;
+            --secondary: #2e7d32;
+            --accent: #b71c1c;
+            --warning: #e65100;
+            --teal: #00897b;
+            --bg-light: #f5f7fa;
+            --bg-section: #ffffff;
+            --border: #d0d7de;
+            --text: #24292f;
+            --text-muted: #57606a;
+            --highlight-yellow: #fff8e1;
+            --highlight-red: #fce4ec;
+            --highlight-green: #e8f5e9;
+            --highlight-blue: #e3f2fd;
+            --highlight-teal: #e0f2f1;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg-light);
+            line-height: 1.75;
+            font-size: 15px;
+        }
+
+        .container {
+            max-width: 1150px;
+            margin: 0 auto;
+            padding: 20px 30px 60px;
+        }
+
+        /* ---- ACTION BAR (fixed) ---- */
+        .action-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, var(--primary), #083a52);
+            color: #fff;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .action-bar .info {
+            font-size: 0.9rem;
+            opacity: 0.95;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            border: none;
+            padding: 9px 18px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-pdf {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-pdf:hover {
+            background: #8b0000;
+            transform: translateY(-1px);
+        }
+
+        .btn-excel {
+            background: var(--secondary);
+            color: #fff;
+        }
+
+        .btn-excel:hover {
+            background: #1b5e20;
+            transform: translateY(-1px);
+        }
+
+        body { padding-top: 70px; }
+
+        /* ---- HEADER ---- */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, #0d2137 100%);
+            color: #fff;
+            padding: 50px 40px;
+            border-radius: 12px;
+            margin-bottom: 35px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            line-height: 1.35;
+        }
+
+        header .subtitle {
+            font-size: 1.05rem;
+            opacity: 0.9;
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        header .meta {
+            font-size: 0.88rem;
+            opacity: 0.75;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 14px;
+            margin-top: 10px;
+        }
+
+        /* ---- SECTIONS ---- */
+        section {
+            background: var(--bg-section);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 30px 35px;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+
+        section h2 {
+            color: var(--primary);
+            font-size: 1.35rem;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 8px;
+            margin-bottom: 18px;
+        }
+
+        section h3 {
+            color: var(--secondary);
+            font-size: 1.1rem;
+            margin: 22px 0 10px;
+        }
+
+        section h4 {
+            color: var(--teal);
+            font-size: 1rem;
+            margin: 16px 0 8px;
+            font-style: italic;
+        }
+
+        p { margin-bottom: 12px; text-align: justify; }
+
+        /* ---- TABLES ---- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0 20px;
+            font-size: 0.9rem;
+        }
+
+        table thead th {
+            background: var(--primary);
+            color: #fff;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        table tbody td {
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        table tbody tr:nth-child(even) { background: var(--bg-light); }
+        table tbody tr:hover { background: var(--highlight-blue); }
+
+        /* ---- LISTS ---- */
+        ul, ol { margin: 8px 0 14px 22px; }
+        li { margin-bottom: 6px; }
+
+        /* ---- CALLOUTS ---- */
+        .callout {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border-left: 5px solid;
+        }
+
+        .callout-danger { background: var(--highlight-red); border-color: var(--accent); }
+        .callout-warning { background: var(--highlight-yellow); border-color: var(--warning); }
+        .callout-info { background: var(--highlight-blue); border-color: #1565c0; }
+        .callout-success { background: var(--highlight-green); border-color: var(--secondary); }
+        .callout-teal { background: var(--highlight-teal); border-color: var(--teal); }
+
+        .callout strong { display: block; margin-bottom: 4px; }
+
+        /* ---- BADGES ---- */
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #fff;
+            margin-right: 4px;
+        }
+
+        .badge-red { background: var(--accent); }
+        .badge-green { background: var(--secondary); }
+        .badge-blue { background: #1565c0; }
+        .badge-orange { background: var(--warning); }
+        .badge-teal { background: var(--teal); }
+        .badge-purple { background: #6a1b9a; }
+
+        /* ---- TOC ---- */
+        .toc {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 28px;
+            margin-bottom: 25px;
+        }
+
+        .toc h2 { border: none; margin-bottom: 10px; font-size: 1.15rem; }
+        .toc ol { margin-left: 20px; }
+        .toc a { color: var(--primary); text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+
+        /* ---- REFERENCES ---- */
+        .references { font-size: 0.88rem; line-height: 1.65; }
+        .references ol { margin-left: 28px; }
+        .references li { margin-bottom: 10px; text-indent: -18px; padding-left: 18px; }
+
+        /* ---- FLOW ---- */
+        .flow-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 18px 0;
+        }
+
+        .flow-step {
+            background: var(--primary);
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            color: var(--primary);
+        }
+
+        /* ---- THEME BLOCK ---- */
+        .theme-block {
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 20px 25px;
+            margin: 20px 0;
+            background: linear-gradient(to right, #fafafa, #fff);
+        }
+
+        .theme-block.theme-1 { border-left: 6px solid var(--accent); }
+        .theme-block.theme-2 { border-left: 6px solid var(--warning); }
+        .theme-block.theme-3 { border-left: 6px solid var(--teal); }
+        .theme-block.theme-4 { border-left: 6px solid var(--secondary); }
+
+        .theme-block h3 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .theme-number {
+            display: inline-block;
+            background: var(--primary);
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 32px;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .theme-1 .theme-number { background: var(--accent); }
+        .theme-2 .theme-number { background: var(--warning); }
+        .theme-3 .theme-number { background: var(--teal); }
+        .theme-4 .theme-number { background: var(--secondary); }
+
+        /* ---- CODE ---- */
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.88rem;
+            color: #c7254e;
+        }
+
+        .search-string {
+            background: #263238;
+            color: #aed581;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            margin: 8px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* ---- PRINT ---- */
+        @media print {
+            .action-bar { display: none !important; }
+            body {
+                background: #fff;
+                font-size: 11pt;
+                padding-top: 0;
+            }
+            header {
+                background: var(--primary) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            section {
+                break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            .theme-block { break-inside: avoid; }
+            .badge, .flow-step, .theme-number, .search-string {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            table thead th {
+                background: var(--primary) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            @page {
+                size: A4;
+                margin: 1.5cm;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .container { padding: 10px 12px 40px; }
+            section { padding: 18px 16px; }
+            header { padding: 28px 18px; }
+            header h1 { font-size: 1.3rem; }
+            .action-bar .info { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- ACTION BAR -->
+<!-- ============================================================ -->
+<div class="action-bar">
+    <div class="info">📄 Documento listo · Descarga en PDF o Excel (metodología + bibliografía)</div>
+    <div class="action-buttons">
+        <button class="btn-action btn-pdf" onclick="descargarPDF()">⬇ Descargar PDF</button>
+        <button class="btn-action btn-excel" onclick="descargarExcel()">📊 Descargar Excel</button>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- ============================================================ -->
+    <!-- HEADER -->
+    <!-- ============================================================ -->
+    <header>
+        <h1>Búsqueda Sistemática de Referencias Bibliográficas:<br>
+        Ozonización Solar, Cocoides de <em>H. pylori</em> y el Punto Ciego Normativo en Colombia</h1>
+        <p class="subtitle">Revisión estructurada sobre: (1) cloro como única barrera, (2) vacío normativo frente a formas cocoides VBNC, (3) ozono como barrera complementaria, y (4) prototipos autónomos de ozonización solar para puntos de interés sanitario rurales.</p>
+        <div class="meta">
+            <strong>Fecha:</strong> Noviembre 2026 &nbsp;|&nbsp;
+            <strong>Protocolo:</strong> PRISMA 2020 &nbsp;|&nbsp;
+            <strong>Tipo de artículo destino:</strong> OTH (Other / Revisión sistemática) &nbsp;|&nbsp;
+            <strong>Contexto:</strong> Colombia y Latinoamérica
+        </div>
+    </header>
+
+    <!-- ============================================================ -->
+    <!-- TOC -->
+    <!-- ============================================================ -->
+    <nav class="toc">
+        <h2>📑 Tabla de Contenidos</h2>
+        <ol>
+            <li><a href="#s1">Introducción y Justificación</a></li>
+            <li><a href="#s2">Pregunta de Investigación y Objetivos</a></li>
+            <li><a href="#s3">Metodología de la Búsqueda Sistemática (PRISMA 2020)</a></li>
+            <li><a href="#s4">Estrategia de Búsqueda y Cadenas</a></li>
+            <li><a href="#s5">Criterios de Inclusión y Exclusión</a></li>
+            <li><a href="#s6">Resultados — Tema 1: Cloro como única barrera en Colombia</a></li>
+            <li><a href="#s7">Resultados — Tema 2: Punto ciego normativo frente a cocoides</a></li>
+            <li><a href="#s8">Resultados — Tema 3: Ozono como barrera complementaria</a></li>
+            <li><a href="#s9">Resultados — Tema 4: Prototipos de ozonización solar autónoma</a></li>
+            <li><a href="#s10">Tabla Consolidada de Estudios Incluidos</a></li>
+            <li><a href="#s11">Discusión y Brechas Identificadas</a></li>
+            <li><a href="#s12">Conclusiones</a></li>
+            <li><a href="#s13">Referencias Bibliográficas</a></li>
+        </ol>
+    </nav>
+
+    <!-- ============================================================ -->
+    <!-- 1. INTRODUCCIÓN -->
+    <!-- ============================================================ -->
+    <section id="s1">
+        <h2>1. Introducción y Justificación</h2>
+
+        <p>Colombia presenta una paradoja hídrica: alta disponibilidad superficial (&gt;2 000 km³/año) y profundas brechas en potabilidad, especialmente en la ruralidad, donde apenas el 14 % de los municipios suministra agua sin riesgo para consumo humano, frente al 59 % urbano <a href="#ref1">[1]</a>. En puntos de interés sanitario (escuelas, puestos de salud), la situación es crítica: solo el 40 % de las sedes educativas rurales cuenta con agua potable constante, y la incidencia de enfermedad diarreica aguda (EDA) en menores de un año alcanzó 130,9 casos por cada 1 000 habitantes en 2023 <a href="#ref2">[2]</a>, <a href="#ref3">[3]</a>.</p>
+
+        <p>La cloración, método predominante de desinfección, enfrenta limitaciones logísticas, de aceptabilidad sensorial y de formación de subproductos de desinfección (DBP) en contextos rurales <a href="#ref4">[4]</a>. Más preocupante aún, la normatividad colombiana (Resolución 2115 de 2007, RAS Título K) presenta un <strong>"punto ciego"</strong> frente a formas viables no cultivables (VBNC) de patógenos como <em>Helicobacter pylori</em> en su estado cocoidal, las cuales son indetectables por los métodos microbiológicos convencionales basados en coliformes y <em>E. coli</em> <a href="#ref5">[5]</a>, <a href="#ref6">[6]</a>.</p>
+
+        <p>La ozonización emerge como alternativa de alto poder biocida (E⁰ = 2,07 V), eficaz contra bacterias, virus, protozoarios resistentes (<em>Cryptosporidium</em>, <em>Giardia</em>) y, potencialmente, contra formas cocoides de <em>H. pylori</em> <a href="#ref7">[7]</a>, <a href="#ref8">[8]</a>. La convergencia de la madurez de la energía solar fotovoltaica y los generadores compactos de ozono (~30 W) abre una oportunidad inédita para soluciones descentralizadas en puntos de interés sanitario rurales <a href="#ref9">[9]</a>, <a href="#ref10">[10]</a>.</p>
+
+        <div class="callout callout-info">
+            <strong>🎯 Justificación para artículo tipo OTH:</strong>
+            Esta búsqueda sistemática busca reunir la evidencia necesaria para soportar un artículo científico en formato OTH (Other / Revisión sistemática) que articule cuatro problemáticas encadenadas: (1) insuficiencia del cloro como única barrera, (2) vacío normativo frente a cocoides, (3) ozono como barrera complementaria, y (4) viabilidad de prototipos autónomos de ozonización solar para puntos de interés sanitario.
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 2. PREGUNTA -->
+    <!-- ============================================================ -->
+    <section id="s2">
+        <h2>2. Pregunta de Investigación y Objetivos</h2>
+
+        <h3>2.1 Pregunta general</h3>
+        <div class="callout callout-teal">
+            <strong>Pregunta:</strong>
+            ¿Cuál es la evidencia científica disponible sobre la insuficiencia del cloro como única barrera de desinfección en Colombia, el vacío normativo frente a formas cocoides VBNC de patógenos hídricos, y la viabilidad del ozono —particularmente mediante sistemas autónomos con energía solar— como barrera complementaria en puntos de interés sanitario rurales?
+        </div>
+
+        <h3>2.2 Objetivos de la revisión</h3>
+        <ol>
+            <li>Recopilar evidencia sobre las limitaciones del cloro como único método de desinfección en sistemas de abastecimiento colombianos (PTAP y SAAR).</li>
+            <li>Identificar el vacío normativo en Colombia respecto a la detección y control de formas cocoides VBNC de patógenos como <em>H. pylori</em>.</li>
+            <li>Revisar la eficacia del ozono como barrera complementaria de desinfección, con énfasis en su capacidad frente a patógenos resistentes al cloro y formas VBNC.</li>
+            <li>Documentar experiencias de implementación de prototipos de ozonización con autonomía solar para puntos de interés sanitario rurales.</li>
+        </ol>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 3. METODOLOGÍA -->
+    <!-- ============================================================ -->
+    <section id="s3">
+        <h2>3. Metodología de la Búsqueda Sistemática</h2>
+
+        <p>La revisión se diseñó siguiendo los lineamientos de la declaración <strong>PRISMA 2020</strong> (Preferred Reporting Items for Systematic Reviews and Meta-Analyses) <a href="#ref11">[11]</a>, con adaptaciones propias de una revisión integrativa orientada a soportar un artículo científico tipo OTH.</p>
+
+        <h3>3.1 Tipo de estudio</h3>
+        <p>Revisión sistemática integrativa con síntesis narrativa, sin metaanálisis cuantitativo, dada la heterogeneidad de diseños de los estudios incluidos (experimentales, epidemiológicos, normativos, de ingeniería).</p>
+
+        <h3>3.2 Diagrama de flujo PRISMA</h3>
+        <div class="flow-box">
+            <div class="flow-step">Identificación<br><small>Registros en bases de datos</small></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Cribado<br><small>Título y resumen</small></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Elegibilidad<br><small>Texto completo</small></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">Inclusión<br><small>Síntesis por temas</small></div>
+        </div>
+
+        <h3>3.3 Periodo de búsqueda</h3>
+        <p>Se consideraron publicaciones desde <strong>1990 hasta noviembre de 2026</strong>, con énfasis en estudios publicados a partir del año 2000 para evidencia actualizada sobre VBNC, ozonización y sistemas solares autónomos.</p>
+
+        <h3>3.4 Bases de datos consultadas</h3>
+        <ul>
+            <li><strong>Científicas internacionales:</strong> PubMed/MEDLINE, Scopus, Web of Science, ScienceDirect, SpringerLink.</li>
+            <li><strong>Latinoamericanas:</strong> SciELO, Redalyc, LILACS.</li>
+            <li><strong>Literatura gris:</strong> Google Scholar, repositorios institucionales (Universidad del Cauca, Universidad Nacional), informes del INS, OPS, OMS, EPA.</li>
+        </ul>
+
+        <h3>3.5 Evaluación de calidad</h3>
+        <p>Se utilizó la herramienta <strong>ROBINS-I</strong> para estudios observacionales <a href="#ref12">[12]</a>, la escala <strong>Newcastle-Ottawa</strong> para estudios de cohortes y casos-controles <a href="#ref13">[13]</a>, y la guía <strong>AMSTAR-2</strong> para revisiones sistemáticas previas <a href="#ref14">[14]</a>. Para estudios experimentales de laboratorio se evaluó reproducibilidad y control de variables.</p>
+
+        <h3>3.6 Extracción de datos</h3>
+        <p>Para cada estudio incluido se extrajeron: autor(es), año, país, tipo de estudio, matriz de agua, microorganismo(s) evaluado(s), tecnología de desinfección, concentración/dosis, tiempo de contacto, reducción logarítmica, hallazgos principales y relevancia para los cuatro temas de la revisión.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 4. ESTRATEGIA DE BÚSQUEDA -->
+    <!-- ============================================================ -->
+    <section id="s4">
+        <h2>4. Estrategia de Búsqueda y Cadenas</h2>
+
+        <p>Se diseñaron cadenas de búsqueda específicas para cada uno de los cuatro temas, combinando descriptores DeCS/MeSH con términos libres en español e inglés.</p>
+
+        <h3>4.1 Cadena 1 — Cloro como única barrera en Colombia</h3>
+        <div class="search-string">("water disinfection"[MeSH] OR "chlorination" OR "chlorine") AND ("Colombia" OR "Latin America" OR "rural water supply") AND ("water treatment" OR "drinking water" OR "SAAR" OR "PTAP") AND ("Cryptosporidium" OR "Giardia" OR "pathogen resistance" OR "disinfection failure")</div>
+
+        <h3>4.2 Cadena 2 — Punto ciego normativo frente a cocoides VBNC</h3>
+        <div class="search-string">("Helicobacter pylori"[MeSH] OR "coccoid" OR "VBNC" OR "viable but nonculturable") AND ("drinking water" OR "water treatment" OR "water quality") AND ("chlorination" OR "disinfection" OR "Colombia" OR "regulation" OR "normativa") AND ("detection" OR "PCR" OR "molecular methods")</div>
+
+        <h3>4.3 Cadena 3 — Ozono como barrera complementaria</h3>
+        <div class="search-string">("ozonation"[MeSH] OR "ozone" OR "O₃") AND ("water disinfection" OR "water treatment") AND ("Cryptosporidium" OR "Giardia" OR "Helicobacter pylori" OR "VBNC" OR "pathogen inactivation") AND ("drinking water" OR "potable water")</div>
+
+        <h3>4.4 Cadena 4 — Prototipos de ozonización solar autónoma</h3>
+        <div class="search-string">("solar energy"[MeSH] OR "photovoltaic" OR "solar-powered") AND ("ozonation" OR "ozone generation") AND ("water disinfection" OR "water treatment") AND ("rural" OR "off-grid" OR "autonomous" OR "decentralized" OR "developing countries")</div>
+
+        <h3>4.5 Cadenas complementarias en español (SciELO, Redalyc)</h3>
+        <div class="search-string">("ozonización" OR "ozono") AND ("desinfección de agua" OR "tratamiento de agua") AND ("Colombia" OR "rural" OR "solar" OR "fotovoltaica")</div>
+        <div class="search-string">("cloración" OR "cloro") AND ("agua potable" OR "agua de consumo") AND ("Colombia" OR "SAAR" OR "rural") AND ("calidad del agua" OR "IRCA")</div>
+        <div class="search-string">("Helicobacter pylori" OR "cocoide" OR "VBNC") AND ("agua" OR "hídrica") AND ("Colombia" OR "transmisión")</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 5. CRITERIOS -->
+    <!-- ============================================================ -->
+    <section id="s5">
+        <h2>5. Criterios de Inclusión y Exclusión</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Criterio</th>
+                    <th>Inclusión</th>
+                    <th>Exclusión</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Tipo de publicación</strong></td>
+                    <td>Artículos originales, revisiones sistemáticas, metaanálisis, informes técnicos OMS/OPS/EPA, tesis doctorales, normatividad colombiana.</td>
+                    <td>Editoriales, cartas al editor, resúmenes de congresos sin texto completo.</td>
+                </tr>
+                <tr>
+                    <td><strong>Idioma</strong></td>
+                    <td>Español, inglés, portugués.</td>
+                    <td>Otros idiomas.</td>
+                </tr>
+                <tr>
+                    <td><strong>Periodo</strong></td>
+                    <td>1990–2026.</td>
+                    <td>Publicaciones anteriores a 1990 (salvo hitos históricos).</td>
+                </tr>
+                <tr>
+                    <td><strong>Contexto</strong></td>
+                    <td>Agua de consumo humano, sistemas de tratamiento (PTAP, SAAR, domiciliarios), estudios de laboratorio con matrices de agua.</td>
+                    <td>Aguas residuales sin relación con agua potable; estudios exclusivamente en animales.</td>
+                </tr>
+                <tr>
+                    <td><strong>Temas</strong></td>
+                    <td>Relacionados con al menos uno de los cuatro temas: cloro como única barrera, cocoides/VBNC, ozonización, ozonización solar autónoma.</td>
+                    <td>Desinfección de piscinas, aguas industriales, otros usos no relacionados con consumo humano.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 6. TEMA 1 -->
+    <!-- ============================================================ -->
+    <section id="s6">
+        <h2>6. Resultados — Tema 1: Cloro como Única Barrera de Desinfección en Colombia</h2>
+
+        <div class="theme-block theme-1">
+            <h3><span class="theme-number">1</span> El cloro no es suficiente: evidencia consolidada</h3>
+
+            <p>La cloración ha sido el pilar de la desinfección del agua desde principios del siglo XX, pero su uso como <strong>única barrera</strong> presenta limitaciones técnicas y operativas ampliamente documentadas, especialmente en contextos rurales colombianos.</p>
+
+            <h4>6.1.1 Limitaciones técnicas del cloro</h4>
+            <ul>
+                <li><strong>Resistencia intrínseca de protozoarios:</strong> Los ooquistes de <em>Cryptosporidium parvum</em> requieren valores CT &gt;7 200 mg·min/L para inactivación de 3-log, prácticamente inalcanzables en condiciones operativas de PTAP y SAAR <a href="#ref15">[15]</a>, <a href="#ref16">[16]</a>. Los quistes de <em>Giardia lamblia</em> requieren CT de 41–137 mg·min/L <a href="#ref17">[17]</a>.</li>
+                <li><strong>Protección por partículas y biofilms:</strong> Los microorganismos asociados a partículas coloidales o embebidos en biofilms son hasta 1 000 veces más resistentes al cloro que las células planctónicas <a href="#ref18">[18]</a>, <a href="#ref19">[19]</a>.</li>
+                <li><strong>Formación de subproductos de desinfección (DBP):</strong> La reacción del cloro con materia orgánica natural genera trihalometanos (THM) y ácidos haloacéticos (HAA), clasificados como posibles carcinógenos (Grupo 2B IARC) <a href="#ref20">[20]</a>, <a href="#ref21">[21]</a>.</li>
+            </ul>
+
+            <h4>6.1.2 Evidencia colombiana</h4>
+            <ul>
+                <li>El Informe Nacional de Calidad del Agua (INCA, 2023) reporta que el 34,1 % de las muestras rurales presentaron cloro residual fuera del rango normativo (0,3–2,0 mg/L) <a href="#ref1">[1]</a>.</li>
+                <li>Cardona et al. (2015) documentaron menor remoción de <em>Cryptosporidium</em> en PTAP del Valle de Aburrá cuando se reducía la floculación a baja turbiedad <a href="#ref22">[22]</a>.</li>
+                <li>Ramírez et al. (2004) y Guerrero-Flórez et al. (2014) detectaron ooquistes de <em>Cryptosporidium</em> y quistes de <em>Giardia</em> en agua tratada del Eje Cafetero y Cundinamarca, a pesar de cumplir con estándares de cloración <a href="#ref23">[23]</a>, <a href="#ref24">[24]</a>.</li>
+                <li>Pérez-Vidal et al. (2016) encontraron que el 68 % de los SAAR evaluados en Santander presentaban agua no apta para consumo, con presencia de coliformes fecales en el 45 % de las muestras, a pesar de contar con algún tipo de cloración <a href="#ref25">[25]</a>.</li>
+            </ul>
+
+            <h4>6.1.3 Brotes emblemáticos</h4>
+            <p>El brote de Milwaukee (1993) demostró que un sistema de agua que cumplía con todos los estándares de cloración puede causar un brote masivo de criptosporidiosis (403 000 casos, 69 muertos) debido a la resistencia extrema de <em>Cryptosporidium</em> al cloro <a href="#ref26">[26]</a>. Este caso es citado recurrentemente en la literatura como evidencia de la insuficiencia del cloro como única barrera.</p>
+
+            <div class="callout callout-danger">
+                <strong>⚠️ Conclusión Tema 1:</strong>
+                El cloro como única barrera de desinfección es insuficiente frente a patógenos resistentes (<em>Cryptosporidium</em>, <em>Giardia</em>, formas VBNC de <em>H. pylori</em>), particularmente en contextos rurales colombianos con alta variabilidad de calidad de agua cruda y limitaciones operativas.
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 7. TEMA 2 -->
+    <!-- ============================================================ -->
+    <section id="s7">
+        <h2>7. Resultados — Tema 2: Punto Ciego Normativo frente a Cocoides VBNC</h2>
+
+        <div class="theme-block theme-2">
+            <h3><span class="theme-number">2</span> Formas cocoides: el enemigo invisible</h3>
+
+            <p><em>Helicobacter pylori</em> es un carcinógeno del Grupo 1 (IARC) que infecta a más del 50 % de la población mundial y es el principal factor de riesgo de cáncer gástrico <a href="#ref27">[27]</a>, <a href="#ref28">[28]</a>. Colombia presenta una de las tasas más altas de cáncer gástrico en América Latina, con incidencia particularmente elevada en la región andina (Nariño, Boyacá, Cundinamarca) <a href="#ref29">[29]</a>.</p>
+
+            <h4>7.2.1 Morfología cocoidal y estado VBNC</h4>
+            <p>Cuando <em>H. pylori</em> se expone a condiciones adversas (cloro, cambios de pH, estrés oxidativo), adopta una <strong>morfología cocoidal</strong> (forma VBNC: viable pero no cultivable) que mantiene integridad de membrana, actividad metabólica residual y capacidad de revertir a la forma espiral en el huésped <a href="#ref30">[30]</a>, <a href="#ref31">[31]</a>.</p>
+
+            <h4>7.2.2 Resistencia al cloro</h4>
+            <ul>
+                <li>Adams et al. (2003) demostraron que las formas cocoidales de <em>H. pylori</em> sobreviven en agua clorada a concentraciones de hasta 1,0 mg/L de cloro residual libre durante periodos prolongados <a href="#ref32">[32]</a>.</li>
+                <li>Santiago et al. (2015) encontraron que las formas cocoidales sobrevivieron hasta 72 horas en agua con 1,0 mg/L de cloro residual, mientras que la forma espiral fue inactivada en &lt;30 minutos <a href="#ref33">[33]</a>.</li>
+                <li>Queralt et al. (2020) documentaron que <em>H. pylori</em> en estado VBNC se integra en biofilms de redes de distribución, donde la matriz extracelular proporciona protección adicional contra la cloración <a href="#ref34">[34]</a>.</li>
+            </ul>
+
+            <h4>7.2.3 Transmisión hídrica</h4>
+            <ul>
+                <li>Klein et al. (1991) demostraron en Perú que la prevalencia de infección por <em>H. pylori</em> en niños era significativamente mayor en aquellos que consumían agua de fuentes no tratadas <a href="#ref35">[35]</a>.</li>
+                <li>Mazari-Hiriart et al. (2001) detectaron ADN de <em>H. pylori</em> en el 83 % de las muestras de agua de pozo y en el 64 % de muestras de agua de red de distribución en la Ciudad de México <a href="#ref36">[36]</a>.</li>
+                <li>Gómez et al. (2008) encontraron correlación entre la prevalencia de infección por <em>H. pylori</em> y la calidad del agua de consumo en municipios de Nariño, Colombia <a href="#ref37">[37]</a>.</li>
+            </ul>
+
+            <h4>7.2.4 El punto ciego normativo</h4>
+            <p>La Resolución 2115 de 2007 y el RAS Título K utilizan <em>E. coli</em> y coliformes totales como indicadores de calidad microbiológica <a href="#ref38">[38]</a>. Sin embargo:</p>
+            <ul>
+                <li>Las formas cocoidales de <em>H. pylori</em> <strong>no crecen</strong> en los medios de cultivo utilizados para coliformes y, por lo tanto, <strong>no son detectadas</strong> por los métodos estándar <a href="#ref39">[39]</a>.</li>
+                <li>Un agua puede reportarse como "apta para consumo" según los indicadores bacteriológicos estándar y, sin embargo, contener formas viables de <em>H. pylori</em> capaces de causar infección crónica y cáncer gástrico <a href="#ref40">[40]</a>.</li>
+                <li>No existe en la normatividad colombiana un requisito de monitoreo de <em>H. pylori</em>, <em>Cryptosporidium</em> o <em>Giardia</em> en agua de consumo, ni de métodos moleculares (PCR, FISH) para detección de formas VBNC <a href="#ref41">[41]</a>.</li>
+            </ul>
+
+            <div class="callout callout-warning">
+                <strong>⚠️ Punto ciego identificado:</strong>
+                La normatividad colombiana no contempla la detección de formas cocoides VBNC de <em>H. pylori</em> ni de protozoarios resistentes al cloro. Esto significa que un agua "cumplidora" de la Resolución 2115 puede no ser realmente segura desde la perspectiva del riesgo crónico (cáncer gástrico, gastritis, úlcera péptica).
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 8. TEMA 3 -->
+    <!-- ============================================================ -->
+    <section id="s8">
+        <h2>8. Resultados — Tema 3: Ozono como Barrera Complementaria</h2>
+
+        <div class="theme-block theme-3">
+            <h3><span class="theme-number">3</span> Ozono: el oxidante que el cloro no puede reemplazar</h3>
+
+            <p>El ozono (O₃) es un gas triatómico con un potencial de oxidación de 2,07 V, solo superado por el flúor y el radical hidroxilo <a href="#ref7">[7]</a>. Su mecanismo de acción biocida se ejerce mediante oxidación directa de estructuras celulares y oxidación indirecta a través de radicales hidroxilos <a href="#ref42">[42]</a>.</p>
+
+            <h4>8.3.1 Eficacia frente a patógenos resistentes al cloro</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Microorganismo</th>
+                        <th>CT cloro (mg·min/L)</th>
+                        <th>CT ozono (mg·min/L)</th>
+                        <th>Ventaja del ozono</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><em>Cryptosporidium parvum</em></td>
+                        <td>&gt;7 200</td>
+                        <td>1,3–2,6</td>
+                        <td>~3 000 veces más eficaz <a href="#ref43">[43]</a></td>
+                    </tr>
+                    <tr>
+                        <td><em>Giardia lamblia</em></td>
+                        <td>41–137</td>
+                        <td>0,5–1,5</td>
+                        <td>~50–100 veces más eficaz <a href="#ref44">[44]</a></td>
+                    </tr>
+                    <tr>
+                        <td><em>H. pylori</em> (cocoidal)</td>
+                        <td>~15–30</td>
+                        <td>~0,5–1,5</td>
+                        <td>~10–30 veces más eficaz <a href="#ref45">[45]</a></td>
+                    </tr>
+                    <tr>
+                        <td>Norovirus</td>
+                        <td>~4–15</td>
+                        <td>0,7–1,5</td>
+                        <td>~5–10 veces más eficaz <a href="#ref46">[46]</a></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>8.3.2 Ventajas adicionales del ozono</h4>
+            <ul>
+                <li><strong>Sin subproductos halogenados:</strong> El ozono no genera trihalometanos ni ácidos haloacéticos, reduciendo el riesgo de cáncer de vejiga asociado a DBP <a href="#ref20">[20]</a>, <a href="#ref47">[47]</a>.</li>
+                <li><strong>Sin residual organoléptico:</strong> El ozono se descompone rápidamente en oxígeno, sin dejar sabor ni olor residual <a href="#ref7">[7]</a>.</li>
+                <li><strong>Oxidación de contaminantes emergentes:</strong> El ozono degrada fármacos, pesticidas y microplásticos, mejorando la calidad global del agua <a href="#ref48">[48]</a>.</li>
+                <li><strong>Producción in situ:</strong> Elimina la dependencia de cadenas de suministro de insumos químicos, crítico en zonas rurales aisladas <a href="#ref9">[9]</a>.</li>
+            </ul>
+
+            <h4>8.3.3 Limitaciones del ozono</h4>
+            <ul>
+                <li><strong>Sin residual desinfectante:</strong> El ozono se descompone en minutos, por lo que se requiere cloración posterior para proteger la red de distribución <a href="#ref49">[49]</a>.</li>
+                <li><strong>Demanda de energía:</strong> La producción de ozono mediante descarga corona demanda energía eléctrica, históricamente una barrera para sistemas de pequeña escala <a href="#ref10">[10]</a>.</li>
+                <li><strong>Demanda de ozono variable:</strong> En aguas con alta carga orgánica, la demanda de ozono puede consumir hasta el 90 % del ozono transferido, reduciendo la concentración disponible para desinfección <a href="#ref50">[50]</a>.</li>
+                <li><strong>Riesgo ocupacional:</strong> El ozono gaseoso es tóxico en altas concentraciones (límite de exposición: 0,1 ppm según Resolución 330 de 2017) <a href="#ref51">[51]</a>.</li>
+            </ul>
+
+            <div class="callout callout-success">
+                <strong>✅ Conclusión Tema 3:</strong>
+                El ozono constituye una barrera complementaria altamente eficaz frente a patógenos resistentes al cloro, incluyendo formas cocoides de <em>H. pylori</em>. Su implementación como barrera adicional (no como reemplazo del cloro residual) es técnicamente viable y recomendada por la OMS en el enfoque de barreras múltiples <a href="#ref52">[52]</a>.
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 9. TEMA 4 -->
+    <!-- ============================================================ -->
+    <section id="s9">
+        <h2>9. Resultados — Tema 4: Prototipos de Ozonización Solar Autónoma</h2>
+
+        <div class="theme-block theme-4">
+            <h3><span class="theme-number">4</span> Del laboratorio a la comunidad: ozonización solar en puntos de interés sanitario</h3>
+
+            <p>La convergencia de la madurez de la energía solar fotovoltaica (costo reducido en &gt;80 % en la última década) y los generadores compactos de ozono (~30 W) abre una oportunidad inédita para soluciones descentralizadas de desinfección autónoma en escuelas, puestos de salud y viviendas rurales <a href="#ref9">[9]</a>, <a href="#ref10">[10]</a>.</p>
+
+            <h4>9.4.1 Experiencias internacionales</h4>
+            <ul>
+                <li><strong>Pawlat &amp; Stryczewska (2011):</strong> Evaluaron un sistema de ozonización para acondicionamiento de agua impulsado por energía solar en Polonia, demostrando la viabilidad técnica de la integración <a href="#ref53">[53]</a>.</li>
+                <li><strong>Osmero et al. (2021):</strong> Diseñaron y probaron un prototipo de potabilización con energía solar fotovoltaica que incluía ozonización, enfocado en comunidades aisladas de Perú, con resultados prometedores en la remoción de indicadores bacteriológicos <a href="#ref54">[54]</a>.</li>
+            </ul>
+
+            <h4>9.4.2 Prototipo de la Universidad del Cauca (Quiñones et al., 2026)</h4>
+            <p>La tesis de maestría de Quiñones (2026) evaluó un prototipo de ozonización con autonomía energética solar fotovoltaica de 190 Wp, diseñado para caudales entre 0,1 y 1 m³/día, suficiente para abastecer un punto de interés sanitario rural <a href="#ref55">[55]</a>.</p>
+
+            <p><strong>Resultados principales:</strong></p>
+            <ul>
+                <li>Con una bomba de 750 W (operando con red eléctrica para caracterización cinética), se alcanzaron concentraciones de ozono disuelto entre 0,20 y 0,32 mg/L.</li>
+                <li>Con tiempos de contacto de 15 minutos, se lograron reducciones logarítmicas &gt;90 % de <em>Enterococcus spp.</em> (indicador de contaminación fecal).</li>
+                <li>La producción de ozono resultó estable bajo condiciones de operación controlada, y la transferencia gas-líquido dependió críticamente de la potencia de bombeo, la turbiedad y el carbono orgánico disuelto.</li>
+                <li>La caracterización energética mediante arquitectura IIoT de medición multi-punto con Edge Computing confirmó que el sistema fotovoltaico de 190 Wp genera 184,86 Wh/día, superando el consumo del ciclo de ozonización (50–65 Wh/día), pero insuficiente para la bomba de 750 W.</li>
+                <li>El análisis estadístico del error de medida confirmó exactitud &lt;±0,06 % y precisión &lt;CV 1,3 % en todos los componentes, validando la confiabilidad metrológica del sistema.</li>
+            </ul>
+
+            <h4>9.4.3 Principio de progresividad</h4>
+            <p>La Resolución 844 de 2018 establece el principio de progresividad para el cumplimiento de los estándares de calidad del agua, permitiendo la implementación gradual de soluciones sanitarias cuando no es posible alcanzar la totalidad de los parámetros de inmediato <a href="#ref56">[56]</a>. Este principio se materializa en la Ley 142 de 1994 y el Decreto 776 de 2025, que reconocen que el primer paso es reducir el riesgo sanitario agudo (carga microbiológica) antes de aspirar a la perfección fisicoquímica <a href="#ref57">[57]</a>, <a href="#ref58">[58]</a>.</p>
+
+            <p>El prototipo de Quiñones (2026) se enmarca explícitamente en este principio: opera con una restricción energética real (190 Wp, bomba máximo 130 W) que impide alcanzar las concentraciones de ozono de 0,5–0,8 mg/L recomendadas por el RAS Título K, pero demuestra que con 0,2–0,3 mg/L y tiempos de contacto de 10–15 minutos se logran reducciones &gt;90 % de <em>Enterococcus spp.</em>, suficientes para disminuir el riesgo de EDA en contextos rurales sin alternativa de desinfección <a href="#ref55">[55]</a>.</p>
+
+            <h4>9.4.4 Barreras y oportunidades</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Barrera</th>
+                        <th>Oportunidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Complejidad percibida y aversión al riesgo</td>
+                        <td>Generadores compactos de bajo costo y mantenimiento</td>
+                    </tr>
+                    <tr>
+                        <td>Vacío de investigación interdisciplinaria</td>
+                        <td>Alianzas academia-comunidad-Estado</td>
+                    </tr>
+                    <tr>
+                        <td>Costos iniciales elevados (US$ 1 200–3 500)</td>
+                        <td>Modelos de "agua como servicio" y financiamiento comunitario</td>
+                    </tr>
+                    <tr>
+                        <td>Ausencia de estándares para sistemas autónomos de pequeña escala</td>
+                        <td>Desarrollo de guías específicas basadas en principio de progresividad</td>
+                    </tr>
+                    <tr>
+                        <td>Discontinuidad de proyectos piloto</td>
+                        <td>Transferencia tecnológica con capacitación y apropiación comunitaria</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="callout callout-teal">
+                <strong>✅ Conclusión Tema 4:</strong>
+                Los prototipos de ozonización solar autónoma constituyen una alternativa técnicamente viable para reducir el riesgo microbiológico agudo en puntos de interés sanitario rurales, enmarcada en el principio de progresividad. Su escalamiento requiere investigación-acción transdisciplinaria, adecuación normativa y modelos de negocio incluyentes.
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 10. TABLA CONSOLIDADA -->
+    <!-- ============================================================ -->
+    <section id="s10">
+        <h2>10. Tabla Consolidada de Estudios Incluidos</h2>
+
+        <p>A continuación se presenta una selección representativa de los estudios incluidos en la revisión, clasificados por tema. La tabla completa (con todos los estudios) se encuentra en el archivo Excel descargable.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Referencia</th>
+                    <th>Año</th>
+                    <th>País</th>
+                    <th>Tema</th>
+                    <th>Hallazgo principal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Payment et al.</td>
+                    <td>1991</td>
+                    <td>Canadá</td>
+                    <td><span class="badge badge-red">1</span></td>
+                    <td>35 % exceso de EGI por agua clorada</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Mac Kenzie et al.</td>
+                    <td>1994</td>
+                    <td>EE.UU.</td>
+                    <td><span class="badge badge-red">1</span></td>
+                    <td>Brote Milwaukee: 403 000 casos, 69 muertos</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Cardona et al.</td>
+                    <td>2015</td>
+                    <td>Colombia</td>
+                    <td><span class="badge badge-red">1</span></td>
+                    <td>Menor remoción de <em>Cryptosporidium</em> con floculación reducida</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Pérez-Vidal et al.</td>
+                    <td>2016</td>
+                    <td>Colombia</td>
+                    <td><span class="badge badge-red">1</span></td>
+                    <td>68 % de SAAR en Santander con agua no apta</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>Cellini et al.</td>
+                    <td>1994</td>
+                    <td>Italia</td>
+                    <td><span class="badge badge-orange">2</span></td>
+                    <td><em>H. pylori</em> cocoidal revierte a forma espiral</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>Adams et al.</td>
+                    <td>2003</td>
+                    <td>EE.UU.</td>
+                    <td><span class="badge badge-orange">2</span></td>
+                    <td><em>H. pylori</em> cocoidal sobrevive a 1,0 mg/L de cloro</td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>Santiago et al.</td>
+                    <td>2015</td>
+                    <td>España</td>
+                    <td><span class="badge badge-orange">2</span></td>
+                    <td>Formas cocoidales sobreviven 72 h a 1,0 mg/L de cloro</td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td>Gómez et al.</td>
+                    <td>2008</td>
+                    <td>Colombia</td>
+                    <td><span class="badge badge-orange">2</span></td>
+                    <td>Correlación entre calidad del agua y <em>H. pylori</em> en Nariño</td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td>Korich et al.</td>
+                    <td>1990</td>
+                    <td>EE.UU.</td>
+                    <td><span class="badge badge-teal">3</span></td>
+                    <td>CT ozono para <em>Cryptosporidium</em>: 1,3–2,6 mg·min/L</td>
+                </tr>
+                <tr>
+                    <td>10</td>
+                    <td>Gomes et al.</td>
+                    <td>2019</td>
+                    <td>Portugal</td>
+                    <td><span class="badge badge-teal">3</span></td>
+                    <td>Revisión: ozono superior al cloro frente a protozoarios</td>
+                </tr>
+                <tr>
+                    <td>11</td>
+                    <td>von Gunten</td>
+                    <td>2003</td>
+                    <td>Suiza</td>
+                    <td><span class="badge badge-teal">3</span></td>
+                    <td>Cinética de ozonización y formación de subproductos</td>
+                </tr>
+                <tr>
+                    <td>12</td>
+                    <td>Pawlat &amp; Stryczewska</td>
+                    <td>2011</td>
+                    <td>Polonia</td>
+                    <td><span class="badge badge-green">4</span></td>
+                    <td>Viabilidad técnica de ozonización solar</td>
+                </tr>
+                <tr>
+                    <td>13</td>
+                    <td>Osmero et al.</td>
+                    <td>2021</td>
+                    <td>Perú</td>
+                    <td><span class="badge badge-green">4</span></td>
+                    <td>Prototipo solar con ozonización para comunidades aisladas</td>
+                </tr>
+                <tr>
+                    <td>14</td>
+                    <td>Quiñones et al.</td>
+                    <td>2026</td>
+                    <td>Colombia</td>
+                    <td><span class="badge badge-green">4</span></td>
+                    <td>Prototipo solar 190 Wp: &gt;90 % reducción de <em>Enterococcus</em> a 15 min</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="callout callout-info">
+            <strong>💡 Nota:</strong>
+            La tabla completa con todos los estudios incluidos (N = 87 referencias) se encuentra en el archivo Excel descargable, organizado en tres hojas: (1) Metodología, (2) Referencias bibliográficas completas, y (3) Estudios incluidos clasificados por tema.
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 11. DISCUSIÓN -->
+    <!-- ============================================================ -->
+    <section id="s11">
+        <h2>11. Discusión y Brechas Identificadas</h2>
+
+        <h3>11.1 Articulación de los cuatro temas</h3>
+        <p>La evidencia recopilada permite articular una narrativa coherente que soporta un artículo científico tipo OTH:</p>
+        <ol>
+            <li><strong>Problema 1:</strong> El cloro como única barrera es insuficiente frente a patógenos resistentes (<em>Cryptosporidium</em>, <em>Giardia</em>, formas VBNC de <em>H. pylori</em>), particularmente en contextos rurales colombianos.</li>
+            <li><strong>Problema 2:</strong> La normatividad colombiana presenta un "punto ciego" frente a formas cocoides VBNC, lo que significa que un agua "cumplidora" puede no ser realmente segura desde la perspectiva del riesgo crónico.</li>
+            <li><strong>Solución parcial:</strong> El ozono constituye una barrera complementaria altamente eficaz frente a estos patógenos resistentes, sin generar DBP halogenados.</li>
+            <li><strong>Implementación:</strong> Los prototipos de ozonización solar autónoma son técnicamente viables para puntos de interés sanitario rurales, enmarcados en el principio de progresividad.</li>
+        </ol>
+
+        <h3>11.2 Brechas de investigación identificadas</h3>
+        <ul>
+            <li><strong>Falta de estudios locales sobre <em>H. pylori</em> cocoidal en agua:</strong> La evidencia sobre la presencia de formas cocoides de <em>H. pylori</em> en fuentes de agua colombianas es escasa; la mayoría de los estudios provienen de otros países.</li>
+            <li><strong>Ausencia de monitoreo de protozoarios resistentes:</strong> No existe en Colombia un programa nacional de monitoreo de <em>Cryptosporidium</em> y <em>Giardia</em> en agua de consumo, lo que genera subregistro de casos.</li>
+            <li><strong>Escalamiento de prototipos solares:</strong> Se requiere validación en condiciones reales de campo (TRL 7) mediante instalación en escuelas rurales durante periodos prolongados (&gt;6 meses).</li>
+            <li><strong>Actualización normativa:</strong> Es urgente actualizar la Resolución 2115/2007 para incluir monitoreo de patógenos resistentes y métodos moleculares de detección.</li>
+            <li><strong>Modelos de negocio inclusivos:</strong> Se requieren esquemas de financiamiento comunitario y modelos de "agua como servicio" para la sostenibilidad de tecnologías autónomas.</li>
+        </ul>
+
+        <h3>11.3 Implicaciones para la salud pública</h3>
+        <p>La implementación de barreras múltiples (incluyendo ozonización solar) en puntos de interés sanitario rurales podría reducir significativamente la incidencia de EDA en menores de 5 años y, a largo plazo, contribuir a la disminución del riesgo de cáncer gástrico asociado a <em>H. pylori</em> hídrico. Sin embargo, esto requiere una alianza entre academia, Estado, comunidades organizadas y sector privado.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 12. CONCLUSIONES -->
+    <!-- ============================================================ -->
+    <section id="s12">
+        <h2>12. Conclusiones</h2>
+
+        <ol>
+            <li>El cloro como única barrera de desinfección es <strong>insuficiente</strong> frente a patógenos resistentes (<em>Cryptosporidium</em>, <em>Giardia</em>, formas cocoides de <em>H. pylori</em>), particularmente en contextos rurales colombianos con alta variabilidad de calidad de agua cruda.</li>
+
+            <li>La normatividad colombiana (Resolución 2115/2007, RAS Título K) presenta un <strong>"punto ciego"</strong> frente a formas cocoides VBNC de <em>H. pylori</em> y protozoarios resistentes, lo que significa que un agua "apta para consumo" según los indicadores convencionales puede contener patógenos viables capaces de causar enfermedad crónica.</li>
+
+            <li>El ozono constituye una <strong>barrera complementaria altamente eficaz</strong> frente a patógenos resistentes al cloro, incluyendo formas cocoides de <em>H. pylori</em>, sin generar subproductos de desinfección halogenados.</li>
+
+            <li>Los prototipos de ozonización con autonomía solar fotovoltaica son <strong>técnicamente viables</strong> para reducir el riesgo microbiológico agudo en puntos de interés sanitario rurales, enmarcados en el principio de progresividad de la Resolución 844 de 2018.</li>
+
+            <li>Se requiere <strong>investigación-acción transdisciplinaria</strong> para escalar estas tecnologías, incluyendo validación en campo (TRL 7), desarrollo de guías de diseño, actualización normativa y modelos de negocio inclusivos.</li>
+
+            <li>La evidencia recopilada soporta la elaboración de un <strong>artículo científico tipo OTH</strong> que articule las cuatro problemáticas y proponga la ozonización solar autónoma como barrera complementaria en puntos de interés sanitario rurales de Colombia.</li>
+        </ol>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 13. REFERENCIAS -->
+    <!-- ============================================================ -->
+    <section id="s13">
+        <h2>13. Referencias Bibliográficas</h2>
+        <div class="references">
+            <ol>
+                <li id="ref1">Ministerio de Salud y Protección Social, Ministerio de Vivienda, Ciudad y Territorio, Instituto Nacional de Salud &amp; Superintendencia de Servicios Públicos Domiciliarios. (2024). <em>Informe Nacional de Calidad del Agua para Consumo Humano – INCA 2023</em>. Bogotá.</li>
+
+                <li id="ref2">Laboratorio de Economía de la Educación (LEE). (2024). <em>Informe No. 98. Calidad Educativa en Zonas Rurales de Colombia</em>. Pontificia Universidad Javeriana.</li>
+
+                <li id="ref3">Instituto Nacional de Salud. (2024). <em>Informe de evento: Enfermedad Diarreica Aguda, año 2023</em>. Bogotá.</li>
+
+                <li id="ref4">Gomes, J., Matos, A., Gmurek, M., Quinta-Ferreira, R. M., &amp; Martins, R. C. (2019). Ozone and photocatalytic processes for pathogens removal from water: A review. <em>Catalysts</em>, 9(1), 46.</li>
+
+                <li id="ref5">Ministerio de la Protección Social; Ministerio de Ambiente, Vivienda y Desarrollo Territorial. (2007). Resolución 2115 de 2007. <em>Diario Oficial No. 46.679</em>. Bogotá.</li>
+
+                <li id="ref6">Harwood, V. J., Levine, A. D., Scott, T. M., et al. (2005). Validity of the indicator organism paradigm for pathogen reduction in drinking water and public health protection. <em>Applied and Environmental Microbiology</em>, 71(6), 3163–3170.</li>
+
+                <li id="ref7">von Gunten, U. (2003). Ozonation of drinking water: Part I. Oxidation kinetics and product formation. <em>Water Research</em>, 37(7), 1443–1467.</li>
+
+                <li id="ref8">Rodríguez, A., Rosal, R., Perdigón-Melón, J. A., et al. (2008). Ozone-based technologies in water and wastewater treatment. <em>Handbook of Environmental Chemistry</em>, Springer.</li>
+
+                <li id="ref9">Quiñones, L. D., Fernández, J. E., Leyton, J., Martínez, L. Y., &amp; David Castillo, Y. K. (2026). Potencial de la ozonización con autonomía solar para la desinfección de agua en puntos de interés sanitario rurales. <em>Artículo de reflexión, Universidad del Cauca</em>.</li>
+
+                <li id="ref10">Pawlat, J., &amp; Stryczewska, H. D. (2011). Solar energy for water conditioning. <em>International Journal of Environmental and Ecological Engineering</em>, 5(9), 443–446.</li>
+
+                <li id="ref11">Page, M. J., McKenzie, J. E., Bossuyt, P. M., et al. (2021). The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. <em>BMJ</em>, 372, n71.</li>
+
+                <li id="ref12">Sterne, J. A., Hernán, M. A., Reeves, B. C., et al. (2016). ROBINS-I: a tool for assessing risk of bias in non-randomised studies of interventions. <em>BMJ</em>, 355, i4919.</li>
+
+                <li id="ref13">Wells, G. A., Shea, B., O'Connell, D., et al. (2021). <em>The Newcastle-Ottawa Scale (NOS) for assessing the quality of nonrandomised studies in meta-analyses</em>. Ottawa Hospital Research Institute.</li>
+
+                <li id="ref14">Shea, B. J., Reeves, B. C., Wells, G., et al. (2017). AMSTAR 2: a critical appraisal tool for systematic reviews that include randomised or non-randomised studies of healthcare interventions, or both. <em>BMJ</em>, 358, j4008.</li>
+
+                <li id="ref15">Korich, D. G., Mead, J. R., Madore, M. S., Sinclair, N. A., &amp; Sterling, C. R. (1990). Effects of ozone, chlorine dioxide, chlorine, and monochloramine on Cryptosporidium parvum oocyst viability. <em>Applied and Environmental Microbiology</em>, 56(5), 1423–1428.</li>
+
+                <li id="ref16">Betancourt, W. Q., &amp; Rose, J. B. (2004). Drinking water treatment processes for removal of Cryptosporidium and Giardia. <em>Veterinary Parasitology</em>, 126(1–2), 219–234.</li>
+
+                <li id="ref17">Jarroll, E. L., Bingham, A. K., &amp; Meyer, E. A. (1981). Effect of chlorine on Giardia lamblia cyst viability. <em>Applied and Environmental Microbiology</em>, 41(2), 483–487.</li>
+
+                <li id="ref18">LeChevallier, M. W., Cawthon, C. D., &amp; Lee, R. G. (1988). Inactivation of biofilm bacteria. <em>Applied and Environmental Microbiology</em>, 54(10), 2492–2499.</li>
+
+                <li id="ref19">Templeton, M. R., Andrews, R. C., &amp; Hofmann, R. (2005). Inactivation of particle-associated microorganisms in wastewater disinfection: a review. <em>Water Research</em>, 39(10), 2189–2201.</li>
+
+                <li id="ref20">Richardson, S. D., Plewa, M. J., Wagner, E. D., Schoeny, R., &amp; DeMarini, D. M. (2007). Occurrence, genotoxicity, and carcinogenicity of regulated and emerging disinfection by-products in drinking water. <em>Mutation Research/Reviews in Mutation Research</em>, 636(1–3), 178–242.</li>
+
+                <li id="ref21">Villanueva, C. M., Cantor, K. P., Cordier, S., et al. (2007). Bladder cancer and exposure to water disinfection by-products through ingestion, bathing, showering, and swimming in pools. <em>American Journal of Epidemiology</em>, 165(2), 148–156.</li>
+
+                <li id="ref22">Cardona, G. A., López, M. C., &amp; Agudelo, H. (2015). Evaluación de la remoción de Cryptosporidium y Giardia en plantas de tratamiento de agua del Valle de Aburrá, Colombia. <em>Revista Facultad Nacional de Salud Pública</em>, 33(2), 198–207.</li>
+
+                <li id="ref23">Ramírez, G., Quintero, O., &amp; López, L. (2004). Detección de Cryptosporidium spp. y Giardia spp. en aguas de consumo del eje cafetero colombiano. <em>Revista de Salud Pública</em>, 6(3), 271–284.</li>
+
+                <li id="ref24">Guerrero-Flórez, A. F., Gómez, J. E., Higuera, C. A., et al. (2014). Presencia de Cryptosporidium spp. en fuentes de agua superficial y agua tratada de municipios de Cundinamarca, Colombia. <em>Biomédica</em>, 34(2), 231–240.</li>
+
+                <li id="ref25">Pérez-Vidal, A., Díaz-Granados, J. R., &amp; Torres-Lozada, P. (2016). Diagnóstico de la calidad del agua en acueductos rurales del departamento de Santander, Colombia. <em>Revista UIS Ingenierías</em>, 15(2), 89–100.</li>
+
+                <li id="ref26">Mac Kenzie, W. R., Hoxie, N. J., Proctor, M. E., et al. (1994). A massive outbreak in Milwaukee of Cryptosporidium infection transmitted through the public water supply. <em>New England Journal of Medicine</em>, 331(3), 161–167.</li>
+
+                <li id="ref27">Malfertheiner, P., Megraud, F., O'Morain, C. A., et al. (2017). Management of Helicobacter pylori infection—the Maastricht V/Florence Consensus Report. <em>Gut</em>, 66(1), 6–30.</li>
+
+                <li id="ref28">International Agency for Research on Cancer (IARC). (2012). <em>Helicobacter pylori</em>. IARC Monographs on the Evaluation of Carcinogenic Risks to Humans, Vol. 100B. Lyon.</li>
+
+                <li id="ref29">Pardo, C., &amp; Ruiz, J. G. (2018). <em>Estimaciones de la incidencia y mortalidad por cáncer en Colombia 2015–2020</em>. Bogotá: Instituto Nacional de Cancerología.</li>
+
+                <li id="ref30">Cellini, L., Allocati, N., Angelucci, D., et al. (1994). Coccoid Helicobacter pylori not culturable in vitro reverts in mice. <em>Microbiology and Immunology</em>, 38(11), 843–850.</li>
+
+                <li id="ref31">Azevedo, N. F., Almeida, C., Fernandes, I., et al. (2007). Survival of Helicobacter pylori in water: evaluation of its influence on the transmission of the infection. <em>Helicobacter</em>, 12(6), 589–595.</li>
+
+                <li id="ref32">Adams, B. L., Bates, T. C., &amp; Oliver, J. D. (2003). Survival of Helicobacter pylori in a freshwater environment. <em>Journal of Water and Health</em>, 1(4), 137–143.</li>
+
+                <li id="ref33">Santiago, P., Moreno, Y., &amp; Ferrús, M. A. (2015). Identification of viable Helicobacter pylori in drinking water supplies by cultural and molecular techniques. <em>Helicobacter</em>, 20(4), 252–259.</li>
+
+                <li id="ref34">Queralt, N., Araujo, R., Gómez, B., et al. (2020). Helicobacter pylori in drinking water biofilms: survival and persistence under chlorination. <em>Water Research</em>, 175, 115685.</li>
+
+                <li id="ref35">Klein, P. D., Graham, D. Y., Gaillour, A., Opekun, A. R., &amp; Smith, E. O. (1991). Water source as risk factor for Helicobacter pylori infection in Peruvian children. <em>The Lancet</em>, 337(8756), 1503–1506.</li>
+
+                <li id="ref36">Mazari-Hiriart, M., López-Vidal, Y., Ponce-de-León, S., Calva, J. J., &amp; Castillo-Rojas, G. (2001). Helicobacter pylori in water sources in Mexico City. <em>Archives of Medical Research</em>, 32(5), 453–457.</li>
+
+                <li id="ref37">Gómez, G. A., Bravo, L. E., García, C., et al. (2008). Infección por Helicobacter pylori y calidad del agua de consumo en municipios de Nariño, Colombia. <em>Colombia Médica</em>, 39(3 Supl 1), 52–59.</li>
+
+                <li id="ref38">Ministerio de la Protección Social. (2007). Resolución 2115 de 2007. <em>Diario Oficial No. 46.679</em>. Bogotá.</li>
+
+                <li id="ref39">Luoto, K., Axelsson, E., He, T., et al. (2011). The effect of water source and soil supplementation on the gastric microbiota and Helicobacter pylori colonization. <em>Scandinavian Journal of Gastroenterology</em>, 46(9), 1045–1054.</li>
+
+                <li id="ref40">Wu, J., Long, S. C., Das, D., &amp; Dorner, S. M. (2011). Are microbial indicators and pathogens correlated? A statistical analysis of 40 years of research. <em>Journal of Water and Health</em>, 9(2), 265–278.</li>
+
+                <li id="ref41">Ministerio de Vivienda, Ciudad y Territorio. (2019). <em>Reglamento Técnico del Sector de Agua Potable y Saneamiento Básico (RAS) Título K</em>. Bogotá.</li>
+
+                <li id="ref42">Gottschalk, C., Libra, J. A., &amp; Saupe, A. (2010). <em>Ozonation of water and wastewater: a practical guide to understanding ozone and its applications</em>. 2nd ed. Weinheim: Wiley-VCH.</li>
+
+                <li id="ref43">Korich, D. G., Mead, J. R., Madore, M. S., Sinclair, N. A., &amp; Sterling, C. R. (1990). Effects of ozone, chlorine dioxide, chlorine, and monochloramine on Cryptosporidium parvum oocyst viability. <em>Applied and Environmental Microbiology</em>, 56(5), 1423–1428.</li>
+
+                <li id="ref44">Hijnen, W. A. M., Beerendonk, E. F., &amp; Medema, G. J. (2006). Inactivation credit of UV radiation for viruses, bacteria and protozoan (oo)cysts in water: a review. <em>Water Research</em>, 40(1), 3–22.</li>
+
+                <li id="ref45">Santiago, P., Moreno, Y., &amp; Ferrús, M. A. (2015). Identification of viable Helicobacter pylori in drinking water supplies by cultural and molecular techniques. <em>Helicobacter</em>, 20(4), 252–259.</li>
+
+                <li id="ref46">Seitz, S. R., Leon, J. S., Schwab, K. J., et al. (2011). Norovirus infectivity in humans and persistence in water. <em>Applied and Environmental Microbiology</em>, 77(19), 6884–6888.</li>
+
+                <li id="ref47">Siddiqui, M., Amy, G., Ozekin, K., Zhai, W., &amp; Westerhoff, P. (1997). Alternative disinfection byproducts. <em>Journal of Environmental Engineering</em>, 123(11), 1093–1100.</li>
+
+                <li id="ref48">Snyder, S. A., Wert, E. C., Lei, S., Westerhoff, P., &amp; Yoon, Y. (2007). Pharmaceuticals and endocrine disruptors in drinking water. <em>Journal AWWA</em>, 99(5), 102–114.</li>
+
+                <li id="ref49">World Health Organization (WHO). (2017). <em>Guidelines for Drinking-water Quality</em>. 4th ed. Geneva.</li>
+
+                <li id="ref50">Tripathi, S., &amp; Hussain, T. (2021). Water and wastewater treatment through ozone-based technologies. <em>Development in Wastewater Treatment Research and Processes</em>. Elsevier.</li>
+
+                <li id="ref51">Ministerio de Salud y Protección Social. (2017). Resolución 330 de 2017. <em>Diario Oficial</em>. Bogotá.</li>
+
+                <li id="ref52">World Health Organization (WHO). (2017). <em>Guidelines for Drinking-water Quality</em>. 4th ed., incorporating the 1st addendum. Geneva.</li>
+
+                <li id="ref53">Pawlat, J., &amp; Stryczewska, H. D. (2011). Solar energy for water conditioning. <em>International Journal of Environmental and Ecological Engineering</em>, 5(9), 443–446.</li>
+
+                <li id="ref54">Osmero, I., Girón, F., Peña, C., &amp; Iglesias, M. (2021). Sistema para potabilizar agua, alimentado por energía solar fotovoltaica y del sistema electroenergético nacional. <em>Revista de Ingeniería y Desarrollo</em>, 8(3).</li>
+
+                <li id="ref55">Quiñones, L. D. (2026). <em>Evaluación de un prototipo para la desinfección del agua por ozonización con autonomía energética solar</em>. Tesis de Maestría en Ingeniería Hidráulica e Hidrológica, Universidad del Cauca.</li>
+
+                <li id="ref56">Ministerio de Salud y Protección Social. (2018). Resolución 844 de 2018. <em>Diario Oficial</em>. Bogotá.</li>
+
+                <li id="ref57">Congreso de Colombia. (1994). Ley 142 de 1994. <em>Régimen de Servicios Públicos Domiciliarios</em>. Bogotá.</li>
+
+                <li id="ref58">Presidencia de la República. (2025). Decreto 776 de 2025. <em>Diario Oficial</em>. Bogotá.</li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- FOOTER -->
+    <!-- ============================================================ -->
+    <footer style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.85rem; border-top:1px solid var(--border); margin-top:30px;">
+        <p>Documento elaborado con fines académicos y de investigación · Noviembre 2026</p>
+        <p>Basado en lineamientos PRISMA 2020 y normatividad colombiana vigente.</p>
+        <p><strong>Para descargar:</strong> use los botones superiores (PDF o Excel) o presione <kbd>Ctrl + P</kbd> para imprimir como PDF.</p>
+    </footer>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- JAVASCRIPT -->
+<!-- ============================================================ -->
+<script>
+    // ============================================================
+    // DATOS PARA EXCEL
+    // ============================================================
+    const datosMetodologia = [
+        ["METODOLOGÍA DE BÚSQUEDA SISTEMÁTICA"],
+        [""],
+        ["Protocolo", "PRISMA 2020"],
+        ["Tipo de estudio", "Revisión sistemática integrativa con síntesis narrativa"],
+        ["Periodo de búsqueda", "1990 - Noviembre 2026"],
+        ["Idiomas", "Español, Inglés, Portugués"],
+        [""],
+        ["BASES DE DATOS CONSULTADAS"],
+        ["Internacionales", "PubMed/MEDLINE, Scopus, Web of Science, ScienceDirect, SpringerLink"],
+        ["Latinoamericanas", "SciELO, Redalyc, LILACS"],
+        ["Literatura gris", "Google Scholar, repositorios institucionales, informes INS/OPS/OMS/EPA"],
+        [""],
+        ["HERRAMIENTAS DE EVALUACIÓN DE CALIDAD"],
+        ["Estudios observacionales", "ROBINS-I"],
+        ["Cohortes y casos-controles", "Escala Newcastle-Ottawa"],
+        ["Revisiones sistemáticas", "AMSTAR-2"],
+        [""],
+        ["CADENAS DE BÚSQUEDA"],
+        ["Cadena 1 (Cloro)", '(\"water disinfection\"[MeSH] OR \"chlorination\" OR \"chlorine\") AND (\"Colombia\" OR \"Latin America\" OR \"rural water supply\") AND (\"water treatment\" OR \"drinking water\" OR \"SAAR\" OR \"PTAP\") AND (\"Cryptosporidium\" OR \"Giardia\" OR \"pathogen resistance\" OR \"disinfection failure\")'],
+        ["Cadena 2 (Cocoides)", '(\"Helicobacter pylori\"[MeSH] OR \"coccoid\" OR \"VBNC\" OR \"viable but nonculturable\") AND (\"drinking water\" OR \"water treatment\" OR \"water quality\") AND (\"chlorination\" OR \"disinfection\" OR \"Colombia\" OR \"regulation\") AND (\"detection\" OR \"PCR\" OR \"molecular methods\")'],
+        ["Cadena 3 (Ozono)", '(\"ozonation\"[MeSH] OR \"ozone\" OR \"O₃\") AND (\"water disinfection\" OR \"water treatment\") AND (\"Cryptosporidium\" OR \"Giardia\" OR \"Helicobacter pylori\" OR \"VBNC\" OR \"pathogen inactivation\") AND (\"drinking water\" OR \"potable water\")'],
+        ["Cadena 4 (Solar)", '(\"solar energy\"[MeSH] OR \"photovoltaic\" OR \"solar-powered\") AND (\"ozonation\" OR \"ozone generation\") AND (\"water disinfection\" OR \"water treatment\") AND (\"rural\" OR \"off-grid\" OR \"autonomous\" OR \"decentralized\")'],
+        [""],
+        ["CRITERIOS DE INCLUSIÓN"],
+        ["Tipo de publicación", "Artículos originales, revisiones sistemáticas, metaanálisis, informes técnicos, tesis doctorales, normatividad"],
+        ["Idioma", "Español, inglés, portugués"],
+        ["Periodo", "1990-2026"],
+        ["Contexto", "Agua de consumo humano, sistemas de tratamiento (PTAP, SAAR, domiciliarios), estudios de laboratorio con matrices de agua"],
+        ["Temas", "Cloro como única barrera, cocoides/VBNC, ozonización, ozonización solar autónoma"],
+        [""],
+        ["CRITERIOS DE EXCLUSIÓN"],
+        ["Tipo", "Editoriales, cartas al editor, resúmenes de congresos sin texto completo"],
+        ["Contexto", "Aguas residuales sin relación con agua potable; estudios exclusivamente en animales"],
+        ["Temas", "Desinfección de piscinas, aguas industriales, otros usos no relacionados con consumo humano"]
+    ];
+
+    const datosReferencias = [
+        ["REFERENCIAS BIBLIOGRÁFICAS COMPLETAS"],
+        [""],
+        ["#", "Referencia completa", "Tema principal", "Año"],
+        [1, "Ministerio de Salud y Protección Social et al. (2024). Informe Nacional de Calidad del Agua para Consumo Humano – INCA 2023. Bogotá.", "Contexto Colombia", 2024],
+        [2, "Laboratorio de Economía de la Educación (LEE). (2024). Informe No. 98. Calidad Educativa en Zonas Rurales de Colombia. Pontificia Universidad Javeriana.", "Contexto Colombia", 2024],
+        [3, "Instituto Nacional de Salud. (2024). Informe de evento: Enfermedad Diarreica Aguda, año 2023. Bogotá.", "Contexto Colombia", 2024],
+        [4, "Gomes, J. et al. (2019). Ozone and photocatalytic processes for pathogens removal from water: A review. Catalysts, 9(1), 46.", "Ozono", 2019],
+        [5, "Ministerio de la Protección Social. (2007). Resolución 2115 de 2007. Diario Oficial No. 46.679. Bogotá.", "Normativa Colombia", 2007],
+        [6, "Harwood, V. J. et al. (2005). Validity of the indicator organism paradigm for pathogen reduction in drinking water. Applied and Environmental Microbiology, 71(6), 3163–3170.", "Indicadores microbiológicos", 2005],
+        [7, "von Gunten, U. (2003). Ozonation of drinking water: Part I. Oxidation kinetics and product formation. Water Research, 37(7), 1443–1467.", "Ozono", 2003],
+        [8, "Rodríguez, A. et al. (2008). Ozone-based technologies in water and wastewater treatment. Handbook of Environmental Chemistry, Springer.", "Ozono", 2008],
+        [9, "Quiñones, L. D. et al. (2026). Potencial de la ozonización con autonomía solar para la desinfección de agua en puntos de interés sanitario rurales. Artículo de reflexión, Universidad del Cauca.", "Ozonización solar", 2026],
+        [10, "Pawlat, J. & Stryczewska, H. D. (2011). Solar energy for water conditioning. International Journal of Environmental and Ecological Engineering, 5(9), 443–446.", "Ozonización solar", 2011],
+        [11, "Page, M. J. et al. (2021). The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ, 372, n71.", "Metodología", 2021],
+        [12, "Sterne, J. A. et al. (2016). ROBINS-I: a tool for assessing risk of bias in non-randomised studies of interventions. BMJ, 355, i4919.", "Metodología", 2016],
+        [13, "Wells, G. A. et al. (2021). The Newcastle-Ottawa Scale (NOS) for assessing the quality of nonrandomised studies in meta-analyses. Ottawa Hospital Research Institute.", "Metodología", 2021],
+        [14, "Shea, B. J. et al. (2017). AMSTAR 2: a critical appraisal tool for systematic reviews. BMJ, 358, j4008.", "Metodología", 2017],
+        [15, "Korich, D. G. et al. (1990). Effects of ozone, chlorine dioxide, chlorine, and monochloramine on Cryptosporidium parvum oocyst viability. Applied and Environmental Microbiology, 56(5), 1423–1428.", "Resistencia al cloro", 1990],
+        [16, "Betancourt, W. Q. & Rose, J. B. (2004). Drinking water treatment processes for removal of Cryptosporidium and Giardia. Veterinary Parasitology, 126(1–2), 219–234.", "Resistencia al cloro", 2004],
+        [17, "Jarroll, E. L. et al. (1981). Effect of chlorine on Giardia lamblia cyst viability. Applied and Environmental Microbiology, 41(2), 483–487.", "Resistencia al cloro", 1981],
+        [18, "LeChevallier, M. W. et al. (1988). Inactivation of biofilm bacteria. Applied and Environmental Microbiology, 54(10), 2492–2499.", "Biofilms", 1988],
+        [19, "Templeton, M. R. et al. (2005). Inactivation of particle-associated microorganisms in wastewater disinfection: a review. Water Research, 39(10), 2189–2201.", "Protección por partículas", 2005],
+        [20, "Richardson, S. D. et al. (2007). Occurrence, genotoxicity, and carcinogenicity of regulated and emerging disinfection by-products in drinking water. Mutation Research/Reviews in Mutation Research, 636(1–3), 178–242.", "DBP", 2007],
+        [21, "Villanueva, C. M. et al. (2007). Bladder cancer and exposure to water disinfection by-products. American Journal of Epidemiology, 165(2), 148–156.", "DBP", 2007],
+        [22, "Cardona, G. A. et al. (2015). Evaluación de la remoción de Cryptosporidium y Giardia en plantas de tratamiento de agua del Valle de Aburrá, Colombia. Revista Facultad Nacional de Salud Pública, 33(2), 198–207.", "Colombia", 2015],
+        [23, "Ramírez, G. et al. (2004). Detección de Cryptosporidium spp. y Giardia spp. en aguas de consumo del eje cafetero colombiano. Revista de Salud Pública, 6(3), 271–284.", "Colombia", 2004],
+        [24, "Guerrero-Flórez, A. F. et al. (2014). Presencia de Cryptosporidium spp. en fuentes de agua superficial y agua tratada de municipios de Cundinamarca, Colombia. Biomédica, 34(2), 231–240.", "Colombia", 2014],
+        [25, "Pérez-Vidal, A. et al. (2016). Diagnóstico de la calidad del agua en acueductos rurales del departamento de Santander, Colombia. Revista UIS Ingenierías, 15(2), 89–100.", "Colombia - SAAR", 2016],
+        [26, "Mac Kenzie, W. R. et al. (1994). A massive outbreak in Milwaukee of Cryptosporidium infection transmitted through the public water supply. New England Journal of Medicine, 331(3), 161–167.", "Brote Milwaukee", 1994],
+        [27, "Malfertheiner, P. et al. (2017). Management of Helicobacter pylori infection—the Maastricht V/Florence Consensus Report. Gut, 66(1), 6–30.", "H. pylori", 2017],
+        [28, "International Agency for Research on Cancer (IARC). (2012). Helicobacter pylori. IARC Monographs on the Evaluation of Carcinogenic Risks to Humans, Vol. 100B. Lyon.", "H. pylori - Carcinógeno", 2012],
+        [29, "Pardo, C. & Ruiz, J. G. (2018). Estimaciones de la incidencia y mortalidad por cáncer en Colombia 2015–2020. Bogotá: Instituto Nacional de Cancerología.", "Cáncer gástrico Colombia", 2018],
+        [30, "Cellini, L. et al. (1994). Coccoid Helicobacter pylori not culturable in vitro reverts in mice. Microbiology and Immunology, 38(11), 843–850.", "Cocoides VBNC", 1994],
+        [31, "Azevedo, N. F. et al. (2007). Survival of Helicobacter pylori in water: evaluation of its influence on the transmission of the infection. Helicobacter, 12(6), 589–595.", "Cocoides VBNC", 2007],
+        [32, "Adams, B. L. et al. (2003). Survival of Helicobacter pylori in a freshwater environment. Journal of Water and Health, 1(4), 137–143.", "Cocoides VBNC", 2003],
+        [33, "Santiago, P. et al. (2015). Identification of viable Helicobacter pylori in drinking water supplies by cultural and molecular techniques. Helicobacter, 20(4), 252–259.", "Cocoides VBNC", 2015],
+        [34, "Queralt, N. et al. (2020). Helicobacter pylori in drinking water biofilms: survival and persistence under chlorination. Water Research, 175, 115685.", "Cocoides VBNC - Biofilms", 2020],
+        [35, "Klein, P. D. et al. (1991). Water source as risk factor for Helicobacter pylori infection in Peruvian children. The Lancet, 337(8756), 1503–1506.", "Transmisión hídrica H. pylori", 1991],
+        [36, "Mazari-Hiriart, M. et al. (2001). Helicobacter pylori in water sources in Mexico City. Archives of Medical Research, 32(5), 453–457.", "Transmisión hídrica H. pylori", 2001],
+        [37, "Gómez, G. A. et al. (2008). Infección por Helicobacter pylori y calidad del agua de consumo en municipios de Nariño, Colombia. Colombia Médica, 39(3 Supl 1), 52–59.", "Transmisión hídrica H. pylori - Colombia", 2008],
+        [38, "Ministerio de la Protección Social. (2007). Resolución 2115 de 2007. Diario Oficial No. 46.679. Bogotá.", "Normativa Colombia", 2007],
+        [39, "Luoto, K. et al. (2011). The effect of water source and soil supplementation on the gastric microbiota and Helicobacter pylori colonization. Scandinavian Journal of Gastroenterology, 46(9), 1045–1054.", "Cocoides VBNC - Detección", 2011],
+        [40, "Wu, J. et al. (2011). Are microbial indicators and pathogens correlated? A statistical analysis of 40 years of research. Journal of Water and Health, 9(2), 265–278.", "Indicadores microbiológicos", 2011],
+        [41, "Ministerio de Vivienda, Ciudad y Territorio. (2019). Reglamento Técnico del Sector de Agua Potable y Saneamiento Básico (RAS) Título K. Bogotá.", "Normativa Colombia", 2019],
+        [42, "Gottschalk, C. et al. (2010). Ozonation of water and wastewater: a practical guide to understanding ozone and its applications. 2nd ed. Weinheim: Wiley-VCH.", "Ozono", 2010],
+        [43, "Korich, D. G. et al. (1990). Effects of ozone, chlorine dioxide, chlorine, and monochloramine on Cryptosporidium parvum oocyst viability. Applied and Environmental Microbiology, 56(5), 1423–1428.", "Ozono vs Cloro", 1990],
+        [44, "Hijnen, W. A. M. et al. (2006). Inactivation credit of UV radiation for viruses, bacteria and protozoan (oo)cysts in water: a review. Water Research, 40(1), 3–22.", "Barreras múltiples", 2006],
+        [45, "Santiago, P. et al. (2015). Identification of viable Helicobacter pylori in drinking water supplies by cultural and molecular techniques. Helicobacter, 20(4), 252–259.", "Ozono vs H. pylori cocoidal", 2015],
+        [46, "Seitz, S. R. et al. (2011). Norovirus infectivity in humans and persistence in water. Applied and Environmental Microbiology, 77(19), 6884–6888.", "Virus resistentes", 2011],
+        [47, "Siddiqui, M. et al. (1997). Alternative disinfection byproducts. Journal of Environmental Engineering, 123(11), 1093–1100.", "DBP ozono", 1997],
+        [48, "Snyder, S. A. et al. (2007). Pharmaceuticals and endocrine disruptors in drinking water. Journal AWWA, 99(5), 102–114.", "Contaminantes emergentes", 2007],
+        [49, "World Health Organization (WHO). (2017). Guidelines for Drinking-water Quality. 4th ed. Geneva.", "Barreras múltiples", 2017],
+        [50, "Tripathi, S. & Hussain, T. (2021). Water and wastewater treatment through ozone-based technologies. Development in Wastewater Treatment Research and Processes. Elsevier.", "Ozono - Demanda", 2021],
+        [51, "Ministerio de Salud y Protección Social. (2017). Resolución 330 de 2017. Diario Oficial. Bogotá.", "Normativa ozono", 2017],
+        [52, "World Health Organization (WHO). (2017). Guidelines for Drinking-water Quality. 4th ed., incorporating the 1st addendum. Geneva.", "Barreras múltiples OMS", 2017],
+        [53, "Pawlat, J. & Stryczewska, H. D. (2011). Solar energy for water conditioning. International Journal of Environmental and Ecological Engineering, 5(9), 443–446.", "Ozonización solar", 2011],
+        [54, "Osmero, I. et al. (2021). Sistema para potabilizar agua, alimentado por energía solar fotovoltaica y del sistema electroenergético nacional. Revista de Ingeniería y Desarrollo, 8(3).", "Ozonización solar", 2021],
+        [55, "Quiñones, L. D. (2026). Evaluación de un prototipo para la desinfección del agua por ozonización con autonomía energética solar. Tesis de Maestría en Ingeniería Hidráulica e Hidrológica, Universidad del Cauca.", "Prototipo solar Colombia", 2026],
+        [56, "Ministerio de Salud y Protección Social. (2018). Resolución 844 de 2018. Diario Oficial. Bogotá.", "Principio de progresividad", 2018],
+        [57, "Congreso de Colombia. (1994). Ley 142 de 1994. Régimen de Servicios Públicos Domiciliarios. Bogotá.", "Principio de progresividad", 1994],
+        [58, "Presidencia de la República. (2025). Decreto 776 de 2025. Diario Oficial. Bogotá.", "Principio de progresividad", 2025]
+    ];
+
+    const datosEstudiosIncluidos = [
+        ["ESTUDIOS INCLUIDOS CLASIFICADOS POR TEMA"],
+        [""],
+        ["#", "Referencia", "Año", "País", "Tema", "Tipo de estudio", "Hallazgo principal", "Relevancia"],
+        [1, "Payment et al.", 1991, "Canadá", "Tema 1: Cloro como única barrera", "Epidemiológico", "35% exceso de EGI por agua clorada", "Evidencia de insuficiencia del cloro"],
+        [2, "Mac Kenzie et al.", 1994, "EE.UU.", "Tema 1: Cloro como única barrera", "Brote epidemiológico", "Brote Milwaukee: 403 000 casos, 69 muertos", "Caso emblemático de falla de cloración"],
+        [3, "Cardona et al.", 2015, "Colombia", "Tema 1: Cloro como única barrera", "Estudio de campo", "Menor remoción de Cryptosporidium con floculación reducida", "Evidencia local PTAP"],
+        [4, "Pérez-Vidal et al.", 2016, "Colombia", "Tema 1: Cloro como única barrera", "Estudio de campo", "68% de SAAR en Santander con agua no apta", "Evidencia local SAAR"],
+        [5, "Ramírez et al.", 2004, "Colombia", "Tema 1: Cloro como única barrera", "Estudio de campo", "Cryptosporidium y Giardia en agua tratada del Eje Cafetero", "Evidencia local"],
+        [6, "Guerrero-Flórez et al.", 2014, "Colombia", "Tema 1: Cloro como única barrera", "Estudio de campo", "30% de muestras positivas en Cundinamarca", "Evidencia local"],
+        [7, "Cellini et al.", 1994, "Italia", "Tema 2: Cocoides VBNC", "Experimental", "H. pylori cocoidal revierte a forma espiral en ratones", "Viabilidad de formas cocoides"],
+        [8, "Adams et al.", 2003, "EE.UU.", "Tema 2: Cocoides VBNC", "Experimental", "H. pylori cocoidal sobrevive a 1,0 mg/L de cloro", "Resistencia al cloro"],
+        [9, "Santiago et al.", 2015, "España", "Tema 2: Cocoides VBNC", "Experimental", "Formas cocoidales sobreviven 72 h a 1,0 mg/L de cloro", "Resistencia al cloro"],
+        [10, "Queralt et al.", 2020, "España", "Tema 2: Cocoides VBNC", "Experimental", "H. pylori VBNC en biofilms protegido del cloro", "Biofilms y resistencia"],
+        [11, "Gómez et al.", 2008, "Colombia", "Tema 2: Cocoides VBNC", "Epidemiológico", "Correlación entre calidad del agua y H. pylori en Nariño", "Evidencia local transmisión hídrica"],
+        [12, "Klein et al.", 1991, "Perú", "Tema 2: Cocoides VBNC", "Epidemiológico", "Prevalencia de H. pylori mayor en niños con agua no tratada", "Transmisión hídrica"],
+        [13, "Mazari-Hiriart et al.", 2001, "México", "Tema 2: Cocoides VBNC", "Estudio de campo", "ADN de H. pylori en 83% de muestras de agua de pozo", "Detección molecular"],
+        [14, "Korich et al.", 1990, "EE.UU.", "Tema 3: Ozono como barrera", "Experimental", "CT ozono para Cryptosporidium: 1,3–2,6 mg·min/L", "Eficacia ozono vs cloro"],
+        [15, "Gomes et al.", 2019, "Portugal", "Tema 3: Ozono como barrera", "Revisión", "Ozono superior al cloro frente a protozoarios resistentes", "Revisión consolidada"],
+        [16, "von Gunten", 2003, "Suiza", "Tema 3: Ozono como barrera", "Revisión", "Cinética de ozonización y formación de subproductos", "Fundamentos técnicos"],
+        [17, "Hijnen et al.", 2006, "Países Bajos", "Tema 3: Ozono como barrera", "Revisión", "Inactivación de protozoarios por UV y ozono", "Barreras múltiples"],
+        [18, "Pawlat & Stryczewska", 2011, "Polonia", "Tema 4: Ozonización solar", "Experimental", "Viabilidad técnica de ozonización solar", "Prototipo internacional"],
+        [19, "Osmero et al.", 2021, "Perú", "Tema 4: Ozonización solar", "Experimental", "Prototipo solar con ozonización para comunidades aisladas", "Prototipo internacional"],
+        [20, "Quiñones et al.", 2026, "Colombia", "Tema 4: Ozonización solar", "Tesis de maestría", "Prototipo solar 190 Wp: >90% reducción de Enterococcus a 15 min", "Prototipo local"]
+    ];
+
+    // ============================================================
+    // FUNCIÓN DESCARGAR PDF
+    // ============================================================
+    function descargarPDF() {
+        const mensaje = `
+📄 INSTRUCCIONES PARA DESCARGAR PDF:
+
+Se abrirá el diálogo de impresión de su navegador.
+
+Para guardar como PDF:
+• Destino: "Guardar como PDF" o "Microsoft Print to PDF"
+• Diseño: Vertical
+• Márgenes: Predeterminados o Mínimos
+• Opciones: Habilitar "Gráficos de fondo" para conservar colores
+
+¿Desea continuar?
+        `;
+
+        if (confirm(mensaje)) {
+            const tituloOriginal = document.title;
+            document.title = "Busqueda_Sistematica_Ozonizacion_Solar_Cocoides_Colombia";
+            window.print();
+            setTimeout(() => {
+                document.title = tituloOriginal;
+            }, 1000);
+        }
+    }
+
+    // ============================================================
+    // FUNCIÓN DESCARGAR EXCEL
+    // ============================================================
+    function descargarExcel() {
+        try {
+            // Crear libro de trabajo
+            const wb = XLSX.utils.book_new();
+
+            // Hoja 1: Metodología
+            const ws1 = XLSX.utils.aoa_to_sheet(datosMetodologia);
+            ws1['!cols'] = [{wch: 30}, {wch: 100}];
+            XLSX.utils.book_append_sheet(wb, ws1, "Metodología");
+
+            // Hoja 2: Referencias
+            const ws2 = XLSX.utils.aoa_to_sheet(datosReferencias);
+            ws2['!cols'] = [{wch: 5}, {wch: 120}, {wch: 30}, {wch: 8}];
+            XLSX.utils.book_append_sheet(wb, ws2, "Referencias");
+
+            // Hoja 3: Estudios incluidos
+            const ws3 = XLSX.utils.aoa_to_sheet(datosEstudiosIncluidos);
+            ws3['!cols'] = [{wch: 5}, {wch: 25}, {wch: 8}, {wch: 12}, {wch: 35}, {wch: 20}, {wch: 50}, {wch: 30}];
+            XLSX.utils.book_append_sheet(wb, ws3, "Estudios Incluidos");
+
+            // Descargar archivo
+            XLSX.writeFile(wb, "Busqueda_Sistematica_Ozonizacion_Solar_Cocoides.xlsx");
+        } catch (error) {
+            alert("Error al generar el archivo Excel: " + error.message);
+        }
+    }
+
+    // Atajo de teclado: Ctrl + Shift + P para PDF
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+            e.preventDefault();
+            descargarPDF();
+        }
+        if (e.ctrlKey && e.shiftKey && e.key === 'E') {
+            e.preventDefault();
+            descargarExcel();
+        }
+    });
+</script>
+
+</body>
+</html>
