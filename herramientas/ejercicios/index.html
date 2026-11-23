@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartilla de Dinámica de Fluidos - Mecánica de Fluidos</title>
+  
+  <!-- Tipografías de Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Estilos de KaTeX para Fórmulas Matemáticas Hermosas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <!-- KaTeX Auto-render Extension -->
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Estilos Personalizados de la Cartilla -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  
+  <!-- Encabezado Principal (Desaparece en Impresión) -->
+  <header class="app-header no-print">
+    <div class="header-container">
+      <div class="header-logo">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 21 3c-1.5 4-2 5.5-3.1 11.2A7 7 0 0 1 11 20z" />
+          <path d="M9 22L11 20" />
+          <path d="M11 20c2-3 4.5-5.5 7.5-7.5" />
+        </svg>
+        <div class="header-text">
+          <h1>FÍSICA DIVULGATIVA</h1>
+          <p>Cartilla de Mecánica de Fluidos</p>
+        </div>
+      </div>
+      
+      <!-- Controles de Encabezado -->
+      <div class="header-controls">
+        <!-- Barra de Progreso General -->
+        <div class="progress-widget" title="Progreso de estudio de los ejercicios">
+          <span class="progress-label">Progreso: <strong id="progress-ratio">0/20</strong></span>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <button id="theme-toggle" class="btn btn-icon" aria-label="Cambiar Tema" title="Alternar Modo Oscuro/Claro">
+          <!-- Icono de Sol / Luna -->
+          <svg class="sun-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.72" x2="5.64" y2="18.3"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg class="moon-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+        
+        <button id="print-page" class="btn btn-outline" title="Imprimir Cartilla o Guardar PDF">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"/>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+          </svg>
+          <span>PDF / Imprimir</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenedor del Layout Principal -->
+  <div class="app-layout">
+    
+    <!-- Panel Lateral Izquierdo: Buscador y Lista de Ejercicios (Oculto en Impresión) -->
+    <aside class="app-sidebar no-print">
+      <div class="sidebar-header">
+        <h2 class="sidebar-title">Ejercicios de Dinámica</h2>
+        
+        <!-- Input de Búsqueda -->
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="exercise-search" placeholder="Buscar ejercicio, fórmula o ley...">
+        </div>
+
+        <!-- Filtros por Principio -->
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-filter="all">Todos</button>
+          <button class="filter-tab" data-filter="continuidad" title="Ecuación de Continuidad">Continuidad</button>
+          <button class="filter-tab" data-filter="bernoulli" title="Ecuación de Bernoulli">Bernoulli</button>
+          <button class="filter-tab" data-filter="torricelli" title="Teorema de Torricelli">Torricelli</button>
+          <button class="filter-tab" data-filter="venturi" title="Efecto Venturi">Venturi</button>
+          <button class="filter-tab" data-filter="poiseuille" title="Viscosidad y Ley de Poiseuille">Poiseuille</button>
+        </div>
+      </div>
+
+      <!-- Lista de Ejercicios -->
+      <nav class="exercise-list" id="exercise-list-container">
+        <!-- Renderizado dinámicamente con Javascript -->
+      </nav>
+    </aside>
+
+    <!-- Panel Central Derecho: Cartilla de Lectura / Detalle de Ejercicios -->
+    <main class="app-content">
+      
+      <!-- Botón volver (Visible sólo en móviles para regresar a la lista de ejercicios) -->
+      <button id="mobile-back" class="btn btn-text no-print" style="display: none;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+        <span>Volver al índice</span>
+      </button>
+
+      <div class="booklet-page" id="booklet-page-view">
+        <!-- Portada de la Cartilla o Ejercicio Activo -->
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Base de datos de ejercicios -->
+  <script src="exercises-data.js"></script>
+  <!-- Lógica de control de la aplicación -->
+  <script src="app.js"></script>
+</body>
+</html>

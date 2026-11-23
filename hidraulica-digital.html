@@ -21,6 +21,14 @@
   <style>
     .figure svg{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#fffdf8}
     .figure figcaption{margin-top:.6rem}
+    .cartilla-preview{border:1px solid var(--line);border-radius:10px;background:#fffdf8;overflow:hidden}
+    .cartilla-preview__head{display:flex;justify-content:space-between;gap:1rem;padding:.8rem 1rem;background:#0d3b66;color:#fff;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase}
+    .cartilla-preview__bar{height:6px;background:#e8e2d4}
+    .cartilla-preview__bar span{display:block;height:100%;width:35%;background:#f4a300}
+    .cartilla-preview__body{padding:1rem 1.1rem 1.2rem}
+    .cartilla-preview__body h4{margin:.15rem 0 .3rem;font-size:1.05rem}
+    .cartilla-preview__card{border:1px solid var(--line);border-radius:8px;padding:.75rem .8rem;margin-top:.8rem;background:var(--bg)}
+    .cartilla-preview__tag{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#215a45;background:#eef4f1;border:1px solid #c9dbd2;border-radius:999px;padding:.15rem .5rem}
   </style>
 </head>
 <body>
@@ -240,6 +248,38 @@
         </svg>
         <figcaption>Esquema de un perfil M2. La herramienta calcula la curva y la tabla de tirantes.</figcaption>
       </figure>
+    </div>
+
+    <div class="split" style="margin-top:2.5rem">
+      <figure class="figure">
+        <div class="cartilla-preview" aria-hidden="true">
+          <div class="cartilla-preview__head"><span>Física divulgativa</span><span>20 ejercicios</span></div>
+          <div class="cartilla-preview__bar"><span></span></div>
+          <div class="cartilla-preview__body">
+            <p class="eyebrow">Ejercicio 03</p>
+            <h4>Boquilla para manguera de riego</h4>
+            <p class="small muted">Continuidad y Bernoulli con datos editables.</p>
+            <div class="cartilla-preview__card">
+              <span class="cartilla-preview__tag">Resuelto</span>
+              <p class="small">Progreso 7 de 20</p>
+            </div>
+          </div>
+        </div>
+        <figcaption>Vista esquemática de la cartilla: ejercicios con pasos, fórmulas y progreso.</figcaption>
+      </figure>
+      <div class="prose">
+        <p class="eyebrow">Herramienta 02</p>
+        <h3>Cartilla de dinámica de fluidos</h3>
+        <p>20 ejercicios interactivos para explicar continuidad, Bernoulli, presión y aplicaciones. Cada uno trae datos editables, pasos de solución, fórmulas y una respuesta que se recalcula.</p>
+        <ul>
+          <li>20 ejercicios de continuidad, Bernoulli, Venturi, sifones y aplicaciones.</li>
+          <li>Fórmulas renderizadas con KaTeX y modo claro/oscuro.</li>
+          <li>Progreso guardado en el navegador y vista para imprimir.</li>
+        </ul>
+        <p class="small muted">Herramienta didáctica. Los datos de los ejercicios son editables; revisa las hipótesis antes de usarlos en diseño.</p>
+        <p class="mt-2"><a class="btn btn--primary" href="herramientas/ejercicios/">Abrir cartilla <svg aria-hidden="true"><use href="#i-arrow"></use></svg></a></p>
+        <p class="small muted mt-2"><a href="herramientas/ejercicios/cartilla-dinamica-fluidos.zip" download>Descargar ZIP</a> · incluye HTML, CSS y JavaScript. Las fórmulas usan KaTeX desde CDN.</p>
+      </div>
     </div>
   </div>
 </section>
