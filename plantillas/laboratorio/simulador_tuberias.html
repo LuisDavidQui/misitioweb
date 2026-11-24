@@ -510,20 +510,15 @@
           return f * (l / d) * (v * v) / (2 * G);
         };
 
-        // Parallel flow splitting: solve hf1(q1) = hf2(q2), q1 + q2 = Q
+        // Parallel flow splitting: h1 = h2 => Q1, Q2
         const paraleloSplitting = computed(() => {
           const qTot = totalQ.value;
-          const eps = materialRoughness.value;
-          let lo = 0, hi = qTot;
-          for (let i = 0; i < 60; i++) {
-            const q1 = (lo + hi) / 2;
-            const q2 = qTot - q1;
-            const hf1 = calcHeadLoss(D1.value, L1.value, q1, eps);
-            const hf2 = calcHeadLoss(D2.value, L2.value, q2, eps);
-            if (hf1 > hf2) hi = q1; else lo = q1;
-          }
-          const q1 = (lo + hi) / 2;
-          return { q1, q2: qTot - q1 };
+          // Approximate splitting via diameter and length: Q ~ sqrt(D^5 / (f * L))
+          const K1 = Math.sqrt(Math.pow(D1.value, 5) / L1.value);
+          const K2 = Math.sqrt(Math.pow(D2.value, 5) / L2.value);
+          const q1 = qTot * (K1 / (K1 + K2));
+          const q2 = qTot * (K2 / (K1 + K2));
+          return { q1, q2 };
         });
 
         const paraleloQ1 = computed(() => paraleloSplitting.value.q1);
@@ -620,15 +615,10 @@
           const serieLoss = Qs.map(qLs => calcHeadLoss(D1.value, L1.value, qLs/1000, eps) + calcHeadLoss(D2.value, L2.value, qLs/1000, eps));
           const paraleloLoss = Qs.map(qLs => {
             const qT = qLs / 1000;
-            let lo = 0, hi = qT;
-            for (let i = 0; i < 60; i++) {
-              const q1 = (lo + hi) / 2;
-              const q2 = qT - q1;
-              const hf1 = calcHeadLoss(D1.value, L1.value, q1, eps);
-              const hf2 = calcHeadLoss(D2.value, L2.value, q2, eps);
-              if (hf1 > hf2) hi = q1; else lo = q1;
-            }
-            return calcHeadLoss(D1.value, L1.value, (lo + hi) / 2, eps);
+            const K1 = Math.sqrt(Math.pow(D1.value, 5) / L1.value);
+            const K2 = Math.sqrt(Math.pow(D2.value, 5) / L2.value);
+            const q1 = qT * (K1 / (K1 + K2));
+            return calcHeadLoss(D1.value, L1.value, q1, eps);
           });
 
           if (tuberiasChart) tuberiasChart.destroy();
