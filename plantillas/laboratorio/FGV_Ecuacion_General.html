@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Flujo Gradualmente Variado – Ecuación General y Simuladores de Perfiles</title>
+<!-- KaTeX para renderizar fórmulas matemáticas -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css"/>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: 'Georgia', 'Times New Roman', serif; background: #ffffff; color: #111111; min-height: 100vh; }
+
+  /* HEADER */
+  header { background: #003087; color: #ffffff; padding: 26px 36px 20px; border-bottom: 6px solid #FFD700; }
+  header .inst { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: #a8c8f8; margin-bottom: 6px; }
+  header h1 { font-size: 1.65rem; font-weight: bold; line-height: 1.3; }
+  header h2 { font-size: 1.05rem; font-weight: normal; color: #FFD700; margin-top: 6px; }
+  header .subtitle { margin-top: 8px; font-size: 0.82rem; color: #c8dcf0; font-style: italic; }
+
+  /* TAB BAR */
+  nav#tabbar { background: #f0f0f0; border-bottom: 3px solid #003087; display: flex; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; overflow-x: auto; }
+  nav#tabbar button { background: #f0f0f0; border: none; border-right: 1px solid #cccccc; padding: 12px 16px; font-family: 'Georgia', serif; font-size: 0.79rem; font-weight: bold; color: #333333; cursor: pointer; text-align: center; line-height: 1.3; white-space: nowrap; transition: all 0.2s; }
+  nav#tabbar button:hover { background: #d0dff5; color: #003087; }
+  nav#tabbar button.active { background: #003087; color: #FFD700; border-bottom: 3px solid #FFD700; }
+
+  /* MAIN CONTENT */
+  main { padding: 28px 36px 60px; max-width: 1240px; margin: 0 auto; }
+  .tab-content { display: none; animation: fadein 0.25s ease; }
+  .tab-content.active { display: block; }
+  @keyframes fadein { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+
+  /* TYPOGRAPHY */
+  h3 { font-size: 1.3rem; color: #003087; border-left: 5px solid #FFD700; padding-left: 12px; margin: 26px 0 14px; }
+  h4 { font-size: 1.05rem; color: #CC0000; margin: 20px 0 10px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+  h5 { font-size: 0.95rem; color: #006400; margin: 16px 0 8px; }
+  p { line-height: 1.8; margin-bottom: 14px; text-align: justify; }
+  ul, ol { margin: 10px 0 14px 28px; line-height: 1.8; }
+  li { margin-bottom: 5px; }
+  strong { color: #003087; }
+  em { color: #555; }
+  code { font-family: 'Courier New', monospace; font-size: 0.88rem; background: #eef3fb; padding: 2px 6px; border-radius: 3px; color: #003087; }
+
+  /* EQUATION BOXES */
+  .eq-box { background: #f8f9fd; border: 2px solid #003087; border-radius: 6px; padding: 16px 20px; margin: 18px 0; text-align: center; overflow-x: auto; }
+  .eq-box.red { border-color: #CC0000; background: #fff5f5; }
+  .eq-box.green { border-color: #006400; background: #f2faf2; }
+  .eq-box.yellow { border-color: #B8860B; background: #fffde8; }
+  .eq-caption { font-size: 0.80rem; color: #555; font-style: italic; margin-top: 8px; text-align: right; }
+
+  /* STEP BOXES */
+  .step-container { margin: 18px 0; }
+  .step { display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start; }
+  .step-num { min-width: 36px; height: 36px; border-radius: 50%; background: #003087; color: #FFD700; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-body { flex: 1; }
+
+  /* CALLOUTS */
+  .callout { border-left: 5px solid #003087; background: #eef3fb; padding: 14px 18px; margin: 18px 0; border-radius: 0 6px 6px 0; }
+  .callout.red { border-color: #CC0000; background: #fff5f5; }
+  .callout.green { border-color: #006400; background: #f2faf2; }
+  .callout.yellow { border-color: #B8860B; background: #fffde8; }
+  .callout-title { font-weight: bold; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; color: #003087; }
+  .callout.red .callout-title { color: #CC0000; }
+  .callout.green .callout-title { color: #006400; }
+  .callout.yellow .callout-title { color: #B8860B; }
+
+  /* TABLES */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.88rem; }
+  thead tr { background: #003087; color: #FFD700; }
+  th { padding: 9px 12px; text-align: center; font-weight: bold; }
+  td { padding: 8px 12px; border: 1px solid #ccc; text-align: center; }
+  tr:nth-child(even) td { background: #f4f7fc; }
+  tr:hover td { background: #e8eef9; }
+
+  /* PROFILE CARDS */
+  .profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 14px; margin: 18px 0; }
+  .profile-card { border: 2px solid #003087; border-radius: 6px; padding: 14px 16px; background: #fff; }
+  .profile-card .pc-header { font-size: 0.98rem; font-weight: bold; color: #fff; background: #003087; margin: -14px -16px 12px; padding: 8px 14px; border-radius: 4px 4px 0 0; }
+  .profile-card.red { border-color: #CC0000; } .profile-card.red .pc-header { background: #CC0000; }
+  .profile-card.green { border-color: #006400; } .profile-card.green .pc-header { background: #006400; }
+  .profile-card.yellow { border-color: #B8860B; } .profile-card.yellow .pc-header { background: #B8860B; }
+
+  /* ============================================================ */
+  /* SIMULATOR LAYOUT & SIDEBAR PRESET PANEL                      */
+  /* ============================================================ */
+  .sim-layout { display: flex; gap: 20px; align-items: flex-start; margin-top: 18px; }
+  .sim-main { flex: 1; min-width: 0; }
+
+  .preset-panel {
+    min-width: 290px; max-width: 290px;
+    background: #f7f9fd;
+    border: 2px solid #003087;
+    border-radius: 8px;
+    position: sticky; top: 70px;
+    font-family: 'Georgia', serif;
+    box-shadow: 0 4px 12px rgba(0,48,135,0.08);
+    overflow: hidden;
+  }
+  .pp-header {
+    background: #003087; color: #FFD700;
+    padding: 10px 14px;
+    font-size: 0.84rem; font-weight: bold;
+    text-align: center; text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .pp-body { padding: 12px 14px 16px; max-height: calc(100vh - 120px); overflow-y: auto; }
+  .pp-sec {
+    font-size: 0.72rem; font-weight: bold; color: #003087;
+    text-transform: uppercase; letter-spacing: 0.10em;
+    margin: 12px 0 6px;
+    border-top: 1px solid #ccd5e8; padding-top: 8px;
+  }
+  .pp-sec:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+
+  /* Matrix 5x3 table */
+  .matrix-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 0.76rem; }
+  .matrix-table th { background: #003087; color: #fff; padding: 4px 2px; font-size: 0.70rem; }
+  .matrix-table td { padding: 3px 2px; border: 1px solid #d0d7e5; background: #fff; }
+  .matrix-btn {
+    width: 100%; padding: 5px 2px; border: 1.5px solid #bbb; border-radius: 4px;
+    font-family: 'Georgia', serif; font-size: 0.75rem; font-weight: bold;
+    cursor: pointer; background: #fdfdfd; transition: all 0.15s;
+  }
+  .matrix-btn:hover { background: #eaf1fb; border-color: #003087; }
+  .matrix-btn.active { background: #003087 !important; color: #FFD700 !important; border-color: #003087 !important; box-shadow: 0 0 5px rgba(0,48,135,0.4); }
+  .matrix-btn.special { background: #fffbf0; border-style: dashed; }
+
+  /* Slope buttons list */
+  .slope-btns { display: flex; flex-direction: column; gap: 5px; }
+  .slope-btn {
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+    background: #fff; border: 1.5px solid #dde3f0; border-radius: 5px;
+    cursor: pointer; font-family: 'Georgia', serif; font-size: 0.77rem;
+    text-align: left; width: 100%; transition: all 0.15s;
+  }
+  .slope-btn:hover { border-color: #003087; background: #eef3fb; }
+  .slope-btn.active { border-width: 2px; background: #fff; }
+  .slope-badge {
+    display: flex; align-items: center; justify-content: center;
+    min-width: 24px; height: 24px; border-radius: 4px;
+    color: #fff; font-weight: bold; font-size: 0.90rem; flex-shrink: 0;
+  }
+  .slope-info { line-height: 1.25; flex: 1; }
+  .slope-info b { display: block; font-size: 0.79rem; color: #111; }
+  .slope-info small { font-size: 0.68rem; color: #666; }
+
+  /* Zone buttons */
+  .zone-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px; }
+  .zone-btn {
+    padding: 6px 4px; border: 2px solid #dde3f0; border-radius: 5px;
+    cursor: pointer; font-family: 'Georgia', serif; font-size: 0.75rem;
+    text-align: center; background: #fff; width: 100%; transition: all 0.15s; line-height: 1.25;
+  }
+  .zone-btn b { display: block; font-size: 0.82rem; }
+  .zone-btn small { font-size: 0.64rem; color: #666; display: block; }
+  .zone-btn:hover { background: #f0f4fc; }
+  .zone-btn.active { color: #fff !important; }
+  .zone-btn.active small { color: rgba(255,255,255,0.9) !important; }
+
+  /* Profile Card inside Sidebar */
+  .pp-pcard { margin-top: 10px; padding: 10px 12px; background: #fff; border-radius: 6px; border: 1.5px solid #003087; font-size: 0.78rem; line-height: 1.5; }
+  .pp-pname { font-size: 1.05rem; font-weight: bold; margin-bottom: 4px; }
+  .pp-pcond { font-family: 'Courier New', monospace; font-size: 0.75rem; background: #eef3fb; padding: 3px 6px; border-radius: 3px; margin-bottom: 6px; color: #003087; font-weight: bold; }
+  
+  /* Mini visual zone layer */
+  .zone-diag { border: 1px solid #ccd5e8; border-radius: 4px; overflow: hidden; margin: 8px 0; font-size: 0.70rem; }
+  .zd-zone { padding: 4px 6px; text-align: center; font-weight: bold; min-height: 18px; transition: all 0.2s; }
+  .zd-line { padding: 2px 6px; font-size: 0.66rem; background: #fff; font-weight: bold; border-top: 2px dashed; }
+  
+  .pp-pdesc { font-size: 0.74rem; color: #222; line-height: 1.5; margin: 7px 0 8px; text-align: justify; }
+  .pp-pynyc { font-size: 0.74rem; border-top: 1px solid #e0e6f2; padding-top: 6px; margin-bottom: 8px; }
+  .apply-btn {
+    width: 100%; padding: 9px 6px;
+    background: #003087; color: #FFD700; border: none;
+    font-family: 'Georgia', serif; font-size: 0.88rem; font-weight: bold;
+    border-radius: 4px; cursor: pointer; transition: background 0.2s;
+  }
+  .apply-btn:hover { background: #0047b3; }
+
+  /* Simulator panel */
+  .sim-panel { background: #f8f9fd; border: 2px solid #003087; border-radius: 8px; padding: 20px; }
+  .sim-panel h4 { margin-top: 0; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 12px; margin-bottom: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 0.80rem; font-weight: bold; color: #003087; }
+  .form-group input { padding: 7px 9px; border: 1px solid #aaa; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.90rem; }
+  
+  .btn-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .btn { background: #003087; color: #FFD700; border: none; padding: 9px 18px; font-family: 'Georgia', serif; font-size: 0.90rem; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+  .btn:hover { background: #0047b3; }
+  .btn.red { background: #CC0000; color: #fff; } .btn.red:hover { background: #aa0000; }
+  .btn.green { background: #006400; color: #fff; } .btn.green:hover { background: #005000; }
+  .btn.outline { background: #fff; color: #003087; border: 1.5px solid #003087; }
+  .btn.outline:hover { background: #eef3fb; }
+  .btn.outline.active { background: #003087; color: #FFD700; }
+
+  canvas { border: 1px solid #003087; border-radius: 5px; background: #fff; display: block; margin: 10px auto 0; max-width: 100%; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+  .result-table { margin-top: 16px; overflow-x: auto; }
+  .result-table table { font-size: 0.76rem; }
+
+  footer { background: #111; color: #ccc; text-align: center; padding: 16px; font-size: 0.78rem; margin-top: 40px; }
+
+  @media (max-width: 900px) {
+    main { padding: 16px 14px 40px; }
+    header { padding: 16px 14px; }
+    header h1 { font-size: 1.25rem; }
+    .sim-layout { flex-direction: column; }
+    .preset-panel { min-width: 100%; max-width: 100%; position: relative; top: 0; }
+    nav#tabbar button { padding: 8px 10px; font-size: 0.72rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inst">Hidráulica de Canales Abiertos — Flujo en Superficie Libre</div>
+  <h1>Flujo Gradualmente Variado (FGV)</h1>
+  <h2>Ecuación General, Clasificación de los 15 Perfiles y Métodos de Cálculo</h2>
+  <div class="subtitle">Derivación físico-matemática · Líneas LPN ($y_n$), LPC ($y_c$) y Lámina de Agua $y(x)$ · Simuladores Interactivos</div>
+</header>
+
+<nav id="tabbar">
+  <button class="active" onclick="showTab('t0',this)">① Conceptos Previos</button>
+  <button onclick="showTab('t1',this)">② Flujo Uniforme</button>
+  <button onclick="showTab('t2',this)">③ Energía en FGV</button>
+  <button onclick="showTab('t3',this)">④ Derivación Ecuación</button>
+  <button onclick="showTab('t4',this)">⑤ Número de Froude</button>
+  <button onclick="showTab('t5',this)">⑥ Perfiles FGV</button>
+  <button onclick="showTab('t6',this)">⑦ Controles de Flujo</button>
+  <button onclick="showTab('t7',this)">⑧ 🔬 Simulador Integración Gráfica</button>
+  <button onclick="showTab('t8',this)">⑨ 🔬 Simulador Tramo a Tramo</button>
+</nav>
+
+<main>
+
+<!-- TAB 0 -->
+<section id="t0" class="tab-content active">
+  <h3>① Conceptos Previos Fundamentales</h3>
+  <h4>1.1 Flujo en Canales Abiertos</h4>
+  <p>Un canal abierto es una conducción donde el fluido posee una <strong>superficie libre</strong> en contacto directo con la atmósfera. La presión en la superficie es la atmosférica ($P=0$ manométrica). El tirante hidráulico $y$ es la profundidad del agua medida perpendicularmente a la solera del fondo.</p>
+  <h4>1.2 Variables hidráulicas clave</h4>
+  <table><thead><tr><th>Símbolo</th><th>Nombre</th><th>Unidades</th><th>Descripción</th></tr></thead><tbody>
+    <tr><td>$y$</td><td>Tirante hidráulico</td><td>m</td><td>Profundidad del agua perpendicular al fondo</td></tr>
+    <tr><td>$y_n$</td><td>Tirante normal (LPN)</td><td>m</td><td>Profundidad de equilibrio uniforme ($S_f = S_0$)</td></tr>
+    <tr><td>$y_c$</td><td>Tirante crítico (LPC)</td><td>m</td><td>Profundidad con energía específica mínima ($Fr=1$)</td></tr>
+    <tr><td>$V$</td><td>Velocidad media</td><td>m/s</td><td>$V = Q/A$</td></tr>
+    <tr><td>$Q$</td><td>Caudal</td><td>m³/s</td><td>Flujo volumétrico continuo</td></tr>
+    <tr><td>$A$</td><td>Área hidráulica</td><td>m²</td><td>Sección transversal mojada ($A = b \cdot y$ en rectangular)</td></tr>
+    <tr><td>$T$</td><td>Ancho superficial</td><td>m</td><td>Ancho de la superficie libre ($T = dA/dy$)</td></tr>
+    <tr><td>$R$</td><td>Radio hidráulico</td><td>m</td><td>$R = A/P_m$</td></tr>
+    <tr><td>$S_0$</td><td>Pendiente del fondo</td><td>—</td><td>$S_0 = -dz/dx$, positiva cuando el fondo desciende</td></tr>
+    <tr><td>$S_f$</td><td>Pendiente de fricción</td><td>—</td><td>Pérdida continua de energía por unidad de longitud</td></tr>
+  </tbody></table>
+  <h4>1.3 Energía Específica y Regímenes de Flujo</h4>
+  <div class="eq-box yellow">$$E = y + \frac{V^2}{2g} = y + \frac{Q^2}{2gA^2}$$<div class="eq-caption">Energía específica: carga total referida a la solera del fondo</div></div>
+  <div class="profile-grid">
+    <div class="profile-card red"><div class="pc-header">Flujo Crítico — $y = y_c$, $Fr = 1$</div><p>Energía específica mínima. La celeridad de onda iguala a la velocidad de flujo. Estado de transición hidráulica.</p></div>
+    <div class="profile-card green"><div class="pc-header">Flujo Subcrítico — $y > y_c$, $Fr &lt; 1$</div><p>Flujo tranquilo y profundo. Las perturbaciones superficiales viajan aguas arriba y abajo. El control hidráulico se ubica <strong>aguas abajo</strong>.</p></div>
+    <div class="profile-card"><div class="pc-header">Flujo Supercrítico — $y &lt; y_c$, $Fr > 1$</div><p>Flujo veloz y somero. Las ondas no pueden viajar contra la corriente. El control hidráulico se ubica <strong>aguas arriba</strong>.</p></div>
+  </div>
+</section>
+
+<!-- TAB 1 -->
+<section id="t1" class="tab-content">
+  <h3>② Flujo Uniforme: Base de Comparación del FGV</h3>
+  <h4>2.1 Equilibrio de Fuerzas y Fórmula de Manning</h4>
+  <p>En flujo uniforme, la componente gravitacional del peso del agua equilibra exactamente la fuerza de resistencia por fricción en el perímetro mojado. La pendiente de fricción es igual a la pendiente de fondo ($S_f = S_0$), por lo que $dy/dx = 0$.</p>
+  <div class="eq-box yellow">$$V = \frac{1}{n} R^{2/3} S_0^{1/2} \qquad Q = \frac{1}{n} A R^{2/3} S_0^{1/2}$$<div class="eq-caption">Ecuación de Manning-Strickler · $n$ = coeficiente de rugosidad [s/m^{1/3}]</div></div>
+  <p>Despejando la pendiente de fricción local para cualquier sección con tirante $y$:</p>
+  <div class="eq-box red">$$S_f = \frac{n^2 Q^2}{A^2 R^{4/3}} = \frac{n^2 V^2}{R^{4/3}}$$<div class="eq-caption">Pendiente de fricción de Manning — función no lineal de $y$ utilizada en FGV</div></div>
+  <h4>2.2 Tirante Normal ($y_n$) y Tirante Crítico ($y_c$)</h4>
+  <p>El <strong>tirante normal $y_n$</strong> (Línea LPN) define el estado uniforme. El <strong>tirante crítico $y_c$</strong> (Línea LPC) define la condición $Fr = 1$ donde $dE/dy = 0$:</p>
+  <div class="eq-box green">$$\frac{Q^2 T}{g A^3} = 1 \qquad \Longrightarrow \qquad \text{Canal rectangular: } y_c = \sqrt[3]{\frac{q^2}{g}} = \sqrt[3]{\frac{Q^2}{b^2 g}}$$</div>
+  <h4>2.3 Clasificación de las 5 Pendientes según $S_0$ vs $S_c$</h4>
+  <table><thead><tr><th>Clave</th><th>Tipo de Pendiente</th><th>Criterio</th><th>Posición de Líneas ($y_n$ vs $y_c$)</th><th>Régimen Uniforme</th></tr></thead><tbody>
+    <tr><td style="color:#006400;font-weight:bold">M</td><td>Moderada / Suave (Mild)</td><td>$0 &lt; S_0 &lt; S_c$</td><td><strong>$y_n > y_c$</strong> (LPN arriba de LPC)</td><td>Subcrítico</td></tr>
+    <tr><td style="color:#B8860B;font-weight:bold">C</td><td>Crítica (Critical)</td><td>$S_0 = S_c$</td><td><strong>$y_n = y_c$</strong> (LPN y LPC coincidentes)</td><td>Crítico</td></tr>
+    <tr><td style="color:#CC0000;font-weight:bold">S</td><td>Pronunciada / Fuerte (Steep)</td><td>$S_0 > S_c$</td><td><strong>$y_n &lt; y_c$</strong> (LPN abajo de LPC)</td><td>Supercrítico</td></tr>
+    <tr><td style="color:#003087;font-weight:bold">H</td><td>Horizontal</td><td>$S_0 = 0$</td><td><strong>$y_n \to \infty$</strong> (LPN en el infinito)</td><td>Sin flujo uniforme</td></tr>
+    <tr><td><strong>A</strong></td><td>Adversa (Adverse)</td><td>$S_0 &lt; 0$</td><td><strong>$\nexists y_n$</strong> (no hay tirante normal real)</td><td>Sin flujo uniforme</td></tr>
+  </tbody></table>
+</section>
+
+<!-- TAB 2 -->
+<section id="t2" class="tab-content">
+  <h3>③ Análisis de Energía en Flujo Gradualmente Variado</h3>
+  <h4>3.1 Definición e Hipótesis Fundamentales</h4>
+  <p>El <strong>Flujo Gradualmente Variado (FGV)</strong> es un flujo permanente ($\partial Q/\partial t = 0$) pero no uniforme ($\partial y/\partial x \neq 0$), donde las variaciones de tirante son tan suaves que las líneas de corriente son prácticamente paralelas y la distribución de presiones es hidrostática.</p>
+  <div class="callout"><div class="callout-title">Hipótesis de la teoría de FGV</div><ul>
+    <li>Canal prismático con sección transversal constante y pendiente constante.</li>
+    <li>Distribución de presión hidrostática en todas las secciones transversales.</li>
+    <li>La pérdida de carga por fricción $S_f$ a un tirante $y$ se evalúa con la fórmula de flujo uniforme (Manning).</li>
+    <li>Coeficiente de energía cinética de Coriolis $\alpha \approx 1$.</li>
+  </ul></div>
+  <h4>3.2 Ecuación Diferencial de Energía</h4>
+  <div class="eq-box">$$H = z + y + \frac{V^2}{2g} \qquad \Longrightarrow \qquad \frac{dH}{dx} = \frac{dz}{dx} + \frac{dy}{dx} + \frac{d}{dx}\!\left(\frac{V^2}{2g}\right) = -S_f$$</div>
+  <p>Puesto que $dz/dx = -S_0$ (el fondo baja con pendiente $S_0$):</p>
+  <div class="eq-box yellow">$$\frac{dy}{dx} + \frac{d}{dx}\!\left(\frac{V^2}{2g}\right) = S_0 - S_f$$</div>
+  <h4>3.3 Derivada del Término Cinético</h4>
+  <p>Continuidad: $V = Q/A$ con $Q = \text{constante}$. Regla de la cadena con $dA/dx = (dA/dy)(dy/dx) = T\,(dy/dx)$:</p>
+  <div class="eq-box green">$$\frac{d}{dx}\!\left(\frac{Q^2}{2gA^2}\right) = \frac{Q^2}{2g}\cdot\left(-2A^{-3}\right)\frac{dA}{dx} = -\frac{Q^2 T}{g A^3}\,\frac{dy}{dx}$$</div>
+  <h4>3.4 Ecuación Canónica del FGV</h4>
+  <div class="eq-box red">$$\boxed{\dfrac{dy}{dx} = \dfrac{S_0 - S_f}{1 - \dfrac{Q^2 T}{g A^3}} = \dfrac{S_0 - S_f}{1 - Fr^2}}$$<div class="eq-caption">Ecuación General de Bresse-Bakhmeteff para Flujo Gradualmente Variado</div></div>
+</section>
+
+<!-- TAB 3 -->
+<section id="t3" class="tab-content">
+  <h3>④ Derivación Completa Paso a Paso</h3>
+  <div class="step-container">
+    <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Ley de conservación de energía con disipación por fricción:</strong>
+      <div class="eq-box">$$H(x) = z(x) + y(x) + \frac{V^2(x)}{2g} \qquad \Longrightarrow \qquad \frac{dH}{dx} = -S_f$$</div>
+      <div class="callout"><div class="callout-title">Fundamento Físico</div><p>De acuerdo con la 2ª Ley de la Termodinámica, la energía mecánica siempre se degrada en calor debido a la fricción turbulenta contra el contorno sólido. Por ende $S_f > 0$ siempre.</p></div>
+    </div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Diferenciación respecto a la distancia $x$:</strong>
+      <div class="eq-box">$$\frac{dz}{dx} + \frac{dy}{dx} + \frac{d}{dx}\!\left(\frac{V^2}{2g}\right) = -S_f$$</div>
+    </div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Sustitución de la pendiente geométrica del fondo ($dz/dx = -S_0$):</strong>
+      <div class="eq-box yellow">$$-S_0 + \frac{dy}{dx} + \frac{d}{dx}\!\left(\frac{V^2}{2g}\right) = -S_f \quad \Longrightarrow \quad \frac{dy}{dx} + \frac{d}{dx}\!\left(\frac{V^2}{2g}\right) = S_0 - S_f$$</div>
+    </div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Desarrollo del gradiente de carga cinética:</strong>
+      <p>Sustituyendo $V = Q/A$ y aplicando la regla de la cadena:</p>
+      <div class="eq-box green">$$\frac{d}{dx}\!\left(\frac{Q^2}{2g A^2}\right) = -\frac{Q^2}{g A^3}\frac{dA}{dx} = -\frac{Q^2 T}{g A^3}\frac{dy}{dx}$$</div>
+      <div class="callout green"><div class="callout-title">Identidad Geométrica $dA = T\,dy$</div><p>Para cualquier canal de sección transversal arbitraria, cuando el tirante varía en $dy$, el incremento elemental de área mojada es una lámina de ancho superficial $T$ y espesor $dy$. Por tanto $dA/dy = T$.</p></div>
+    </div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body"><strong>Agrupación y factorización del gradiente del tirante $dy/dx$:</strong>
+      <div class="eq-box">$$\frac{dy}{dx} - \frac{Q^2 T}{g A^3}\frac{dy}{dx} = S_0 - S_f \quad \Longrightarrow \quad \frac{dy}{dx}\left(1 - \frac{Q^2 T}{g A^3}\right) = S_0 - S_f$$</div>
+    </div></div>
+    <div class="step"><div class="step-num">6</div><div class="step-body"><strong>Identificación del Número de Froude:</strong>
+      <p>Como $D = A/T$ es la profundidad hidráulica y $V = Q/A$:</p>
+      <div class="eq-box">$$Fr^2 = \frac{V^2}{g D} = \frac{(Q/A)^2}{g (A/T)} = \frac{Q^2 T}{g A^3}$$</div>
+    </div></div>
+    <div class="step"><div class="step-num">7</div><div class="step-body"><strong>Despeje final: Ecuación General del FGV:</strong>
+      <div class="eq-box red">$$\boxed{\dfrac{dy}{dx} = \dfrac{S_0 - S_f}{1 - Fr^2}}$$</div>
+    </div></div>
+  </div>
+  <div class="callout yellow"><div class="callout-title">Interpretación Física de la Ecuación</div><ul>
+    <li><strong>Numerador $(S_0 - S_f)$:</strong> Balance entre la gravedad propulsora ($S_0$) y la resistencia disipativa ($S_f$). Si $S_0 > S_f$, el flujo tiende a acelerar; si $S_0 &lt; S_f$, el flujo se frena.</li>
+    <li><strong>Denominador $(1 - Fr^2)$:</strong> Factor inercial que cambia de signo en el punto crítico $Fr = 1$, provocando la inversión de las pendientes hidráulicas entre régimen subcrítico y supercrítico.</li>
+  </ul></div>
+</section>
+
+<!-- TAB 4 -->
+<section id="t4" class="tab-content">
+  <h3>⑤ El Número de Froude y su Rol en el FGV</h3>
+  <h4>5.1 Definición y Mecánica de Ondas Superficiales</h4>
+  <div class="eq-box yellow">$$Fr = \frac{V}{\sqrt{gD}} = \frac{V}{c} \qquad \text{con celeridad de onda de gravedad } c = \sqrt{gD}$$</div>
+  <div class="callout green"><div class="callout-title">Significado Físico de $Fr$</div>
+    <ul>
+      <li><strong>$Fr &lt; 1$ (Subcrítico):</strong> $V &lt; c$. Las perturbaciones y ondas viajan aguas arriba y aguas abajo. El flujo está "informado" de cualquier obstáculo o control ubicado aguas abajo.</li>
+      <li><strong>$Fr = 1$ (Crítico):</strong> $V = c$. Las ondas superficiales quedan estacionarias. La ecuación del FGV presenta una singularidad matemática ($1 - Fr^2 = 0$).</li>
+      <li><strong>$Fr > 1$ (Supercrítico):</strong> $V > c$. El agua corre más rápido que la onda. Ninguna señal puede propagarse aguas arriba. El flujo depende exclusivamente de las condiciones de aguas arriba.</li>
+    </ul>
+  </div>
+  <h4>5.2 Forma Adimensional para Canal Rectangular</h4>
+  <p>En canales rectangulares anchos o prismáticos, la ecuación general se puede expresar en función de las razones $(y_n/y)$ y $(y_c/y)$:</p>
+  <div class="eq-box green">$$\frac{dy}{dx} = S_0\cdot\frac{1 - (y_n/y)^{10/3}}{1 - (y_c/y)^3}$$<div class="eq-caption">Fórmula canónica adimensional: el signo de $dy/dx$ depende de la posición relativa de $y$ respecto a $y_n$ e $y_c$</div></div>
+</section>
+
+<!-- TAB 5 -->
+<section id="t5" class="tab-content">
+  <h3>⑥ Clasificación Integral de los 15 Perfiles del FGV</h3>
+  <h4>6.1 Sistema de Coordenadas y Zonas</h4>
+  <p>La combinación de las <strong>5 pendientes de fondo</strong> ($M, C, S, H, A$) con las <strong>3 zonas hidráulicas</strong> delimitadas por la Línea de Profundidad Normal (LPN, $y_n$) y la Línea de Profundidad Crítica (LPC, $y_c$) genera un espacio teórico de <strong>15 perfiles</strong>:</p>
+  <ul>
+    <li><strong>Zona 1:</strong> $y > y_n$ y $y > y_c$ (Tirante por encima de ambas líneas de referencia).</li>
+    <li><strong>Zona 2:</strong> Tirante comprendido entre $y_n$ e $y_c$.</li>
+    <li><strong>Zona 3:</strong> $y &lt; y_n$ y $y &lt; y_c$ (Tirante por debajo de ambas líneas de referencia).</li>
+  </ul>
+
+  <h4>6.2 Matriz Completa de los 15 Perfiles</h4>
+  <table>
+    <thead><tr><th>Pendiente</th><th>Zona 1 ($y > \max$)</th><th>Zona 2 (Entre $y_n$ e $y_c$)</th><th>Zona 3 ($y < \min$)</th></tr></thead>
+    <tbody>
+      <tr>
+        <td style="color:#006400;font-weight:bold">Moderada / Suave (M)<br><small>$S_0 &lt; S_c \implies y_n > y_c$</small></td>
+        <td><strong>M1</strong> ($dy/dx > 0$)<br>Remanso subcrítico</td>
+        <td><strong>M2</strong> ($dy/dx &lt; 0$)<br>Desagüe / caída subcrítica</td>
+        <td><strong>M3</strong> ($dy/dx > 0$)<br>Supercrítico creciente</td>
+      </tr>
+      <tr>
+        <td style="color:#B8860B;font-weight:bold">Crítica (C)<br><small>$S_0 = S_c \implies y_n = y_c$</small></td>
+        <td><strong>C1</strong> ($dy/dx > 0$)<br>Remanso subcrítico</td>
+        <td><strong>C2*</strong> ($dy/dx = 0/0$)<br>Flujo Uniforme Crítico (recta)</td>
+        <td><strong>C3</strong> ($dy/dx > 0$)<br>Supercrítico creciente</td>
+      </tr>
+      <tr>
+        <td style="color:#CC0000;font-weight:bold">Pronunciada / Fuerte (S)<br><small>$S_0 > S_c \implies y_n &lt; y_c$</small></td>
+        <td><strong>S1</strong> ($dy/dx > 0$)<br>Remanso subcrítico</td>
+        <td><strong>S2</strong> ($dy/dx &lt; 0$)<br>Caída supercrítica</td>
+        <td><strong>S3</strong> ($dy/dx > 0$)<br>Supercrítico creciente</td>
+      </tr>
+      <tr>
+        <td style="color:#003087;font-weight:bold">Horizontal (H)<br><small>$S_0 = 0 \implies y_n \to \infty$</small></td>
+        <td><strong>H1*</strong> (Inexistente)<br>Requeriría $y > \infty$</td>
+        <td><strong>H2</strong> ($dy/dx &lt; 0$)<br>Desagüe subcrítico horizontal</td>
+        <td><strong>H3</strong> ($dy/dx > 0$)<br>Supercrítico horizontal</td>
+      </tr>
+      <tr>
+        <td><strong>Adversa (A)</strong><br><small>$S_0 &lt; 0 \implies \nexists y_n \in \mathbb{R}^+$</small></td>
+        <td><strong>A1*</strong> (Inexistente)<br>No existe $y_n$ real positivo</td>
+        <td><strong>A2</strong> ($dy/dx &lt; 0$)<br>Desagüe retardado adverso</td>
+        <td><strong>A3</strong> ($dy/dx > 0$)<br>Supercrítico adverso</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><em>*Nota académica: De los 15 perfiles teóricos, 12 son curvas continuas de FGV, C2 es el estado singular de flujo uniforme crítico ($y = y_c = y_n$ permanente), y H1 y A1 son casos inexistentes físicamente en canales finitos.</em></p>
+</section>
+
+<!-- TAB 6 -->
+<section id="t6" class="tab-content">
+  <h3>⑦ Controles de Flujo y Condiciones de Frontera</h3>
+  <h4>7.1 Concepto de Control Hidráulico</h4>
+  <p>Un <strong>control de flujo</strong> es cualquier sección física del canal donde existe una relación matemática biunívoca entre caudal y tirante ($Q = f(y)$), independientemente de lo que ocurra aguas arriba o aguas abajo. Es el punto de arranque para integrar numéricamente el perfil de FGV.</p>
+  <div class="callout green"><div class="callout-title">Regla de Oro de la Dirección de Cálculo</div><ul>
+    <li><strong>Régimen Subcrítico ($Fr &lt; 1$):</strong> Las ondas viajan aguas arriba $\implies$ el control está <strong>aguas abajo</strong>. El cálculo avanza de <strong>aguas abajo hacia aguas arriba</strong>.</li>
+    <li><strong>Régimen Supercrítico ($Fr > 1$):</strong> Las ondas no pueden subir $\implies$ el control está <strong>aguas arriba</strong>. El cálculo avanza de <strong>aguas arriba hacia aguas abajo</strong>.</li>
+  </ul></div>
+  <h4>7.2 Salto Hidráulico (Ecuación de Bélanger)</h4>
+  <p>Cuando un flujo supercrítico se encuentra con una condición de aguas abajo que impone régimen subcrítico, la transición no es gradual: se forma un <strong>salto hidráulico</strong> gobernado por conservación de momentum:</p>
+  <div class="eq-box red">$$\frac{y_2}{y_1} = \frac{1}{2}\!\left(-1 + \sqrt{1 + 8 Fr_1^2}\right)$$</div>
+</section>
+
+<!-- ======================================================= -->
+<!-- TAB 7 — SIMULADOR INTEGRACIÓN GRÁFICA CON PANEL LATERAL -->
+<!-- ======================================================= -->
+<section id="t7" class="tab-content">
+  <h3>⑧ Simulación — Método de Integración Gráfica</h3>
+  <h4>8.1 Fundamento Matemático</h4>
+  <div class="eq-box yellow">$$\Delta x = \int_{y_1}^{y_2} \frac{dx}{dy}\,dy = \int_{y_1}^{y_2} \underbrace{\frac{1 - Fr^2(y)}{S_0 - S_f(y)}}_{F(y)}\,dy$$<div class="eq-caption">La distancia $\Delta x$ entre dos tirantes equivale al área bajo la curva de la función $F(y)$ (regla del trapecio)</div></div>
+
+  <!-- LAYOUT CON PANEL LATERAL -->
+  <div class="sim-layout">
+    <!-- PANEL LATERAL -->
+    <aside class="preset-panel">
+      <div class="pp-header">🎚 Selector de los 15 Perfiles</div>
+      <div class="pp-body">
+        
+        <div class="pp-sec">Matriz Rápida (15 Perfiles)</div>
+        <table class="matrix-table">
+          <thead><tr><th>Tipo</th><th>Z1</th><th>Z2</th><th>Z3</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><b style="color:#006400">M</b></td>
+              <td><button class="matrix-btn" id="g_mat_M1" onclick="quickSelect('G','M',1)">M1</button></td>
+              <td><button class="matrix-btn" id="g_mat_M2" onclick="quickSelect('G','M',2)">M2</button></td>
+              <td><button class="matrix-btn" id="g_mat_M3" onclick="quickSelect('G','M',3)">M3</button></td>
+            </tr>
+            <tr>
+              <td><b style="color:#B8860B">C</b></td>
+              <td><button class="matrix-btn" id="g_mat_C1" onclick="quickSelect('G','C',1)">C1</button></td>
+              <td><button class="matrix-btn special" id="g_mat_C2" onclick="quickSelect('G','C',2)">C2*</button></td>
+              <td><button class="matrix-btn" id="g_mat_C3" onclick="quickSelect('G','C',3)">C3</button></td>
+            </tr>
+            <tr>
+              <td><b style="color:#CC0000">S</b></td>
+              <td><button class="matrix-btn" id="g_mat_S1" onclick="quickSelect('G','S',1)">S1</button></td>
+              <td><button class="matrix-btn" id="g_mat_S2" onclick="quickSelect('G','S',2)">S2</button></td>
+              <td><button class="matrix-btn" id="g_mat_S3" onclick="quickSelect('G','S',3)">S3</button></td>
+            </tr>
+            <tr>
+              <td><b style="color:#003087">H</b></td>
+              <td><button class="matrix-btn special" id="g_mat_H1" onclick="quickSelect('G','H',1)">H1*</button></td>
+              <td><button class="matrix-btn" id="g_mat_H2" onclick="quickSelect('G','H',2)">H2</button></td>
+              <td><button class="matrix-btn" id="g_mat_H3" onclick="quickSelect('G','H',3)">H3</button></td>
+            </tr>
+            <tr>
+              <td><b>A</b></td>
+              <td><button class="matrix-btn special" id="g_mat_A1" onclick="quickSelect('G','A',1)">A1*</button></td>
+              <td><button class="matrix-btn" id="g_mat_A2" onclick="quickSelect('G','A',2)">A2</button></td>
+              <td><button class="matrix-btn" id="g_mat_A3" onclick="quickSelect('G','A',3)">A3</button></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pp-sec">1. Seleccionar Pendiente</div>
+        <div class="slope-btns">
+          <button id="g_slope_M" class="slope-btn" onclick="selectSlope('G','M')">
+            <span class="slope-badge" style="background:#006400">M</span>
+            <div class="slope-info"><b>Moderada / Suave</b><small>S₀ &lt; Sc · yₙ &gt; yc</small></div>
+          </button>
+          <button id="g_slope_C" class="slope-btn" onclick="selectSlope('G','C')">
+            <span class="slope-badge" style="background:#B8860B">C</span>
+            <div class="slope-info"><b>Crítica</b><small>S₀ = Sc · yₙ = yc</small></div>
+          </button>
+          <button id="g_slope_S" class="slope-btn" onclick="selectSlope('G','S')">
+            <span class="slope-badge" style="background:#CC0000">S</span>
+            <div class="slope-info"><b>Pronunciada / Fuerte</b><small>S₀ &gt; Sc · yₙ &lt; yc</small></div>
+          </button>
+          <button id="g_slope_H" class="slope-btn" onclick="selectSlope('G','H')">
+            <span class="slope-badge" style="background:#003087">H</span>
+            <div class="slope-info"><b>Horizontal</b><small>S₀ = 0 · yₙ → ∞</small></div>
+          </button>
+          <button id="g_slope_A" class="slope-btn" onclick="selectSlope('G','A')">
+            <span class="slope-badge" style="background:#333">A</span>
+            <div class="slope-info"><b>Adversa</b><small>S₀ &lt; 0 · sin yₙ real</small></div>
+          </button>
+        </div>
+
+        <div class="pp-sec">2. Seleccionar Zona</div>
+        <div class="zone-btns">
+          <button class="zone-btn" id="g_zone_1" onclick="selectZone('G',1)">
+            <b style="color:#003087">Zona 1</b><small>y &gt; max</small>
+          </button>
+          <button class="zone-btn" id="g_zone_2" onclick="selectZone('G',2)">
+            <b style="color:#B8860B">Zona 2</b><small>entre líneas</small>
+          </button>
+          <button class="zone-btn" id="g_zone_3" onclick="selectZone('G',3)">
+            <b style="color:#CC0000">Zona 3</b><small>y &lt; min</small>
+          </button>
+        </div>
+
+        <!-- Ficha del perfil -->
+        <div class="pp-pcard" id="g_profile_info">
+          <div class="pp-pname" id="g_pname">M1 — Pendiente Suave</div>
+          <div class="pp-pcond" id="g_pcond">y &gt; yₙ &gt; yc</div>
+          <div id="g_pdiag"></div>
+          <div class="pp-pdesc" id="g_pdesc"></div>
+          <div class="pp-pynyc" id="g_pynyc"></div>
+          <button class="apply-btn" onclick="applyPreset('G')">▶ Cargar y Calcular Perfil</button>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- SIMULADOR GRÁFICO -->
+    <div class="sim-main">
+      <div class="sim-panel">
+        <h4>Parámetros Hidráulicos del Canal Rectangular</h4>
+        <div class="form-grid">
+          <div class="form-group"><label>Caudal Q (m³/s)</label><input type="number" id="g_Q" value="5.0" step="0.1" min="0.1"/></div>
+          <div class="form-group"><label>Ancho b (m)</label><input type="number" id="g_b" value="4.0" step="0.1" min="0.1"/></div>
+          <div class="form-group"><label>Manning n</label><input type="number" id="g_n" value="0.013" step="0.001" min="0.005"/></div>
+          <div class="form-group"><label>Pendiente S₀</label><input type="number" id="g_S0" value="0.001" step="0.0001" min="-0.05" max="0.1"/></div>
+          <div class="form-group"><label>Tirante y₁ (m)</label><input type="number" id="g_y1" value="0.90" step="0.05" min="0.01"/></div>
+          <div class="form-group"><label>Tirante y₂ (m)</label><input type="number" id="g_y2" value="2.50" step="0.05" min="0.01"/></div>
+          <div class="form-group"><label>Puntos evaluación N</label><input type="number" id="g_pts" value="25" step="1" min="5" max="100"/></div>
+        </div>
+
+        <div class="btn-bar">
+          <button class="btn" onclick="calcGrafica()">▶ Integrar y Graficar F(y)</button>
+          <button class="btn red" onclick="limpiarGrafica()">✕ Limpiar</button>
+        </div>
+
+        <div id="g_info" style="margin:10px 0;font-size:0.86rem;font-weight:bold;color:#003087;min-height:1.4em"></div>
+        <canvas id="canvas-grafica" width="640" height="340"></canvas>
+        <div class="result-table" id="g_tabla"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= -->
+<!-- TAB 8 — SIMULADOR TRAMO A TRAMO CON PANEL LATERAL       -->
+<!-- ======================================================= -->
+<section id="t8" class="tab-content">
+  <h3>⑨ Simulación — Método de Cálculo Tramo a Tramo</h3>
+  <h4>9.1 Fundamento del Método de Marcha Directa</h4>
+  <div class="callout green"><div class="callout-title">Ecuación de Marcha Directa</div>
+    <p>El canal se divide en tramos con incrementos prefijados de tirante $\Delta y$. La distancia entre secciones sucesivas $i$ e $i+1$ es:</p>
+    <div class="eq-box green">$$\Delta x_i = \frac{E_i - E_{i+1}}{\bar{S}_f - S_0} \qquad \bar{S}_f = \frac{S_{f,i} + S_{f,i+1}}{2} \qquad E = y + \frac{Q^2}{2g A^2}$$</div>
+  </div>
+
+  <!-- LAYOUT CON PANEL LATERAL -->
+  <div class="sim-layout">
+    <!-- PANEL LATERAL -->
+    <aside class="preset-panel">
+      <div class="pp-header">🎚 Selector de los 15 Perfiles</div>
+      <div class="pp-body">
+        
+        <div class="pp-sec">Matriz Rápida (15 Perfiles)</div>
+        <table class="matrix-table">
+          <thead><tr><th>Tipo</th><th>Z1</th><th>Z2</th><th>Z3</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><b style="color:#006400">M</b></td>
+              <td><button class="matrix-btn" id="t_mat_M1" onclick="quickSelect('T','M',1)">M1</button></td>
+              <td><button class="matrix-btn" id="t_mat_M2" onclick="quickSelect('T','M',2)">M2</button></td>
+              <td><button class="matrix-btn" id="t_mat_M3" onclick="quickSelect('T','M',3)">M3</button></td>
+            </tr>
+            <tr>
+              <td><b style="color:#B8860B">C</b></td>
+              <td><button class="matrix-btn" id="t_mat_C1" onclick="quickSelect('T','C',1)">C1</button></td>
+              <td><button class="matrix-btn special" id="t_mat_C2" onclick="quickSelect('T','C',2)">C2*</button></td>
+              <td><button class="matrix-btn" id="t_mat_C3" onclick="quickSelect('T','C',3)">C3</button></td>
+            </tr>
+            <tr>
+              <td><b style="color:#CC0000">S</b></td>
+              <td><button class="matrix-btn" id="t_mat_S1" onclick="quickSelect('T','S',1)">S1</button></td>
+              <td><button class="matrix-btn" id="t_mat_S2" onclick="quickSelect('T','S',2)">S2</button></td>
+              <td><button class="matrix-btn" id="t_mat_S3" onclick="quickSelect('T','S',3)">S3</button></td>
+            </tr>
+            <tr>
+              <td><b style="color:#003087">H</b></td>
+              <td><button class="matrix-btn special" id="t_mat_H1" onclick="quickSelect('T','H',1)">H1*</button></td>
+              <td><button class="matrix-btn" id="t_mat_H2" onclick="quickSelect('T','H',2)">H2</button></td>
+              <td><button class="matrix-btn" id="t_mat_H3" onclick="quickSelect('T','H',3)">H3</button></td>
+            </tr>
+            <tr>
+              <td><b>A</b></td>
+              <td><button class="matrix-btn special" id="t_mat_A1" onclick="quickSelect('T','A',1)">A1*</button></td>
+              <td><button class="matrix-btn" id="t_mat_A2" onclick="quickSelect('T','A',2)">A2</button></td>
+              <td><button class="matrix-btn" id="t_mat_A3" onclick="quickSelect('T','A',3)">A3</button></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pp-sec">1. Seleccionar Pendiente</div>
+        <div class="slope-btns">
+          <button id="t_slope_M" class="slope-btn" onclick="selectSlope('T','M')">
+            <span class="slope-badge" style="background:#006400">M</span>
+            <div class="slope-info"><b>Moderada / Suave</b><small>S₀ &lt; Sc · yₙ &gt; yc</small></div>
+          </button>
+          <button id="t_slope_C" class="slope-btn" onclick="selectSlope('T','C')">
+            <span class="slope-badge" style="background:#B8860B">C</span>
+            <div class="slope-info"><b>Crítica</b><small>S₀ = Sc · yₙ = yc</small></div>
+          </button>
+          <button id="t_slope_S" class="slope-btn" onclick="selectSlope('T','S')">
+            <span class="slope-badge" style="background:#CC0000">S</span>
+            <div class="slope-info"><b>Pronunciada / Fuerte</b><small>S₀ &gt; Sc · yₙ &lt; yc</small></div>
+          </button>
+          <button id="t_slope_H" class="slope-btn" onclick="selectSlope('T','H')">
+            <span class="slope-badge" style="background:#003087">H</span>
+            <div class="slope-info"><b>Horizontal</b><small>S₀ = 0 · yₙ → ∞</small></div>
+          </button>
+          <button id="t_slope_A" class="slope-btn" onclick="selectSlope('T','A')">
+            <span class="slope-badge" style="background:#333">A</span>
+            <div class="slope-info"><b>Adversa</b><small>S₀ &lt; 0 · sin yₙ real</small></div>
+          </button>
+        </div>
+
+        <div class="pp-sec">2. Seleccionar Zona</div>
+        <div class="zone-btns">
+          <button class="zone-btn" id="t_zone_1" onclick="selectZone('T',1)">
+            <b style="color:#003087">Zona 1</b><small>y &gt; max</small>
+          </button>
+          <button class="zone-btn" id="t_zone_2" onclick="selectZone('T',2)">
+            <b style="color:#B8860B">Zona 2</b><small>entre líneas</small>
+          </button>
+          <button class="zone-btn" id="t_zone_3" onclick="selectZone('T',3)">
+            <b style="color:#CC0000">Zona 3</b><small>y &lt; min</small>
+          </button>
+        </div>
+
+        <!-- Ficha del perfil -->
+        <div class="pp-pcard" id="t_profile_info">
+          <div class="pp-pname" id="t_pname">M1 — Pendiente Suave</div>
+          <div class="pp-pcond" id="t_pcond">y &gt; yₙ &gt; yc</div>
+          <div id="t_pdiag"></div>
+          <div class="pp-pdesc" id="t_pdesc"></div>
+          <div class="pp-pynyc" id="t_pynyc"></div>
+          <button class="apply-btn" onclick="applyPreset('T')">▶ Cargar y Calcular Perfil</button>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- SIMULADOR TRAMO -->
+    <div class="sim-main">
+      <div class="sim-panel">
+        <h4>Parámetros Hidráulicos del Canal Rectangular</h4>
+        <div class="form-grid">
+          <div class="form-group"><label>Caudal Q (m³/s)</label><input type="number" id="t_Q" value="5.0" step="0.1" min="0.1"/></div>
+          <div class="form-group"><label>Ancho b (m)</label><input type="number" id="t_b" value="4.0" step="0.1" min="0.1"/></div>
+          <div class="form-group"><label>Manning n</label><input type="number" id="t_n" value="0.013" step="0.001" min="0.005"/></div>
+          <div class="form-group"><label>Pendiente S₀</label><input type="number" id="t_S0" value="0.001" step="0.0001" min="-0.05" max="0.1"/></div>
+          <div class="form-group"><label>Tirante inicial y₀ (m)</label><input type="number" id="t_y0" value="0.90" step="0.05" min="0.01"/></div>
+          <div class="form-group"><label>Tirante final yf (m)</label><input type="number" id="t_yf" value="2.50" step="0.05" min="0.01"/></div>
+          <div class="form-group"><label>Número de tramos N</label><input type="number" id="t_N" value="20" step="1" min="2" max="200"/></div>
+        </div>
+
+        <div class="btn-bar">
+          <button class="btn" onclick="calcTramo()">▶ Calcular Perfil Longitudinal</button>
+          <button class="btn red" onclick="limpiarTramo()">✕ Limpiar</button>
+          <div style="flex:1"></div>
+          <button class="btn outline active" id="btn_view_depth" onclick="setViewMode('depth')">📊 Vista Tirante y(x)</button>
+          <button class="btn outline" id="btn_view_elev" onclick="setViewMode('elev')">📐 Vista Cota Real z(x)+y(x)</button>
+        </div>
+
+        <div id="t_info" style="margin:10px 0;font-size:0.86rem;font-weight:bold;color:#003087;min-height:1.4em"></div>
+        <canvas id="canvas-tramo" width="640" height="360"></canvas>
+        <div class="result-table" id="t_tabla"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Flujo Gradualmente Variado (FGV) · Hidráulica de Canales Abiertos · Documento Académico Interactivo · 2026
+</footer>
+
+<!-- ================================================================ -->
+<!-- JAVASCRIPT COMPLETO DE CONTROL Y CÁLCULO                         -->
+<!-- ================================================================ -->
+<script>
+// ─────────────────────────────────────────────────────────────────
+// 1. NAVEGACIÓN ENTRE PESTAÑAS
+// ─────────────────────────────────────────────────────────────────
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('#tabbar button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if (window.renderMathInElement) {
+    renderMathInElement(document.getElementById(id), {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false}
+      ]
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// 2. MOTOR HIDRÁULICO (Canal Rectangular)
+// ─────────────────────────────────────────────────────────────────
+const G_CONST = 9.81;
+
+function hydraulics(Q, b, n, S0, y) {
+  const ySafe = Math.max(0.001, y);
+  const A  = b * ySafe;
+  const T  = b;
+  const Pm = b + 2 * ySafe;
+  const R  = A / Pm;
+  const V  = Q / A;
+  const Fr = V / Math.sqrt(G_CONST * ySafe);
+  const Sf = (n * n * V * V) / Math.pow(R, 4/3);
+  const E  = ySafe + (V * V) / (2 * G_CONST);
+  return { A, T, Pm, R, V, Fr, Sf, E };
+}
+
+function tirante_normal(Q, b, n, S0) {
+  if (S0 <= 1e-8) return Infinity; // Horizontal o Adversa
+  const Qfn = y => (1/n) * (b*y) * Math.pow((b*y)/(b + 2*y), 2/3) * Math.sqrt(S0);
+  let ya = 0.001, yb = 60.0;
+  if (Qfn(yb) < Q) return yb;
+  for (let i = 0; i < 350; i++) {
+    const ym = (ya + yb) / 2;
+    const diff = Qfn(ym) - Q;
+    if (Math.abs(diff) < 1e-9) return ym;
+    if (diff < 0) ya = ym; else yb = ym;
+  }
+  return (ya + yb) / 2;
+}
+
+function tirante_critico(Q, b) {
+  const q = Q / b;
+  return Math.pow((q * q) / G_CONST, 1/3);
+}
+
+function pendiente_critica(Q, b, n, yc) {
+  const Ac = b * yc;
+  const Pmc = b + 2 * yc;
+  const Rc = Ac / Pmc;
+  const Vc = Q / Ac;
+  return (n * n * Vc * Vc) / Math.pow(Rc, 4/3);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// 3. BASE DE DATOS DE LOS 15 PERFILES DEL FGV
+//    Parámetros base: Q=5 m³/s, b=4 m, n=0.013  ==>  yc ≈ 0.5422 m, Sc ≈ 0.00276
+// ─────────────────────────────────────────────────────────────────
+const PROFILES_DB = {
+  M: {
+    name: 'Moderada / Suave (Mild)', code: 'M', color: '#006400', S0: 0.001,
+    summary: 'S₀ < Sc (0.0010 < 0.0028). La Línea LPN está por encima de la Línea LPC (yₙ > yc). Flujo uniforme subcrítico.',
+    zones: {
+      1: {
+        code: 'M1', zone: 1, regime: 'Subcrítico (Fr < 1)',
+        cond: 'y > yₙ > yc', dsign: 'dy/dx > 0 (Remanso creciente)',
+        y1: 0.90, y2: 2.50, y0: 0.90, yf: 2.50, N: 25,
+        desc: 'Perfil de remanso (backwater): el tirante sube aguas abajo al acercarse a un embalse, presa o estrechamiento. Asintótico a LPN aguas arriba y casi horizontal aguas abajo. Es el perfil más común en ríos e ingeniería civil.',
+        isSpecial: false
+      },
+      2: {
+        code: 'M2', zone: 2, regime: 'Subcrítico (Fr < 1)',
+        cond: 'yₙ > y > yc', dsign: 'dy/dx < 0 (Desagüe decreciente)',
+        y1: 0.74, y2: 0.58, y0: 0.74, yf: 0.58, N: 25,
+        desc: 'Perfil de aceleración o desagüe: el tirante cae suavemente desde yₙ hacia el tirante crítico yc. Ocurre aguas arriba de una caída libre (brink), un vertedero o un cambio a pendiente pronunciada.',
+        isSpecial: false
+      },
+      3: {
+        code: 'M3', zone: 3, regime: 'Supercrítico (Fr > 1)',
+        cond: 'yₙ > yc > y', dsign: 'dy/dx > 0 (Creciente hacia yc)',
+        y1: 0.15, y2: 0.48, y0: 0.15, yf: 0.48, N: 25,
+        desc: 'Perfil supercrítico: se forma aguas abajo de una compuerta de fondo o descarga de aliviadero. El tirante crece suavemente hacia yc, donde culmina violentamente en un resalto hidráulico.',
+        isSpecial: false
+      }
+    }
+  },
+  C: {
+    name: 'Crítica (Critical)', code: 'C', color: '#B8860B', S0: 0.00276,
+    summary: 'S₀ = Sc ≈ 0.0028. La Línea LPN y la Línea LPC son coincidentes (yₙ = yc = 0.542 m). El flujo uniforme es crítico.',
+    zones: {
+      1: {
+        code: 'C1', zone: 1, regime: 'Subcrítico (Fr < 1)',
+        cond: 'y > yc = yₙ', dsign: 'dy/dx > 0 (Creciente)',
+        y1: 0.65, y2: 2.20, y0: 0.65, yf: 2.20, N: 25,
+        desc: 'Perfil subcrítico en pendiente crítica: se origina por un remanso (vertedero o presa) sobre un canal en pendiente crítica. El tirante crece aguas abajo y tiende asintóticamente a una recta horizontal.',
+        isSpecial: false
+      },
+      2: {
+        code: 'C2', zone: 2, regime: 'Crítico Uniforme (Fr = 1)',
+        cond: 'y = yc = yₙ', dsign: 'dy/dx = 0/0 (Indeterminado / Recta uniforme)',
+        y1: 0.542, y2: 0.542, y0: 0.542, yf: 0.542, N: 20,
+        desc: 'Flujo uniforme crítico: Caso singular y límite. Teóricamente tanto numerador como denominador son cero (dy/dx = 0/0). Físicamente el agua corre en una recta paralela al fondo en estado crítico permanente. Es inestable ante perturbaciones.',
+        isSpecial: true
+      },
+      3: {
+        code: 'C3', zone: 3, regime: 'Supercrítico (Fr > 1)',
+        cond: 'y < yc = yₙ', dsign: 'dy/dx > 0 (Creciente)',
+        y1: 0.15, y2: 0.48, y0: 0.15, yf: 0.48, N: 25,
+        desc: 'Perfil supercrítico en pendiente crítica: el agua sale a gran velocidad por debajo de compuerta y sube suavemente aproximándose al tirante crítico yc = yₙ.',
+        isSpecial: false
+      }
+    }
+  },
+  S: {
+    name: 'Pronunciada / Fuerte (Steep)', code: 'S', color: '#CC0000', S0: 0.010,
+    summary: 'S₀ > Sc (0.010 > 0.0028). La Línea LPN está por debajo de la Línea LPC (yₙ < yc). Flujo uniforme supercrítico.',
+    zones: {
+      1: {
+        code: 'S1', zone: 1, regime: 'Subcrítico (Fr < 1)',
+        cond: 'y > yc > yₙ', dsign: 'dy/dx > 0 (Remanso)',
+        y1: 0.65, y2: 2.20, y0: 0.65, yf: 2.20, N: 25,
+        desc: 'Perfil subcrítico en pendiente fuerte: se produce aguas arriba de una presa o compuerta que frena un canal empinado. El perfil se une con el flujo supercrítico aguas arriba a través de un resalto hidráulico sumergido.',
+        isSpecial: false
+      },
+      2: {
+        code: 'S2', zone: 2, regime: 'Supercrítico (Fr > 1)',
+        cond: 'yc > y > yₙ', dsign: 'dy/dx < 0 (Caída hacia yₙ)',
+        y1: 0.50, y2: 0.38, y0: 0.50, yf: 0.38, N: 25,
+        desc: 'Perfil de aceleración supercrítico: el flujo arranca en la sección de control crítico yc (e.g. cambio de pendiente suave a fuerte) y cae asintóticamente hacia el tirante normal yₙ.',
+        isSpecial: false
+      },
+      3: {
+        code: 'S3', zone: 3, regime: 'Supercrítico Rápido (Fr > 1)',
+        cond: 'yc > yₙ > y', dsign: 'dy/dx > 0 (Creciente hacia yₙ)',
+        y1: 0.10, y2: 0.32, y0: 0.10, yf: 0.32, N: 25,
+        desc: 'Perfil supercrítico sumamente rápido: originado tras una compuerta que descarga con tirante menor a yₙ. El agua se frena por fricción y sube asintóticamente hacia el tirante normal supercrítico yₙ.',
+        isSpecial: false
+      }
+    }
+  },
+  H: {
+    name: 'Horizontal (S₀ = 0)', code: 'H', color: '#003087', S0: 0.000001,
+    summary: 'S₀ = 0. La pendiente del fondo es nula. El tirante normal es infinito (yₙ → ∞). No existe flujo uniforme.',
+    zones: {
+      1: {
+        code: 'H1', zone: 1, regime: 'Teórico / Inexistente',
+        cond: 'y > yₙ → ∞', dsign: 'No existe en canales reales',
+        y1: 5.0, y2: 5.0, y0: 5.0, yf: 5.0, N: 10,
+        desc: 'Caso puramente teórico: Dado que en un canal horizontal S₀ = 0, el tirante normal es infinito (yₙ = ∞). Por lo tanto, la Zona 1 requeriría un tirante superior al infinito, lo cual es físicamente imposible en canales finitos.',
+        isSpecial: true
+      },
+      2: {
+        code: 'H2', zone: 2, regime: 'Subcrítico (Fr < 1)',
+        cond: 'yₙ → ∞ > y > yc', dsign: 'dy/dx < 0 (Caída hacia yc)',
+        y1: 2.20, y2: 0.62, y0: 2.20, yf: 0.62, N: 25,
+        desc: 'Perfil de desagüe horizontal: La fricción disipa energía sin que la gravedad impulse el flujo. El tirante decrece aguas abajo hacia yc, como en la entrada a una caída libre en fondo plano.',
+        isSpecial: false
+      },
+      3: {
+        code: 'H3', zone: 3, regime: 'Supercrítico (Fr > 1)',
+        cond: 'yₙ → ∞ > yc > y', dsign: 'dy/dx > 0 (Creciente hacia yc)',
+        y1: 0.15, y2: 0.48, y0: 0.15, yf: 0.48, N: 25,
+        desc: 'Perfil supercrítico horizontal: Se origina tras una compuerta en canal horizontal. El flujo pierde velocidad rápidamente por fricción y el tirante sube hacia yc, terminando en resalto hidráulico.',
+        isSpecial: false
+      }
+    }
+  },
+  A: {
+    name: 'Adversa (S₀ < 0)', code: 'A', color: '#333333', S0: -0.001,
+    summary: 'S₀ < 0. El fondo asciende en la dirección del flujo. No existe tirante normal real (yₙ ∉ ℝ⁺). Fricción y gravedad frenan el agua.',
+    zones: {
+      1: {
+        code: 'A1', zone: 1, regime: 'Inexistente Físicamente',
+        cond: '∄ yₙ real (S₀ < 0)', dsign: 'No existe zona física',
+        y1: 5.0, y2: 5.0, y0: 5.0, yf: 5.0, N: 10,
+        desc: 'Caso inexistente: En pendientes adversas el fondo sube aguas abajo. No puede existir un tirante normal real positivo donde la gravedad impulse el flujo contra la fricción. Por ende, la Zona 1 no existe en la naturaleza.',
+        isSpecial: true
+      },
+      2: {
+        code: 'A2', zone: 2, regime: 'Subcrítico (Fr < 1)',
+        cond: 'y > yc (S₀ < 0)', dsign: 'dy/dx < 0 (Caída acelerada)',
+        y1: 2.20, y2: 0.62, y0: 2.20, yf: 0.62, N: 25,
+        desc: 'Perfil subcrítico adverso: Doble deceleración energética debido a la fricción de Manning sumada al ascenso geométrico del fondo. El tirante cae rápidamente hacia el estado crítico yc.',
+        isSpecial: false
+      },
+      3: {
+        code: 'A3', zone: 3, regime: 'Supercrítico (Fr > 1)',
+        cond: 'y < yc (S₀ < 0)', dsign: 'dy/dx > 0 (Creciente rápido)',
+        y1: 0.15, y2: 0.48, y0: 0.15, yf: 0.48, N: 25,
+        desc: 'Perfil supercrítico adverso: Aguas abajo de una compuerta en contrapendiente. La lámina de agua sube abruptamente hacia yc para disipar el exceso de energía cinética.',
+        isSpecial: false
+      }
+    }
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────
+// 4. LÓGICA DE SELECCIÓN DE PRESETS EN EL PANEL LATERAL
+// ─────────────────────────────────────────────────────────────────
+let activeSlope = { G: 'M', T: 'M' };
+let activeZone  = { G: 1, T: 1 };
+let viewMode    = 'depth'; // 'depth' | 'elev'
+
+function selectSlope(sim, slopeCode) {
+  activeSlope[sim] = slopeCode;
+  updateUI(sim);
+}
+
+function selectZone(sim, zoneNum) {
+  activeZone[sim] = zoneNum;
+  updateUI(sim);
+}
+
+function quickSelect(sim, slopeCode, zoneNum) {
+  activeSlope[sim] = slopeCode;
+  activeZone[sim]  = zoneNum;
+  updateUI(sim);
+  applyPreset(sim);
+}
+
+function updateUI(sim) {
+  const p = sim.toLowerCase();
+  const sCode = activeSlope[sim];
+  const zNum  = activeZone[sim];
+  const slope = PROFILES_DB[sCode];
+  const prof  = slope.zones[zNum];
+
+  // Actualizar botones de pendiente
+  ['M','C','S','H','A'].forEach(k => {
+    const btn = document.getElementById(`${p}_slope_${k}`);
+    if (btn) {
+      btn.classList.toggle('active', k === sCode);
+      btn.style.borderColor = (k === sCode) ? PROFILES_DB[k].color : '#dde3f0';
+    }
+  });
+
+  // Actualizar botones de zona
+  const zoneColors = { 1: '#003087', 2: '#B8860B', 3: '#CC0000' };
+  [1, 2, 3].forEach(z => {
+    const btn = document.getElementById(`${p}_zone_${z}`);
+    if (btn) {
+      if (z === zNum) {
+        btn.classList.add('active');
+        btn.style.background = zoneColors[z];
+        btn.style.borderColor = zoneColors[z];
+      } else {
+        btn.classList.remove('active');
+        btn.style.background = '#fff';
+        btn.style.borderColor = '#dde3f0';
+      }
+    }
+  });
+
+  // Actualizar matriz 5x3
+  ['M','C','S','H','A'].forEach(k => {
+    [1, 2, 3].forEach(z => {
+      const mBtn = document.getElementById(`${p}_mat_${k}${z}`);
+      if (mBtn) {
+        mBtn.classList.toggle('active', (k === sCode && z === zNum));
+      }
+    });
+  });
+
+  // Calcular yn, yc, Sc actuales con los parámetros del formulario o del perfil
+  const Q = +document.getElementById(`${p}_Q`).value || 5.0;
+  const b = +document.getElementById(`${p}_b`).value || 4.0;
+  const n = +document.getElementById(`${p}_n`).value || 0.013;
+  const S0 = slope.S0;
+
+  const yn = tirante_normal(Q, b, n, S0);
+  const yc = tirante_critico(Q, b);
+  const Sc = pendiente_critica(Q, b, n, yc);
+
+  // Llenar tarjeta informativa del perfil
+  const pname = document.getElementById(`${p}_pname`);
+  const pcond = document.getElementById(`${p}_pcond`);
+  const pdesc = document.getElementById(`${p}_pdesc`);
+  const pynyc = document.getElementById(`${p}_pynyc`);
+  const pdiag = document.getElementById(`${p}_pdiag`);
+
+  pname.innerHTML = `<span style="color:${slope.color}">Perfil ${prof.code}</span> — ${slope.name}`;
+  pcond.innerHTML = `<strong>${prof.cond}</strong> &nbsp;|&nbsp; <span style="font-size:0.70rem">${prof.regime}</span><br><small style="color:#555">${prof.dsign}</small>`;
+  pdesc.textContent = prof.desc;
+
+  const ynStr = (!isFinite(yn) || yn > 50) ? '→ ∞' : (yn <= 0 ? 'No existe' : yn.toFixed(3) + ' m');
+  pynyc.innerHTML = `
+    <div style="display:flex; justify-content:space-between; margin-bottom:4px">
+      <span><b style="color:#006400">LPN (yₙ)</b>: ${ynStr}</span>
+      <span><b style="color:#CC0000">LPC (yc)</b>: ${yc.toFixed(3)} m</span>
+    </div>
+    <div style="color:#666; font-size:0.68rem">
+      Pendiente S₀: ${S0.toFixed(5)} &nbsp;|&nbsp; Pendiente Crítica Sc: ${Sc.toFixed(5)}
+    </div>
+  `;
+
+  // Renderizar mini diagrama de capas
+  pdiag.innerHTML = renderMiniDiagram(slope, yn, yc, zNum);
+}
+
+function renderMiniDiagram(slope, yn, yc, activeZ) {
+  const ynStr = (!isFinite(yn) || yn > 50) ? 'yₙ → ∞' : (yn <= 0 ? '∄ yₙ real' : `yₙ = ${yn.toFixed(2)} m`);
+  const ycStr = `yc = ${yc.toFixed(2)} m`;
+  const sCode = slope.code;
+
+  let topLbl, topClr, botLbl, botClr;
+  if (sCode === 'H' || sCode === 'A') {
+    topLbl = (sCode === 'H') ? 'LPN: yₙ → ∞' : 'LPN: No existe (S₀ < 0)';
+    topClr = '#666';
+    botLbl = `LPC: ${ycStr}`;
+    botClr = '#CC0000';
+  } else if (yn >= yc) {
+    topLbl = `LPN: ${ynStr}`; topClr = '#006400';
+    botLbl = `LPC: ${ycStr}`; botClr = '#CC0000';
+  } else {
+    topLbl = `LPC: ${ycStr}`; topClr = '#CC0000';
+    botLbl = `LPN: ${ynStr}`; botClr = '#006400';
+  }
+
+  const hl = z => (activeZ === z)
+    ? `background:${slope.color}25; border-left:4px solid ${slope.color}; color:${slope.color}; font-weight:bold;`
+    : 'color:#888;';
+
+  const z1Exists = !(sCode === 'H' || sCode === 'A');
+
+  return `
+    <div class="zone-diag">
+      ${z1Exists
+        ? `<div class="zd-zone" style="${hl(1)}">Zona 1 (y &gt; max)</div>`
+        : `<div class="zd-zone" style="color:#bbb; font-style:italic; background:#f9f9f9;">Zona 1 (Inexistente en canal finito)</div>`}
+      <div class="zd-line" style="border-color:${topClr}; color:${topClr}">${topLbl}</div>
+      <div class="zd-zone" style="${hl(2)}">${sCode==='C' ? 'Zona 2: Flujo Crítico Uniforme (C2)' : 'Zona 2 (Entre LPN y LPC)'}</div>
+      <div class="zd-line" style="border-color:${botClr}; color:${botClr}">${botLbl}</div>
+      <div class="zd-zone" style="${hl(3)}">Zona 3 (y &lt; min)</div>
+    </div>
+  `;
+}
+
+function applyPreset(sim) {
+  const p = sim.toLowerCase();
+  const sCode = activeSlope[sim];
+  const zNum  = activeZone[sim];
+  const slope = PROFILES_DB[sCode];
+  const prof  = slope.zones[zNum];
+
+  document.getElementById(`${p}_Q`).value  = '5.0';
+  document.getElementById(`${p}_b`).value  = '4.0';
+  document.getElementById(`${p}_n`).value  = '0.013';
+  document.getElementById(`${p}_S0`).value = slope.S0;
+
+  if (sim === 'G') {
+    document.getElementById('g_y1').value  = prof.y1;
+    document.getElementById('g_y2').value  = prof.y2;
+    document.getElementById('g_pts').value = prof.N;
+    calcGrafica();
+  } else {
+    document.getElementById('t_y0').value = prof.y0;
+    document.getElementById('t_yf').value = prof.yf;
+    document.getElementById('t_N').value  = prof.N;
+    calcTramo();
+  }
+}
+
+function setViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('btn_view_depth').classList.toggle('active', mode === 'depth');
+  document.getElementById('btn_view_elev').classList.toggle('active', mode === 'elev');
+  calcTramo();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// 5. SIMULADOR: INTEGRACIÓN GRÁFICA F(y)
+// ─────────────────────────────────────────────────────────────────
+function calcGrafica() {
+  const Q  = +document.getElementById('g_Q').value;
+  const b  = +document.getElementById('g_b').value;
+  const n  = +document.getElementById('g_n').value;
+  const S0 = +document.getElementById('g_S0').value;
+  const y1 = +document.getElementById('g_y1').value;
+  const y2 = +document.getElementById('g_y2').value;
+  const N  = Math.max(5, +document.getElementById('g_pts').value);
+
+  const yn = tirante_normal(Q, b, n, S0);
+  const yc = tirante_critico(Q, b);
+
+  // Manejar caso especial C2, H1, A1
+  const sCode = activeSlope['G'];
+  const zNum  = activeZone['G'];
+  const prof  = PROFILES_DB[sCode].zones[zNum];
+
+  if (prof.isSpecial) {
+    handleSpecialGrafica(prof, yn, yc, Q, b, n, S0);
+    return;
+  }
+
+  const ys = [], Fs = [];
+  const dy = (y2 - y1) / (N - 1);
+  for (let i = 0; i < N; i++) {
+    const y = y1 + i * dy;
+    const h = hydraulics(Q, b, n, S0, y);
+    const num = S0 - h.Sf;
+    const den = 1 - h.Fr * h.Fr;
+    const Fy  = (Math.abs(num) < 1e-12) ? 0 : (den / num);
+    ys.push(y);
+    Fs.push(Fy);
+  }
+
+  // Integración numérica por regla del trapecio
+  let deltaX = 0;
+  for (let i = 0; i < N - 1; i++) {
+    if (isFinite(Fs[i]) && isFinite(Fs[i+1]) && Math.abs(Fs[i]) < 1e5 && Math.abs(Fs[i+1]) < 1e5) {
+      deltaX += 0.5 * (Fs[i] + Fs[i+1]) * dy;
+    }
+  }
+
+  const ynStr = (!isFinite(yn) || yn > 50) ? '→ ∞' : (yn <= 0 ? 'No existe' : yn.toFixed(4) + ' m');
+  document.getElementById('g_info').innerHTML = `
+    <span style="color:#006400">LPN: yₙ = ${ynStr}</span> &nbsp;|&nbsp;
+    <span style="color:#CC0000">LPC: yc = ${yc.toFixed(4)} m</span> &nbsp;|&nbsp;
+    <strong>Longitud Integrada ΔX = ${deltaX.toFixed(2)} m</strong>
+    ${deltaX < 0 ? '<em style="color:#777; font-size:0.78rem"> (Perfil calculado aguas arriba del control)</em>' : ''}
+  `;
+
+  drawGraficaCanvas(ys, Fs, yn, yc, deltaX, Q, b, n, S0, prof);
+
+  // Generar tabla de datos
+  let html = `<table><thead><tr>
+    <th>#</th><th>Tirante y (m)</th><th>Velocidad V (m/s)</th><th>Froude Fr</th><th>Pend. Fricción Sf</th><th>F(y) = dx/dy</th>
+  </tr></thead><tbody>`;
+  for (let i = 0; i < N; i++) {
+    const y = ys[i];
+    const h = hydraulics(Q, b, n, S0, y);
+    const fStr = (Math.abs(Fs[i]) > 1e4 || isNaN(Fs[i])) ? '±∞' : Fs[i].toFixed(2);
+    const frColor = h.Fr > 1 ? '#CC0000' : (h.Fr < 0.98 ? '#006400' : '#B8860B');
+    html += `<tr>
+      <td>${i+1}</td>
+      <td><strong>${y.toFixed(4)}</strong></td>
+      <td>${h.V.toFixed(3)}</td>
+      <td style="color:${frColor}; font-weight:bold">${h.Fr.toFixed(3)}</td>
+      <td>${h.Sf.toExponential(3)}</td>
+      <td><strong>${fStr}</strong></td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  document.getElementById('g_tabla').innerHTML = html;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FUNCIÓN AUXILIAR: AJUSTE DE TEXTO CON SALTO DE LÍNEA EN CANVAS
+// ─────────────────────────────────────────────────────────────────
+function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, align) {
+  ctx.save();
+  ctx.textAlign = align || 'left';
+  const words = text.split(' ');
+  let line = '';
+  let curY = y;
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + (line ? ' ' : '') + words[n];
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && n > 0) {
+      ctx.fillText(line, x, curY);
+      line = words[n];
+      curY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  if (line) {
+    ctx.fillText(line, x, curY);
+    curY += lineHeight;
+  }
+  ctx.restore();
+  return curY;
+}
+
+function renderSpecialNoticeOnCanvas(canvasId, prof, yn, yc, Q, b, n, S0) {
+  const cv = document.getElementById(canvasId);
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Fondo suave
+  ctx.fillStyle = '#fbfcfe';
+  ctx.fillRect(0, 0, W, H);
+
+  // Marco exterior
+  ctx.strokeStyle = '#003087';
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(18, 18, W - 36, H - 36);
+
+  // Marco interior fino
+  ctx.strokeStyle = '#ccd5e8';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(23, 23, W - 46, H - 46);
+
+  // Barra de encabezado
+  ctx.fillStyle = '#003087';
+  ctx.fillRect(24, 24, W - 48, 44);
+
+  ctx.fillStyle = '#FFD700';
+  ctx.font = 'bold 16px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillText(`Caso Especial: Perfil ${prof.code} (${prof.cond})`, W / 2, 52);
+
+  // Subtítulo con estado
+  ctx.fillStyle = '#CC0000';
+  ctx.font = 'bold 12px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillText(`[ ${prof.regime.toUpperCase()} ]`, W / 2, 92);
+
+  // Parámetros de texto con márgenes controlados (42px a cada lado)
+  const marginX = 42;
+  const maxTextW = W - 84; // 556 px de ancho garantizado dentro de los márgenes
+  let curY = 120;
+
+  // Texto descriptivo con ajuste automático de saltos de línea dentro de los márgenes
+  ctx.fillStyle = '#222222';
+  ctx.font = '13px Georgia';
+  curY = drawWrappedText(ctx, prof.desc, marginX, curY, maxTextW, 20, 'left');
+
+  curY += 8;
+
+  // Encabezado de puntos clave
+  ctx.fillStyle = '#003087';
+  ctx.font = 'bold 12px Georgia';
+  ctx.textAlign = 'left';
+  ctx.fillText('Fundamento físico e hidráulico:', marginX, curY);
+  curY += 18;
+
+  ctx.font = '12px Georgia';
+  ctx.fillStyle = '#333333';
+
+  let b1 = '', b2 = '';
+  if (prof.code === 'H1') {
+    b1 = '• En pendiente horizontal (S₀ = 0), el tirante normal es infinito (yₙ → ∞). Estar en Zona 1 requeriría y > ∞, imposible en canal finito.';
+    b2 = '• En la práctica, un canal horizontal de gran profundidad representa un reservorio o lago en reposo total (V = 0, Sf = 0).';
+  } else if (prof.code === 'A1') {
+    b1 = '• En pendiente adversa (S₀ < 0), el fondo sube aguas abajo; el peso del fluido se opone al movimiento en vez de impulsarlo.';
+    b2 = '• La ecuación de Manning requeriría √(S₀) imaginaria, por lo que ∄ yₙ real positivo y la Zona 1 no existe físicamente.';
+  } else if (prof.code === 'C2') {
+    b1 = '• Flujo uniforme crítico: Sf = S₀ y Fr = 1 simultáneamente, dando dy/dx = (S₀ - Sf)/(1 - Fr²) = 0/0 (indeterminado).';
+    b2 = '• La lámina de agua corre en línea recta paralela al fondo en estado crítico permanente (y = yc = yₙ).';
+  } else {
+    b1 = '• Esta combinación teórica no genera un tramo continuo estándar de flujo gradualmente variado.';
+    b2 = '• El régimen no admite soluciones físicas continuas bajo las condiciones de contorno fijadas.';
+  }
+
+  curY = drawWrappedText(ctx, b1, marginX, curY, maxTextW, 18, 'left');
+  curY = drawWrappedText(ctx, b2, marginX, curY, maxTextW, 18, 'left');
+
+  // Franja inferior con datos de referencia
+  const ynStr = (!isFinite(yn) || yn > 50) ? '→ ∞' : (yn <= 0 ? 'No existe' : yn.toFixed(3) + ' m');
+  const barY = H - 34;
+  ctx.fillStyle = '#eef3fb';
+  ctx.fillRect(24, barY - 14, W - 48, 25);
+  ctx.strokeStyle = '#b0c4de';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(24, barY - 14, W - 48, 25);
+
+  ctx.font = 'bold 11px Georgia';
+  ctx.fillStyle = '#003087';
+  ctx.textAlign = 'center';
+  ctx.fillText(`S₀ = ${S0}  |  LPN (yₙ): ${ynStr}  |  LPC (yc): ${yc.toFixed(3)} m  |  Q = ${Q} m³/s, b = ${b} m`, W / 2, barY + 3);
+}
+
+function handleSpecialGrafica(prof, yn, yc, Q, b, n, S0) {
+  renderSpecialNoticeOnCanvas('canvas-grafica', prof, yn, yc, Q, b, n, S0);
+  document.getElementById('g_info').innerHTML = `<span style="color:#CC0000; font-weight:bold">Perfil Especial ${prof.code}: ${prof.cond}</span>`;
+  document.getElementById('g_tabla').innerHTML = `<div class="callout yellow"><div class="callout-title">Nota Técnica del Perfil ${prof.code}</div><p>${prof.desc}</p></div>`;
+}
+
+function drawGraficaCanvas(ys, Fs, yn, yc, deltaX, Q, b, n, S0, prof) {
+  const cv = document.getElementById('canvas-grafica');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const padL = 65, padR = 25, padT = 36, padB = 46;
+  ctx.clearRect(0, 0, W, H);
+
+  const validFs = Fs.filter(f => isFinite(f) && !isNaN(f) && Math.abs(f) < 1e5);
+  if (validFs.length < 2) return;
+
+  const yMin = Math.min(...ys), yMax = Math.max(...ys);
+  const fMin = Math.min(...validFs), fMax = Math.max(...validFs);
+  const rY = (yMax - yMin) || 1, rF = (fMax - fMin) || 1;
+
+  const px = y => padL + (y - yMin) / rY * (W - padL - padR);
+  const pf = f => padT + (1 - (f - fMin) / rF) * (H - padT - padB);
+
+  // Bandas de zonificación de fondo
+  const ynSafe = (!isFinite(yn) || yn > 50 || yn <= 0) ? yMax + 999 : yn;
+  const topRef = Math.max(ynSafe, yc);
+  const botRef = Math.min(ynSafe, yc);
+
+  const band = (a, bVal) => {
+    const la = Math.max(a, yMin), lb = Math.min(bVal, yMax);
+    return la < lb ? [px(la), px(lb)] : null;
+  };
+
+  const b1 = band(topRef, yMax + 999);
+  if (b1) { ctx.fillStyle = 'rgba(0,100,0,0.06)'; ctx.fillRect(b1[0], padT, b1[1] - b1[0], H - padT - padB); }
+  const b2 = band(botRef, topRef);
+  if (b2) { ctx.fillStyle = 'rgba(184,134,11,0.07)'; ctx.fillRect(b2[0], padT, b2[1] - b2[0], H - padT - padB); }
+  const b3 = band(yMin - 999, botRef);
+  if (b3) { ctx.fillStyle = 'rgba(204,0,0,0.06)'; ctx.fillRect(b3[0], padT, b3[1] - b3[0], H - padT - padB); }
+
+  // Grilla
+  ctx.setLineDash([2, 3]);
+  ctx.strokeStyle = '#e2e6f0';
+  ctx.lineWidth = 0.8;
+  for (let i = 0; i <= 5; i++) {
+    const yv = yMin + rY * i / 5;
+    ctx.beginPath(); ctx.moveTo(px(yv), padT); ctx.lineTo(px(yv), H - padB); ctx.stroke();
+    const fv = fMin + rF * i / 5;
+    ctx.beginPath(); ctx.moveTo(padL, pf(fv)); ctx.lineTo(W - padR, pf(fv)); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Línea cero
+  if (fMin <= 0 && fMax >= 0) {
+    ctx.strokeStyle = '#888888';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, pf(0)); ctx.lineTo(W - padR, pf(0)); ctx.stroke();
+  }
+
+  // Relleno de área bajo la curva
+  ctx.beginPath();
+  let started = false;
+  ys.forEach((y, i) => {
+    const f = Fs[i];
+    if (isFinite(f) && Math.abs(f) < 1e5) {
+      if (!started) { ctx.moveTo(px(y), pf(f)); started = true; }
+      else ctx.lineTo(px(y), pf(f));
+    }
+  });
+  const zeroY = pf(Math.max(fMin, Math.min(0, fMax)));
+  ctx.lineTo(px(ys[ys.length - 1]), zeroY);
+  ctx.lineTo(px(ys[0]), zeroY);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0, 48, 135, 0.10)';
+  ctx.fill();
+
+  // Curva F(y)
+  ctx.beginPath();
+  started = false;
+  ys.forEach((y, i) => {
+    const f = Fs[i];
+    if (isFinite(f) && Math.abs(f) < 1e5) {
+      if (!started) { ctx.moveTo(px(y), pf(f)); started = true; }
+      else ctx.lineTo(px(y), pf(f));
+    }
+  });
+  ctx.strokeStyle = '#003087';
+  ctx.lineWidth = 2.8;
+  ctx.stroke();
+
+  // Puntos calculados
+  ys.forEach((y, i) => {
+    const f = Fs[i];
+    if (isFinite(f) && Math.abs(f) < 1e5) {
+      const h = hydraulics(Q, b, n, S0, y);
+      ctx.beginPath();
+      ctx.arc(px(y), pf(f), 3, 0, 2 * Math.PI);
+      ctx.fillStyle = (h.Fr > 1) ? '#CC0000' : '#003087';
+      ctx.fill();
+    }
+  });
+
+  // Línea LPN (yn)
+  if (isFinite(yn) && yn >= yMin && yn <= yMax && yn > 0) {
+    ctx.setLineDash([7, 4]);
+    ctx.strokeStyle = '#006400';
+    ctx.lineWidth = 2.0;
+    ctx.beginPath(); ctx.moveTo(px(yn), padT); ctx.lineTo(px(yn), H - padB); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#006400';
+    ctx.font = 'bold 11px Georgia';
+    ctx.textAlign = 'left';
+    ctx.fillText(`LPN (yₙ = ${yn.toFixed(2)}m)`, px(yn) + 3, padT + 14);
+  }
+
+  // Línea LPC (yc)
+  if (yc >= yMin && yc <= yMax) {
+    ctx.setLineDash([7, 4]);
+    ctx.strokeStyle = '#CC0000';
+    ctx.lineWidth = 2.0;
+    ctx.beginPath(); ctx.moveTo(px(yc), padT); ctx.lineTo(px(yc), H - padB); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#CC0000';
+    ctx.font = 'bold 11px Georgia';
+    ctx.textAlign = 'left';
+    ctx.fillText(`LPC (yc = ${yc.toFixed(2)}m)`, px(yc) + 3, padT + 28);
+  }
+
+  // Ejes
+  ctx.strokeStyle = '#111';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT); ctx.lineTo(padL, H - padB); ctx.lineTo(W - padR, H - padB);
+  ctx.stroke();
+
+  // Ticks X
+  ctx.fillStyle = '#111';
+  ctx.textAlign = 'center';
+  ctx.font = '11px Georgia';
+  for (let i = 0; i <= 5; i++) {
+    const v = yMin + rY * i / 5;
+    ctx.fillText(v.toFixed(2), px(v), H - padB + 16);
+    ctx.beginPath(); ctx.moveTo(px(v), H - padB); ctx.lineTo(px(v), H - padB + 5); ctx.stroke();
+  }
+
+  // Ticks Y
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const v = fMin + rF * i / 5;
+    ctx.fillText(v.toFixed(0), padL - 6, pf(v) + 4);
+    ctx.beginPath(); ctx.moveTo(padL, pf(v)); ctx.lineTo(padL - 5, pf(v)); ctx.stroke();
+  }
+
+  // Rótulos de ejes
+  ctx.fillStyle = '#003087';
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 12px Georgia';
+  ctx.fillText('Tirante y (m)', padL + (W - padL - padR) / 2, H - 6);
+
+  ctx.save();
+  ctx.translate(14, padT + (H - padT - padB) / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Función F(y) = dx/dy', 0, 0);
+  ctx.restore();
+
+  // Título del canvas
+  ctx.fillStyle = '#003087';
+  ctx.font = 'bold 12px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillText(`Curva F(y) para Perfil ${prof.code}  |  Longitud Integrada ΔX ≈ ${deltaX.toFixed(1)} m`, W / 2, 18);
+}
+
+function limpiarGrafica() {
+  const cv = document.getElementById('canvas-grafica');
+  cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+  document.getElementById('g_tabla').innerHTML = '';
+  document.getElementById('g_info').innerHTML = '';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// 6. SIMULADOR: TRAMO A TRAMO (Marcha Directa)
+// ─────────────────────────────────────────────────────────────────
+function calcTramo() {
+  const Q  = +document.getElementById('t_Q').value;
+  const b  = +document.getElementById('t_b').value;
+  const n  = +document.getElementById('t_n').value;
+  const S0 = +document.getElementById('t_S0').value;
+  const y0 = +document.getElementById('t_y0').value;
+  const yf = +document.getElementById('t_yf').value;
+  const N  = Math.max(2, +document.getElementById('t_N').value);
+
+  const yn = tirante_normal(Q, b, n, S0);
+  const yc = tirante_critico(Q, b);
+
+  const sCode = activeSlope['T'];
+  const zNum  = activeZone['T'];
+  const prof  = PROFILES_DB[sCode].zones[zNum];
+
+  // Caso especial C2
+  if (prof.code === 'C2') {
+    handleC2Tramo(yc, S0, N);
+    return;
+  }
+  // Caso especial H1 / A1
+  if (prof.isSpecial) {
+    handleSpecialTramo(prof, yn, yc, Q, b, n, S0);
+    return;
+  }
+
+  const rows = [];
+  let cumX = 0;
+  const dy = (yf - y0) / N;
+
+  for (let i = 0; i <= N; i++) {
+    const y = y0 + i * dy;
+    const h = hydraulics(Q, b, n, S0, y);
+
+    if (i === 0) {
+      rows.push({
+        sec: 1, x: 0, dx: 0, y, A: h.A, V: h.V, Fr: h.Fr, E: h.E, Sf: h.Sf, Sfavg: 0
+      });
+    } else {
+      const prev = rows[i - 1];
+      const Sfavg = (prev.Sf + h.Sf) / 2;
+      const denom = Sfavg - S0;
+      const dx = (Math.abs(denom) < 1e-12) ? 0 : (prev.E - h.E) / denom;
+      cumX += dx;
+      rows.push({
+        sec: i + 1, x: cumX, dx, y, A: h.A, V: h.V, Fr: h.Fr, E: h.E, Sf: h.Sf, Sfavg
+      });
+    }
+  }
+
+  const totalL = Math.abs(rows[rows.length - 1].x - rows[0].x);
+  const ynStr = (!isFinite(yn) || yn > 50) ? '→ ∞' : (yn <= 0 ? 'No existe' : yn.toFixed(4) + ' m');
+
+  document.getElementById('t_info').innerHTML = `
+    <span style="color:#006400">LPN: yₙ = ${ynStr}</span> &nbsp;|&nbsp;
+    <span style="color:#CC0000">LPC: yc = ${yc.toFixed(4)} m</span> &nbsp;|&nbsp;
+    <strong>Longitud Total L = ${totalL.toFixed(2)} m</strong> &nbsp;|&nbsp;
+    <span style="color:${prof.regime.includes('Sub') ? '#006400' : '#CC0000'}">${prof.regime}</span>
+  `;
+
+  drawTramoCanvas(rows, yn, yc, S0, prof);
+
+  // Tabla
+  let html = `<table><thead><tr>
+    <th>Sec.</th><th>x (m)</th><th>Tirante y (m)</th><th>Energía E (m)</th><th>Velocidad V (m/s)</th><th>Froude Fr</th><th>Sf prom.</th><th>Δx (m)</th>
+  </tr></thead><tbody>`;
+  rows.forEach(r => {
+    const frColor = r.Fr > 1 ? '#CC0000' : (r.Fr < 0.98 ? '#006400' : '#B8860B');
+    html += `<tr>
+      <td>${r.sec}</td>
+      <td><strong>${r.x.toFixed(2)}</strong></td>
+      <td><strong>${r.y.toFixed(4)}</strong></td>
+      <td>${r.E.toFixed(4)}</td>
+      <td>${r.V.toFixed(3)}</td>
+      <td style="color:${frColor}; font-weight:bold">${r.Fr.toFixed(3)}</td>
+      <td>${r.Sfavg.toExponential(3)}</td>
+      <td>${r.dx.toFixed(2)}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('t_tabla').innerHTML = html;
+}
+
+function handleC2Tramo(yc, S0, N) {
+  const rows = [];
+  const L = 100.0;
+  const dx = L / N;
+  for (let i = 0; i <= N; i++) {
+    rows.push({
+      sec: i + 1, x: i * dx, dx: (i === 0 ? 0 : dx), y: yc, A: 4 * yc, V: 5 / (4 * yc),
+      Fr: 1.0, E: yc + (5 / (4 * yc))**2 / (2 * 9.81), Sf: S0, Sfavg: S0
+    });
+  }
+  document.getElementById('t_info').innerHTML = `
+    <span style="color:#B8860B; font-weight:bold">Perfil C2 — Flujo Crítico Uniforme Coincidente</span> &nbsp;|&nbsp;
+    <span style="color:#006400">LPN = LPC = ${yc.toFixed(3)} m</span> &nbsp;|&nbsp;
+    <strong>Longitud L = 100.0 m</strong> (Tirante constante)
+  `;
+  drawTramoCanvas(rows, yc, yc, S0, { code: 'C2', cond: 'y = yc = yₙ' });
+
+  let html = `<table><thead><tr><th>Sec.</th><th>x (m)</th><th>Tirante y (m)</th><th>Fr</th><th>Estado</th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    html += `<tr><td>${r.sec}</td><td>${r.x.toFixed(1)}</td><td>${r.y.toFixed(4)}</td><td style="color:#B8860B;font-weight:bold">1.000</td><td>Crítico Uniforme</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('t_tabla').innerHTML = html;
+}
+
+function handleSpecialTramo(prof, yn, yc, Q, b, n, S0) {
+  renderSpecialNoticeOnCanvas('canvas-tramo', prof, yn, yc, Q, b, n, S0);
+  document.getElementById('t_info').innerHTML = `<span style="color:#CC0000; font-weight:bold">Perfil Especial ${prof.code}: ${prof.cond}</span>`;
+  document.getElementById('t_tabla').innerHTML = `<div class="callout red"><div class="callout-title">Explicación Física del Perfil ${prof.code}</div><p>${prof.desc}</p></div>`;
+}
+
+function drawTramoCanvas(rows, yn, yc, S0, prof) {
+  const cv = document.getElementById('canvas-tramo');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const padL = 65, padR = 25, padT = 38, padB = 46;
+  ctx.clearRect(0, 0, W, H);
+
+  const xs = rows.map(r => r.x);
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const rX = (xMax - xMin) || 1;
+
+  if (viewMode === 'depth') {
+    // -------------------------------------------------------------
+    // VISTA 1: DIAGRAMA DE TIRANTE y(x) CON LPN Y LPC HORIZONTALES
+    // -------------------------------------------------------------
+    const ys = rows.map(r => r.y);
+    const extraLines = [yc];
+    if (isFinite(yn) && yn > 0 && yn < 50) extraLines.push(yn);
+    const yMin = 0;
+    const yMax = Math.max(...ys, ...extraLines) * 1.18;
+    const rY = (yMax - yMin) || 1;
+
+    const px = x => padL + (x - xMin) / rX * (W - padL - padR);
+    const py = y => padT + (1 - (y - yMin) / rY) * (H - padT - padB);
+
+    // Fondo blanco
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    // Bandas horizontales de zonas
+    const ynSafe = (!isFinite(yn) || yn > 50 || yn <= 0) ? yMax + 999 : yn;
+    const topRef = Math.max(ynSafe, yc);
+    const botRef = Math.min(ynSafe, yc);
+
+    // Zona 1
+    if (topRef < yMax) {
+      ctx.fillStyle = 'rgba(0,100,0,0.06)';
+      ctx.fillRect(padL, py(yMax), W - padL - padR, py(Math.min(topRef, yMax)) - py(yMax));
+      ctx.fillStyle = '#006400'; ctx.font = 'bold 10px Georgia'; ctx.textAlign = 'right';
+      ctx.fillText('ZONA 1', W - padR - 8, py(yMax) + 14);
+    }
+    // Zona 2
+    if (botRef < topRef) {
+      const yTop = Math.min(topRef, yMax), yBot = Math.max(botRef, yMin);
+      if (yTop > yBot) {
+        ctx.fillStyle = 'rgba(184,134,11,0.07)';
+        ctx.fillRect(padL, py(yTop), W - padL - padR, py(yBot) - py(yTop));
+        ctx.fillStyle = '#B8860B'; ctx.font = 'bold 10px Georgia'; ctx.textAlign = 'right';
+        ctx.fillText('ZONA 2', W - padR - 8, py(yTop) + 14);
+      }
+    }
+    // Zona 3
+    if (botRef > yMin) {
+      ctx.fillStyle = 'rgba(204,0,0,0.06)';
+      ctx.fillRect(padL, py(botRef), W - padL - padR, py(yMin) - py(botRef));
+      ctx.fillStyle = '#CC0000'; ctx.font = 'bold 10px Georgia'; ctx.textAlign = 'right';
+      ctx.fillText('ZONA 3', W - padR - 8, py(botRef) + 14);
+    }
+
+    // Fondo del canal (solera z = 0)
+    ctx.fillStyle = '#dfd8c8';
+    ctx.fillRect(padL, py(0), W - padL - padR, H - padB - py(0) + 2);
+
+    // Grilla
+    ctx.setLineDash([2, 3]);
+    ctx.strokeStyle = '#e0e4ee';
+    ctx.lineWidth = 0.8;
+    for (let i = 0; i <= 5; i++) {
+      const xv = xMin + rX * i / 5;
+      ctx.beginPath(); ctx.moveTo(px(xv), padT); ctx.lineTo(px(xv), H - padB); ctx.stroke();
+      const yv = yMin + rY * i / 5;
+      ctx.beginPath(); ctx.moveTo(padL, py(yv)); ctx.lineTo(W - padR, py(yv)); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // Relleno de agua
+    ctx.beginPath();
+    rows.forEach((r, i) => {
+      if (i === 0) ctx.moveTo(px(r.x), py(r.y));
+      else ctx.lineTo(px(r.x), py(r.y));
+    });
+    ctx.lineTo(px(xs[xs.length - 1]), py(0));
+    ctx.lineTo(px(xs[0]), py(0));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0, 70, 190, 0.18)';
+    ctx.fill();
+
+    // Línea de la superficie libre y(x)
+    ctx.beginPath();
+    rows.forEach((r, i) => {
+      if (i === 0) ctx.moveTo(px(r.x), py(r.y));
+      else ctx.lineTo(px(r.x), py(r.y));
+    });
+    ctx.strokeStyle = '#003087';
+    ctx.lineWidth = 3.0;
+    ctx.stroke();
+
+    // Línea LPN (yn)
+    if (isFinite(yn) && yn >= yMin && yn <= yMax && yn > 0) {
+      ctx.setLineDash([8, 4]);
+      ctx.strokeStyle = '#006400';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath(); ctx.moveTo(padL, py(yn)); ctx.lineTo(W - padR, py(yn)); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#006400';
+      ctx.font = 'bold 11px Georgia';
+      ctx.textAlign = 'left';
+      ctx.fillText(`LPN: yₙ = ${yn.toFixed(3)} m`, padL + 8, py(yn) - 4);
+    } else if (!isFinite(yn) || yn > 50) {
+      ctx.fillStyle = '#666'; ctx.font = 'italic 10px Georgia'; ctx.textAlign = 'left';
+      ctx.fillText('LPN: yₙ → ∞ (fuera de escala)', padL + 8, padT + 12);
+    }
+
+    // Línea LPC (yc)
+    if (yc >= yMin && yc <= yMax) {
+      ctx.setLineDash([8, 4]);
+      ctx.strokeStyle = '#CC0000';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath(); ctx.moveTo(padL, py(yc)); ctx.lineTo(W - padR, py(yc)); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#CC0000';
+      ctx.font = 'bold 11px Georgia';
+      ctx.textAlign = 'left';
+      ctx.fillText(`LPC: yc = ${yc.toFixed(3)} m`, padL + 8, py(yc) + 14);
+    }
+
+    // Puntos de cálculo
+    rows.forEach(r => {
+      ctx.beginPath();
+      ctx.arc(px(r.x), py(r.y), 3.5, 0, 2 * Math.PI);
+      ctx.fillStyle = (r.Fr > 1) ? '#CC0000' : '#003087';
+      ctx.fill();
+    });
+
+    // Ejes
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(padL, padT); ctx.lineTo(padL, H - padB); ctx.lineTo(W - padR, H - padB);
+    ctx.stroke();
+
+    // Ticks X
+    ctx.fillStyle = '#111';
+    ctx.textAlign = 'center';
+    ctx.font = '11px Georgia';
+    for (let i = 0; i <= 5; i++) {
+      const v = xMin + rX * i / 5;
+      ctx.fillText(v.toFixed(0), px(v), H - padB + 16);
+      ctx.beginPath(); ctx.moveTo(px(v), H - padB); ctx.lineTo(px(v), H - padB + 5); ctx.stroke();
+    }
+
+    // Ticks Y
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i++) {
+      const v = yMin + rY * i / 5;
+      ctx.fillText(v.toFixed(2), padL - 6, py(v) + 4);
+      ctx.beginPath(); ctx.moveTo(padL, py(v)); ctx.lineTo(padL - 5, py(v)); ctx.stroke();
+    }
+
+    // Rótulos de ejes
+    ctx.fillStyle = '#003087';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 12px Georgia';
+    ctx.fillText('Distancia x (m)', padL + (W - padL - padR) / 2, H - 6);
+
+    ctx.save();
+    ctx.translate(14, padT + (H - padT - padB) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Tirante y (m)', 0, 0);
+    ctx.restore();
+
+    // Título superior
+    ctx.fillStyle = '#003087';
+    ctx.font = 'bold 12px Georgia';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Perfil Longitudinal ${prof.code}  |  Longitud Total L = ${Math.abs(xMax - xMin).toFixed(1)} m`, W / 2, 18);
+
+  } else {
+    // -------------------------------------------------------------
+    // VISTA 2: COTA REAL z(x) + y(x) MOSTRANDO LA PENDIENTE S0
+    // -------------------------------------------------------------
+    const zStart = 2.0; // Datum arbitrario de fondo
+    const bedZ = rows.map(r => zStart - S0 * r.x);
+    const waterZ = rows.map((r, i) => bedZ[i] + r.y);
+    const lpnZ = (isFinite(yn) && yn > 0 && yn < 50) ? rows.map((r, i) => bedZ[i] + yn) : [];
+    const lpcZ = rows.map((r, i) => bedZ[i] + yc);
+
+    const allZ = [...bedZ, ...waterZ, ...lpcZ, ...lpnZ];
+    const zMin = Math.min(...allZ) * 0.95;
+    const zMax = Math.max(...allZ) * 1.05;
+    const rZ = (zMax - zMin) || 1;
+
+    const px = x => padL + (x - xMin) / rX * (W - padL - padR);
+    const pz = z => padT + (1 - (z - zMin) / rZ) * (H - padT - padB);
+
+    // Fondo canal y terreno
+    ctx.beginPath();
+    rows.forEach((r, i) => {
+      if (i === 0) ctx.moveTo(px(r.x), pz(bedZ[i]));
+      else ctx.lineTo(px(r.x), pz(bedZ[i]));
+    });
+    ctx.lineTo(px(xs[xs.length - 1]), H - padB);
+    ctx.lineTo(px(xs[0]), H - padB);
+    ctx.closePath();
+    ctx.fillStyle = '#dfd8c8';
+    ctx.fill();
+
+    // Relleno de agua entre fondo y lámina
+    ctx.beginPath();
+    rows.forEach((r, i) => {
+      if (i === 0) ctx.moveTo(px(r.x), pz(waterZ[i]));
+      else ctx.lineTo(px(r.x), pz(waterZ[i]));
+    });
+    for (let i = rows.length - 1; i >= 0; i--) {
+      ctx.lineTo(px(rows[i].x), pz(bedZ[i]));
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0, 70, 190, 0.22)';
+    ctx.fill();
+
+    // Línea de solera z(x)
+    ctx.beginPath();
+    rows.forEach((r, i) => {
+      if (i === 0) ctx.moveTo(px(r.x), pz(bedZ[i]));
+      else ctx.lineTo(px(r.x), pz(bedZ[i]));
+    });
+    ctx.strokeStyle = '#554433';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Línea de agua z(x) + y(x)
+    ctx.beginPath();
+    rows.forEach((r, i) => {
+      if (i === 0) ctx.moveTo(px(r.x), pz(waterZ[i]));
+      else ctx.lineTo(px(r.x), pz(waterZ[i]));
+    });
+    ctx.strokeStyle = '#003087';
+    ctx.lineWidth = 3.0;
+    ctx.stroke();
+
+    // Línea LPN inclinada
+    if (lpnZ.length > 0) {
+      ctx.setLineDash([8, 4]);
+      ctx.strokeStyle = '#006400';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      rows.forEach((r, i) => {
+        if (i === 0) ctx.moveTo(px(r.x), pz(lpnZ[i]));
+        else ctx.lineTo(px(r.x), pz(lpnZ[i]));
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#006400'; ctx.font = 'bold 10px Georgia';
+      ctx.fillText(`LPN (yₙ=${yn.toFixed(2)}m)`, px(xs[0]) + 5, pz(lpnZ[0]) - 4);
+    }
+
+    // Línea LPC inclinada
+    ctx.setLineDash([8, 4]);
+    ctx.strokeStyle = '#CC0000';
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    rows.forEach((r, i) => {
+      if (i === 0) ctx.moveTo(px(r.x), pz(lpcZ[i]));
+      else ctx.lineTo(px(r.x), pz(lpcZ[i]));
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#CC0000'; ctx.font = 'bold 10px Georgia';
+    ctx.fillText(`LPC (yc=${yc.toFixed(2)}m)`, px(xs[0]) + 5, pz(lpcZ[0]) + 12);
+
+    // Ejes
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(padL, padT); ctx.lineTo(padL, H - padB); ctx.lineTo(W - padR, H - padB);
+    ctx.stroke();
+
+    // Ticks X
+    ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.font = '11px Georgia';
+    for (let i = 0; i <= 5; i++) {
+      const v = xMin + rX * i / 5;
+      ctx.fillText(v.toFixed(0), px(v), H - padB + 16);
+      ctx.beginPath(); ctx.moveTo(px(v), H - padB); ctx.lineTo(px(v), H - padB + 5); ctx.stroke();
+    }
+
+    // Ticks Y
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i++) {
+      const v = zMin + rZ * i / 5;
+      ctx.fillText(v.toFixed(2), padL - 6, pz(v) + 4);
+      ctx.beginPath(); ctx.moveTo(padL, pz(v)); ctx.lineTo(padL - 5, pz(v)); ctx.stroke();
+    }
+
+    ctx.fillStyle = '#003087';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 12px Georgia';
+    ctx.fillText('Distancia x (m)', padL + (W - padL - padR) / 2, H - 6);
+
+    ctx.save();
+    ctx.translate(14, padT + (H - padT - padB) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Cota de Elevación z + y (m)', 0, 0);
+    ctx.restore();
+
+    ctx.fillStyle = '#003087';
+    ctx.font = 'bold 12px Georgia';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Vista en Elevación: Perfil ${prof.code} con Pendiente Real S₀ = ${S0}`, W / 2, 18);
+  }
+}
+
+function limpiarTramo() {
+  const cv = document.getElementById('canvas-tramo');
+  cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+  document.getElementById('t_tabla').innerHTML = '';
+  document.getElementById('t_info').innerHTML = '';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// 7. INICIALIZACIÓN AL CARGAR LA PÁGINA
+// ─────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  updateUI('G');
+  updateUI('T');
+  calcGrafica();
+  calcTramo();
+});
+</script>
+</body>
+</html>

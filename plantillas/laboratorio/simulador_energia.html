@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Energía Específica en Canales Abiertos | Laboratorio Virtual Unicauca</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            unicauca: {
+              blue: '#002855',
+              dark: '#001938',
+              light: '#0A4A8F',
+              accent: '#0284C7',
+              gold: '#D97706',
+              goldLight: '#FBBF24',
+              red: '#C8102E',
+              crimson: '#9E0B20',
+              surface: '#F8FAFC',
+              card: '#FFFFFF',
+              border: '#E2E8F0'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Courier New', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- KaTeX for math formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+  <style>
+    @keyframes flowArrows {
+      0% { stroke-dashoffset: 24; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .water-flow-line {
+      stroke-dasharray: 8, 4;
+      animation: flowArrows 1.2s linear infinite;
+    }
+    @keyframes waveSubtle {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-1.5px); }
+    }
+    .wave-surface {
+      animation: waveSubtle 2.5s ease-in-out infinite;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+  <div id="energyApp" class="flex-1 flex flex-col">
+
+    <!-- TOP UNIVERSITY HEADER -->
+    <header class="bg-unicauca-blue text-white shadow-md border-b-2 border-unicauca-gold shrink-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        
+        <!-- Brand & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shadow-inner">
+            <span class="text-xl">⚡</span>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-[10px] uppercase tracking-wider font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                Práctica III • Laboratorio Virtual
+              </span>
+              <span class="text-xs text-blue-200 hidden md:inline">Universidad del Cauca</span>
+            </div>
+            <h1 class="text-base sm:text-lg font-bold leading-tight tracking-tight text-white">
+              Simulador de Energía Específica en Canales Abiertos
+            </h1>
+          </div>
+        </div>
+
+        <!-- Quick Actions & Presets -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <!-- Preset Selector -->
+          <div class="flex items-center space-x-1.5 bg-blue-950/70 px-2.5 py-1.5 rounded-xl border border-blue-800 text-slate-200">
+            <span class="text-[11px] text-blue-300 font-medium hidden sm:inline">Escenario:</span>
+            <select 
+              v-model="selectedPreset" 
+              @change="applyPreset"
+              class="bg-transparent text-xs font-semibold text-amber-300 focus:outline-none cursor-pointer"
+            >
+              <option value="unicauca_lab" class="bg-slate-900 text-white">🔬 Lab Unicauca (Canal Rectangular 30 cm)</option>
+              <option value="riego_trapecial" class="bg-slate-900 text-white">🌾 Canal de Riego Trapecial (b=1.0m, z=1.5)</option>
+              <option value="torrente_supercritico" class="bg-slate-900 text-white">🌊 Flujo Supercrítico Torrencial (S0=2.5%)</option>
+              <option value="colector_circular" class="bg-slate-900 text-white">⭕ Colector Circular Pluvial (D=0.80m)</option>
+            </select>
+          </div>
+
+          <!-- Unit Selector -->
+          <div class="inline-flex rounded-xl bg-blue-950/80 p-0.5 border border-blue-800 text-[11px]">
+            <button 
+              @click="qUnit = 'L/s'"
+              :class="qUnit === 'L/s' ? 'bg-amber-400 text-blue-950 font-bold' : 'text-slate-300 hover:text-white'"
+              class="px-2 py-1 rounded-lg transition"
+            >
+              L/s
+            </button>
+            <button 
+              @click="qUnit = 'm3/s'"
+              :class="qUnit === 'm3/s' ? 'bg-amber-400 text-blue-950 font-bold' : 'text-slate-300 hover:text-white'"
+              class="px-2 py-1 rounded-lg transition"
+            >
+              m³/s
+            </button>
+          </div>
+
+          <!-- Return to main app -->
+          <a 
+            href="index.html" 
+            class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex items-center space-x-1 border border-white/15"
+            title="Regresar a la guía de prácticas principal"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <span class="hidden sm:inline">Guía Principal</span>
+          </a>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- STATUS & REGIME BANNER -->
+    <div class="bg-slate-900 text-white text-xs border-b border-slate-800 shrink-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center space-x-3">
+          <span class="text-slate-400">Régimen Hidráulico:</span>
+          <span 
+            :class="{
+              'bg-blue-600/30 text-blue-300 border-blue-500/40': currentRegime === 'Subcrítico',
+              'bg-amber-500/30 text-amber-300 border-amber-400/40': currentRegime === 'Crítico',
+              'bg-rose-600/30 text-rose-300 border-rose-500/40': currentRegime === 'Supercrítico'
+            }"
+            class="px-2.5 py-0.5 rounded-full font-bold border flex items-center space-x-1 shadow-sm"
+          >
+            <span class="w-1.5 h-1.5 rounded-full" :class="{
+              'bg-blue-400': currentRegime === 'Subcrítico',
+              'bg-amber-400': currentRegime === 'Crítico',
+              'bg-rose-400': currentRegime === 'Supercrítico'
+            }"></span>
+            <span>{{ currentRegime }} (Fr = {{ formatNum(currentFroude, 3) }})</span>
+          </span>
+
+          <span class="text-slate-400 hidden sm:inline">|</span>
+
+          <span class="text-slate-400 hidden sm:inline">Tipo de Pendiente:</span>
+          <span 
+            :class="{
+              'bg-emerald-600/20 text-emerald-300 border-emerald-500/30': slopeType === 'Suave (Subcrítica - M)',
+              'bg-amber-600/20 text-amber-300 border-amber-500/30': slopeType === 'Crítica (C)',
+              'bg-purple-600/20 text-purple-300 border-purple-500/30': slopeType === 'Fuerte (Supercrítica - S)'
+            }"
+            class="px-2 py-0.5 rounded font-mono text-[11px] border hidden sm:inline-flex"
+          >
+            {{ slopeType }} (Sc = {{ (hydraulics.Sc * 100).toFixed(4) }}%)
+          </span>
+        </div>
+
+        <div class="flex items-center space-x-4 text-[11px] text-slate-400 font-mono">
+          <div><span class="text-slate-300">yc:</span> <strong class="text-amber-400">{{ (hydraulics.yc * 100).toFixed(2) }} cm</strong></div>
+          <div><span class="text-slate-300">Emin:</span> <strong class="text-amber-400">{{ (hydraulics.Emin * 100).toFixed(2) }} cm</strong></div>
+          <div><span class="text-slate-300">yn:</span> <strong class="text-cyan-400">{{ (hydraulics.yn * 100).toFixed(2) }} cm</strong></div>
+          <div><span class="text-slate-300">y_alt:</span> <strong class="text-purple-400">{{ (hydraulics.y_alt * 100).toFixed(2) }} cm</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN TWO-COLUMN WORKSPACE -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex-1 flex flex-col lg:flex-row gap-5">
+      
+      <!-- LEFT CONTROL COLUMN: Parameters & Geometry -->
+      <section class="w-full lg:w-80 shrink-0 space-y-4">
+        
+        <!-- 1. Geometry Form Selector -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+              <span>📐 Forma de Sección</span>
+            </h2>
+            <span class="text-[10px] text-slate-600 font-mono">Geometría</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <button 
+              @click="geometry.shape = 'rectangular'"
+              :class="geometry.shape === 'rectangular' ? 'border-unicauca-blue bg-blue-50 text-unicauca-blue font-bold shadow-sm' : 'border-slate-200 text-slate-600 hover:border-slate-300'"
+              class="p-2 border rounded-xl flex flex-col items-center justify-center space-y-1 text-xs transition"
+            >
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="1"></rect></svg>
+              <span class="text-[11px]">Rectangular</span>
+            </button>
+
+            <button 
+              @click="geometry.shape = 'trapezoidal'"
+              :class="geometry.shape === 'trapezoidal' ? 'border-unicauca-blue bg-blue-50 text-unicauca-blue font-bold shadow-sm' : 'border-slate-200 text-slate-600 hover:border-slate-300'"
+              class="p-2 border rounded-xl flex flex-col items-center justify-center space-y-1 text-xs transition"
+            >
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18h16L18 6H6L4 18z"></path></svg>
+              <span class="text-[11px]">Trapecial</span>
+            </button>
+
+            <button 
+              @click="geometry.shape = 'circular'"
+              :class="geometry.shape === 'circular' ? 'border-unicauca-blue bg-blue-50 text-unicauca-blue font-bold shadow-sm' : 'border-slate-200 text-slate-600 hover:border-slate-300'"
+              class="p-2 border rounded-xl flex flex-col items-center justify-center space-y-1 text-xs transition"
+            >
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"></circle></svg>
+              <span class="text-[11px]">Circular</span>
+            </button>
+          </div>
+
+          <!-- Dimension Inputs -->
+          <div class="space-y-2.5 pt-1">
+            <!-- Rectangular & Trapecial: Base width b -->
+            <div v-if="geometry.shape !== 'circular'" class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-slate-600 font-medium">Ancho de base (b):</span>
+                <span class="font-mono font-bold text-unicauca-blue">{{ geometry.b.toFixed(2) }} m ({{ (geometry.b*100).toFixed(0) }} cm)</span>
+              </div>
+              <input 
+                type="range" 
+                v-model.number="geometry.b" 
+                min="0.10" 
+                max="3.00" 
+                step="0.01" 
+                class="w-full accent-unicauca-blue h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+              />
+            </div>
+
+            <!-- Trapecial: Side slope z -->
+            <div v-if="geometry.shape === 'trapezoidal'" class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-slate-600 font-medium">Talud lateral (z, 1:z):</span>
+                <span class="font-mono font-bold text-unicauca-blue">z = {{ geometry.z.toFixed(2) }}</span>
+              </div>
+              <input 
+                type="range" 
+                v-model.number="geometry.z" 
+                min="0.0" 
+                max="3.0" 
+                step="0.05" 
+                class="w-full accent-unicauca-blue h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+              />
+            </div>
+
+            <!-- Rectangular & Trapecial: Total wall height H -->
+            <div v-if="geometry.shape !== 'circular'" class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-slate-600 font-medium">Altura de paredes (H):</span>
+                <span class="font-mono font-bold text-unicauca-blue">{{ geometry.H.toFixed(2) }} m ({{ (geometry.H*100).toFixed(0) }} cm)</span>
+              </div>
+              <input 
+                type="range" 
+                v-model.number="geometry.H" 
+                min="0.15" 
+                max="3.00" 
+                step="0.01" 
+                class="w-full accent-unicauca-blue h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+              />
+            </div>
+
+            <!-- Circular: Diameter D -->
+            <div v-if="geometry.shape === 'circular'" class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-slate-600 font-medium">Diámetro interno (D):</span>
+                <span class="font-mono font-bold text-unicauca-blue">{{ geometry.D.toFixed(2) }} m ({{ (geometry.D*100).toFixed(0) }} cm)</span>
+              </div>
+              <input 
+                type="range" 
+                v-model.number="geometry.D" 
+                min="0.20" 
+                max="2.50" 
+                step="0.02" 
+                class="w-full accent-unicauca-blue h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Hydraulic Flow Inputs -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+              <span>💧 Parámetros de Flujo</span>
+            </h2>
+            <span class="text-[10px] text-slate-600 font-mono">Q, S₀, T</span>
+          </div>
+
+          <!-- Discharge Q -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600 font-medium">Caudal constante (Q):</span>
+              <span class="font-mono font-bold text-unicauca-blue">
+                {{ qUnit === 'L/s' ? (flowQ * 1000).toFixed(1) + ' L/s' : flowQ.toFixed(4) + ' m³/s' }}
+              </span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <input 
+                type="range" 
+                v-model.number="flowQSlider" 
+                :min="qSliderMin" 
+                :max="qSliderMax" 
+                :step="qSliderStep" 
+                class="w-full accent-unicauca-blue h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+              />
+              <input 
+                type="number" 
+                v-model.number="flowQInput" 
+                :step="qUnit === 'L/s' ? '0.5' : '0.001'" 
+                class="w-20 text-xs font-mono font-bold p-1 rounded border border-slate-300 text-right focus:outline-none focus:ring-1 focus:ring-unicauca-accent"
+              />
+            </div>
+          </div>
+
+          <!-- Channel Slope S0 -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600 font-medium">Pendiente de fondo (S₀):</span>
+              <span class="font-mono font-bold text-unicauca-blue">
+                {{ slopeS0.toFixed(4) }} m/m <span class="text-[10px] text-slate-600 font-normal">({{ (slopeS0 * 100).toFixed(2) }}%)</span>
+              </span>
+            </div>
+            <input 
+              type="range" 
+              v-model.number="slopeS0" 
+              min="0.0002" 
+              max="0.05" 
+              step="0.0002" 
+              class="w-full accent-unicauca-blue h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+            />
+          </div>
+
+          <!-- Water Temperature -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600 font-medium">Temperatura agua (T):</span>
+              <span class="font-mono font-bold text-slate-700">{{ temperature.toFixed(0) }} °C</span>
+            </div>
+            <input 
+              type="range" 
+              v-model.number="temperature" 
+              min="5" 
+              max="35" 
+              step="1" 
+              class="w-full accent-slate-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+            />
+          </div>
+        </div>
+
+        <!-- 3. Channel Wall Material -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-2.5">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+              <span>🧱 Material & Rugosidad</span>
+            </h2>
+            <span class="text-[10px] text-slate-600 font-mono">Manning n</span>
+          </div>
+
+          <select 
+            v-model="selectedMaterialKey" 
+            @change="onMaterialChange"
+            class="w-full p-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-unicauca-accent font-medium bg-slate-50"
+          >
+            <option v-for="mat in materials" :key="mat.key" :value="mat.key">
+              {{ mat.name }} (n = {{ mat.n.toFixed(3) }})
+            </option>
+          </select>
+
+          <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+            <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
+              <span class="text-[10px] text-slate-600 block">Manning n:</span>
+              <input 
+                type="number" 
+                v-model.number="customN" 
+                step="0.001" 
+                class="w-full font-mono font-bold text-xs bg-transparent border-0 p-0 text-unicauca-blue focus:outline-none"
+              />
+            </div>
+            <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
+              <span class="text-[10px] text-slate-600 block">Rugosidad ε:</span>
+              <span class="font-mono font-bold text-slate-700 text-xs">{{ activeMaterial.eps }} mm</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Interactive Depth Probe (Sondeo del Tirante) -->
+        <div class="bg-gradient-to-br from-blue-900 to-unicauca-blue text-white rounded-2xl p-4 shadow-sm border border-blue-800 space-y-3">
+          <div class="flex items-center justify-between pb-1 border-b border-blue-800">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center space-x-1">
+              <span>🔍 Explorador de Tirante (E vs y)</span>
+            </h2>
+            <button 
+              @click="snapToNormalDepth"
+              class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-400 text-blue-950 hover:bg-amber-300 transition"
+              title="Fijar al tirante normal de flujo uniforme"
+            >
+              Tirante Normal (yn)
+            </button>
+          </div>
+
+          <p class="text-[11px] text-blue-200 leading-tight">
+            Deslice el tirante para recorrer en vivo la curva de energía y observar la alternancia de profundidades:
+          </p>
+
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-blue-200">Tirante de sondeo (y):</span>
+              <strong class="text-amber-300 text-sm">{{ (probeDepth * 100).toFixed(2) }} cm</strong>
+            </div>
+            <input 
+              type="range" 
+              v-model.number="probeDepth" 
+              :min="probeMin" 
+              :max="probeMax" 
+              step="0.001" 
+              class="w-full accent-amber-400 h-2 bg-blue-950 rounded-lg cursor-pointer"
+            />
+            <div class="flex justify-between text-[10px] text-blue-300 font-mono">
+              <span>0.5 cm</span>
+              <span class="text-amber-300">yc = {{ (hydraulics.yc * 100).toFixed(1) }} cm</span>
+              <span>{{ (probeMax * 100).toFixed(0) }} cm</span>
+            </div>
+          </div>
+
+          <div class="pt-1 text-[11px] flex justify-between items-center text-blue-100 bg-blue-950/60 p-2 rounded-xl border border-blue-800">
+            <span>Energía en este tirante:</span>
+            <strong class="font-mono text-amber-300 text-xs">{{ (probeEnergy * 100).toFixed(2) }} cm</strong>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT VISUALIZATION & ANALYSIS COLUMN -->
+      <section class="flex-1 flex flex-col space-y-4 min-w-0">
+        
+        <!-- DUAL VIEW CONTAINER: 2D SVG CROSS-SECTION + SPECIFIC ENERGY CURVE -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          
+          <!-- PANEL A: 2D SVG Cross-Section View -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-2">
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+                  <span>🌊 Sección Transversal 2D</span>
+                </h3>
+                <p class="text-[11px] text-slate-600">Representación a escala del tirante y las cotas críticas</p>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-600">
+                {{ activeMaterial.name }}
+              </span>
+            </div>
+
+            <!-- SVG Container -->
+            <div class="relative w-full h-[280px] sm:h-[310px] bg-slate-50/80 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center">
+              
+              <!-- Overflow Banner -->
+              <div 
+                v-if="isOverflowing" 
+                class="absolute top-2 left-1/2 -translate-x-1/2 z-10 px-3 py-1 bg-rose-600/90 text-white rounded-full text-xs font-bold flex items-center space-x-1 shadow-lg animate-pulse"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span>¡ALERTA: DESBORDAMIENTO DEL CANAL!</span>
+              </div>
+
+              <!-- SVG Canvas -->
+              <svg 
+                ref="channelSvg"
+                viewBox="0 0 600 360" 
+                class="w-full h-full select-none"
+              >
+                <defs>
+                  <!-- Pattern: Concrete -->
+                  <pattern id="concretePat" width="16" height="16" patternUnits="userSpaceOnUse">
+                    <rect width="16" height="16" fill="#cbd5e1"/>
+                    <circle cx="4" cy="4" r="1" fill="#94a3b8"/>
+                    <circle cx="12" cy="6" r="1.5" fill="#64748b"/>
+                    <circle cx="7" cy="13" r="1" fill="#94a3b8"/>
+                  </pattern>
+                  <!-- Pattern: Earth -->
+                  <pattern id="earthPat" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <rect width="20" height="20" fill="#d7ccc8"/>
+                    <path d="M0,10 Q5,5 10,10 T20,10" fill="none" stroke="#a1887f" stroke-width="1"/>
+                    <circle cx="6" cy="16" r="1.2" fill="#8d6e63"/>
+                    <circle cx="15" cy="4" r="1.5" fill="#8d6e63"/>
+                  </pattern>
+                  <!-- Pattern: Gravel -->
+                  <pattern id="gravelPat" width="24" height="24" patternUnits="userSpaceOnUse">
+                    <rect width="24" height="24" fill="#cfd8dc"/>
+                    <ellipse cx="6" cy="8" rx="3" ry="2" fill="#90a4ae"/>
+                    <ellipse cx="18" cy="6" rx="4" ry="2.5" fill="#78909c"/>
+                    <ellipse cx="14" cy="18" rx="3.5" ry="2" fill="#90a4ae"/>
+                    <ellipse cx="4" cy="20" rx="2" ry="1.5" fill="#607d8b"/>
+                  </pattern>
+                  <!-- Gradient: Acrylic / Smooth -->
+                  <linearGradient id="acrylicGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#e0f2fe"/>
+                    <stop offset="50%" stop-color="#bae6fd"/>
+                    <stop offset="100%" stop-color="#7dd3fc"/>
+                  </linearGradient>
+
+                  <!-- Water Gradient -->
+                  <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.85"/>
+                    <stop offset="100%" stop-color="#0284c7" stop-opacity="0.95"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Ground / Base Horizon Line -->
+                <line x1="20" y1="240" x2="580" y2="240" stroke="#94a3b8" stroke-dasharray="4,4" stroke-width="1"/>
+
+                <!-- 1. Channel Structure Walls -->
+                <path 
+                  :d="svgPaths.channelOuter" 
+                  :fill="currentWallFill" 
+                  stroke="#475569" 
+                  stroke-width="2.5"
+                  stroke-linejoin="round"
+                />
+
+                <!-- 2. Water Body -->
+                <path 
+                  v-if="svgPaths.waterBody"
+                  :d="svgPaths.waterBody" 
+                  fill="url(#waterGrad)" 
+                  stroke="#0284c7" 
+                  stroke-width="1.5"
+                />
+
+                <!-- 3. Water Surface Wave Line -->
+                <line 
+                  v-if="svgPaths.waterSurface"
+                  :x1="svgPaths.waterSurface.x1" 
+                  :y1="svgPaths.waterSurface.y" 
+                  :x2="svgPaths.waterSurface.x2" 
+                  :y2="svgPaths.waterSurface.y" 
+                  stroke="#0369a1" 
+                  stroke-width="3"
+                  class="wave-surface"
+                />
+
+                <!-- Flow streamlines -->
+                <line 
+                  v-if="svgPaths.waterSurface"
+                  :x1="svgPaths.waterSurface.x1 + 20" 
+                  :y1="svgPaths.waterSurface.y + (240 - svgPaths.waterSurface.y) * 0.5" 
+                  :x2="svgPaths.waterSurface.x2 - 20" 
+                  :y2="svgPaths.waterSurface.y + (240 - svgPaths.waterSurface.y) * 0.5" 
+                  stroke="#e0f2fe" 
+                  stroke-width="1.5" 
+                  class="water-flow-line"
+                />
+
+                <!-- 4. Critical Depth Line (yc) - Dashed Amber -->
+                <g v-if="svgAnnotations.ycY !== null">
+                  <line 
+                    :x1="svgAnnotations.ycX1" 
+                    :y1="svgAnnotations.ycY" 
+                    :x2="svgAnnotations.ycX2" 
+                    :y2="svgAnnotations.ycY" 
+                    stroke="#d97706" 
+                    stroke-width="2" 
+                    stroke-dasharray="6,4"
+                  />
+                  <!-- Label yc -->
+                  <text 
+                    :x="svgAnnotations.ycX2 + 8" 
+                    :y="svgAnnotations.ycY + 4" 
+                    fill="#d97706" 
+                    font-size="11" 
+                    font-weight="bold"
+                    font-family="JetBrains Mono"
+                  >
+                    yc = {{ (hydraulics.yc * 100).toFixed(1) }} cm
+                  </text>
+                </g>
+
+                <!-- 5. Alternate Depth Line (y_alt) - Dashed Purple -->
+                <g v-if="svgAnnotations.yAltY !== null">
+                  <line 
+                    :x1="svgAnnotations.yAltX1" 
+                    :y1="svgAnnotations.yAltY" 
+                    :x2="svgAnnotations.yAltX2" 
+                    :y2="svgAnnotations.yAltY" 
+                    stroke="#9333ea" 
+                    stroke-width="1.5" 
+                    stroke-dasharray="4,4"
+                  />
+                  <!-- Label y_alt -->
+                  <text 
+                    :x="svgAnnotations.yAltX1 - 8" 
+                    :y="svgAnnotations.yAltY + 4" 
+                    fill="#9333ea" 
+                    font-size="10" 
+                    font-weight="bold"
+                    font-family="JetBrains Mono"
+                    text-anchor="end"
+                  >
+                    y_alt = {{ (hydraulics.y_alt * 100).toFixed(1) }} cm
+                  </text>
+                </g>
+
+                <!-- 6. Operating Depth Annotation (y) -->
+                <g v-if="svgAnnotations.yMeasure">
+                  <!-- Dimension Line -->
+                  <line 
+                    :x1="svgAnnotations.yMeasure.x" 
+                    :y1="240" 
+                    :x2="svgAnnotations.yMeasure.x" 
+                    :y2="svgAnnotations.yMeasure.yWater" 
+                    stroke="#0284c7" 
+                    stroke-width="1.5"
+                  />
+                  <!-- Arrow heads -->
+                  <polygon 
+                    :points="`${svgAnnotations.yMeasure.x-3},236 ${svgAnnotations.yMeasure.x+3},236 ${svgAnnotations.yMeasure.x},240`" 
+                    fill="#0284c7"
+                  />
+                  <polygon 
+                    :points="`${svgAnnotations.yMeasure.x-3},${svgAnnotations.yMeasure.yWater+4} ${svgAnnotations.yMeasure.x+3},${svgAnnotations.yMeasure.yWater+4} ${svgAnnotations.yMeasure.x},${svgAnnotations.yMeasure.yWater}`" 
+                    fill="#0284c7"
+                  />
+                  <!-- Text label -->
+                  <text 
+                    :x="svgAnnotations.yMeasure.x + 6" 
+                    :y="svgAnnotations.yMeasure.yWater + (240 - svgAnnotations.yMeasure.yWater)/2 + 4" 
+                    fill="#0369a1" 
+                    font-size="11" 
+                    font-weight="bold"
+                    font-family="JetBrains Mono"
+                  >
+                    y = {{ (probeDepth * 100).toFixed(1) }} cm
+                  </text>
+                </g>
+
+                <!-- 7. Base Width Annotation (b) -->
+                <g v-if="svgAnnotations.bMeasure">
+                  <line 
+                    :x1="svgAnnotations.bMeasure.x1" 
+                    y1="255" 
+                    :x2="svgAnnotations.bMeasure.x2" 
+                    y2="255" 
+                    stroke="#64748b" 
+                    stroke-width="1.2"
+                  />
+                  <text 
+                    :x="300" 
+                    y="270" 
+                    fill="#475569" 
+                    font-size="11" 
+                    font-family="JetBrains Mono" 
+                    font-weight="600"
+                    text-anchor="middle"
+                  >
+                    b = {{ geometry.b.toFixed(2) }} m
+                  </text>
+                </g>
+
+              </svg>
+            </div>
+
+            <!-- SVG Legend -->
+            <div class="flex flex-wrap items-center justify-center gap-4 text-[11px] pt-3 text-slate-600 font-medium">
+              <span class="flex items-center space-x-1.5">
+                <span class="w-3 h-3 rounded bg-sky-500"></span>
+                <span>Tirante Actual (y)</span>
+              </span>
+              <span class="flex items-center space-x-1.5">
+                <span class="w-3 h-0.5 border-t-2 border-amber-500 border-dashed"></span>
+                <span>Tirante Crítico (yc)</span>
+              </span>
+              <span class="flex items-center space-x-1.5">
+                <span class="w-3 h-0.5 border-t-2 border-purple-600 border-dashed"></span>
+                <span>Tirante Alterno (y_alt)</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- PANEL B: Specific Energy Curve Chart (Chart.js) -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-2">
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+                  <span>📈 Curva de Energía Específica (E vs y)</span>
+                </h3>
+                <p class="text-[11px] text-slate-600">E = y + V² / (2g) para caudal constante Q = {{ (flowQ * 1000).toFixed(1) }} L/s</p>
+              </div>
+              <div class="flex items-center space-x-1">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900">
+                  Emin = {{ (hydraulics.Emin * 100).toFixed(2) }} cm
+                </span>
+              </div>
+            </div>
+
+            <!-- Chart Canvas Container -->
+            <div class="relative w-full h-[280px] sm:h-[310px]">
+              <canvas ref="energyChartCanvas"></canvas>
+            </div>
+
+            <!-- Chart Sub-Legend / Insights -->
+            <div class="flex flex-wrap items-center justify-between text-[11px] pt-3 text-slate-500 border-t border-slate-100 gap-2">
+              <div class="flex items-center space-x-3 font-medium">
+                <span class="flex items-center space-x-1 text-rose-600">
+                  <span class="w-2 h-2 rounded-full bg-rose-600"></span>
+                  <span>Rama Supercrítica (Fr > 1)</span>
+                </span>
+                <span class="flex items-center space-x-1 text-blue-600">
+                  <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                  <span>Rama Subcrítica (Fr < 1)</span>
+                </span>
+              </div>
+              <div class="text-slate-400 font-mono text-[10px]">
+                Asíntota 45°: E = y (V → 0)
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- BOTTOM METRICS & HYDRAULIC RESULTS DASHBOARD -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+              <span>📊 Resultados Hidráulicos del Punto de Operación</span>
+            </h3>
+            <span class="text-[11px] text-slate-400 font-mono">Gravedad g = 9.81 m/s²</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 text-xs">
+            
+            <!-- 1. Tirante Actual y -->
+            <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+              <span class="text-[10px] text-slate-600 block">Tirante sondeo (y):</span>
+              <strong class="font-mono font-bold text-sm text-unicauca-blue">{{ (probeDepth * 100).toFixed(2) }} cm</strong>
+              <span class="text-[10px] text-slate-600 block font-mono">{{ probeDepth.toFixed(4) }} m</span>
+            </div>
+
+            <!-- 2. Tirante Crítico yc -->
+            <div class="p-2.5 bg-amber-50/70 rounded-xl border border-amber-200">
+              <span class="text-[10px] text-amber-700 block font-semibold">Tirante crítico (yc):</span>
+              <strong class="font-mono font-bold text-sm text-amber-800">{{ (hydraulics.yc * 100).toFixed(2) }} cm</strong>
+              <span class="text-[10px] text-amber-600 block font-mono">{{ hydraulics.yc.toFixed(4) }} m</span>
+            </div>
+
+            <!-- 3. Tirante Alterno y_alt -->
+            <div class="p-2.5 bg-purple-50/70 rounded-xl border border-purple-200">
+              <span class="text-[10px] text-purple-700 block font-semibold">Tirante alterno (y_alt):</span>
+              <strong class="font-mono font-bold text-sm text-purple-800">{{ (hydraulics.y_alt * 100).toFixed(2) }} cm</strong>
+              <span class="text-[10px] text-purple-600 block font-mono">{{ hydraulics.y_alt.toFixed(4) }} m</span>
+            </div>
+
+            <!-- 4. Energía Específica E -->
+            <div class="p-2.5 bg-blue-50/70 rounded-xl border border-blue-200">
+              <span class="text-[10px] text-blue-700 block font-semibold">Energía Específica (E):</span>
+              <strong class="font-mono font-bold text-sm text-blue-900">{{ (probeEnergy * 100).toFixed(2) }} cm</strong>
+              <span class="text-[10px] text-blue-600 block font-mono">{{ probeEnergy.toFixed(4) }} m</span>
+            </div>
+
+            <!-- 5. Energía Mínima Emin -->
+            <div class="p-2.5 bg-amber-50/70 rounded-xl border border-amber-200">
+              <span class="text-[10px] text-amber-700 block font-semibold">Energía mínima (Emin):</span>
+              <strong class="font-mono font-bold text-sm text-amber-800">{{ (hydraulics.Emin * 100).toFixed(2) }} cm</strong>
+              <span class="text-[10px] text-amber-600 block font-mono">{{ hydraulics.Emin.toFixed(4) }} m</span>
+            </div>
+
+            <!-- 6. Cabeza de Velocidad hv -->
+            <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+              <span class="text-[10px] text-slate-600 block">Cab. Velocidad (V²/2g):</span>
+              <strong class="font-mono font-bold text-sm text-slate-800">{{ (hydraulics.hv * 100).toFixed(2) }} cm</strong>
+              <span class="text-[10px] text-slate-600 block font-mono">V = {{ hydraulics.V.toFixed(2) }} m/s</span>
+            </div>
+
+            <!-- 7. Número de Froude Fr -->
+            <div class="p-2.5 rounded-xl border" :class="{
+              'bg-blue-50 border-blue-200': currentRegime === 'Subcrítico',
+              'bg-amber-50 border-amber-200': currentRegime === 'Crítico',
+              'bg-rose-50 border-rose-200': currentRegime === 'Supercrítico'
+            }">
+              <span class="text-[10px] block" :class="{
+                'text-blue-700': currentRegime === 'Subcrítico',
+                'text-amber-700': currentRegime === 'Crítico',
+                'text-rose-700': currentRegime === 'Supercrítico'
+              }">Froude (Fr):</span>
+              <strong class="font-mono font-bold text-sm" :class="{
+                'text-blue-900': currentRegime === 'Subcrítico',
+                'text-amber-900': currentRegime === 'Crítico',
+                'text-rose-900': currentRegime === 'Supercrítico'
+              }">{{ formatNum(currentFroude, 3) }}</strong>
+              <span class="text-[10px] font-bold block">{{ currentRegime }}</span>
+            </div>
+
+            <!-- 8. Tirante Normal yn -->
+            <div class="p-2.5 bg-cyan-50/70 rounded-xl border border-cyan-200">
+              <span class="text-[10px] text-cyan-700 block font-semibold">Tirante normal (yn):</span>
+              <strong class="font-mono font-bold text-sm text-cyan-900">{{ (hydraulics.yn * 100).toFixed(2) }} cm</strong>
+              <span class="text-[10px] text-cyan-600 block font-mono">S₀ = {{ (slopeS0*100).toFixed(2) }}%</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- EDUCATIONAL ACCORDION: Theoretical Fundamentals & Formulas -->
+        <details class="group bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <summary class="p-4 cursor-pointer flex items-center justify-between text-xs font-bold text-slate-800 hover:bg-slate-50 select-none">
+            <span class="flex items-center space-x-2">
+              <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+              <span>Fundamentos Físicos y Demostraciones Matemáticas (Práctica III)</span>
+            </span>
+            <span class="text-slate-400 group-open:rotate-180 transition-transform duration-200">▼</span>
+          </summary>
+          <div class="p-5 pt-2 text-xs text-slate-600 space-y-3 border-t border-slate-100">
+            <p>
+              La <strong>energía específica</strong> \(E\) en la sección de un canal abierto es la energía mecánica por unidad de peso del líquido en movimiento referida al fondo del canal:
+            </p>
+            <div class="p-3 bg-slate-50 rounded-xl font-mono text-center text-unicauca-blue border border-slate-200">
+              \(E = y + \frac{V^2}{2g} = y + \frac{Q^2}{2g \, [A(y)]^2}\)
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+              <div class="p-3 rounded-xl bg-amber-50/50 border border-amber-200">
+                <strong class="text-amber-900 block mb-1">1. Condición Crítica</strong>
+                <p class="text-[11px] leading-relaxed">
+                  Ocurre en el mínimo energético \(\frac{dE}{dy} = 0\), lo cual conduce a:
+                  <br><strong>\(\frac{Q^2 T}{g A^3} = 1 \iff Fr = 1\)</strong>.
+                  Para sección rectangular: \(y_c = \sqrt[3]{\frac{q^2}{g}}\) y \(E_{min} = 1.5 \, y_c\).
+                </p>
+              </div>
+              <div class="p-3 rounded-xl bg-purple-50/50 border border-purple-200">
+                <strong class="text-purple-900 block mb-1">2. Tirantes Alternos</strong>
+                <p class="text-[11px] leading-relaxed">
+                  Para cualquier energía \(E > E_{min}\), existen dos tirantes físicos posibles:
+                  uno <strong>supercrítico</strong> (\(y < y_c, Fr > 1\)) y otro <strong>subcrítico</strong> (\(y > y_c, Fr < 1\)), representados por los extremos de la cuerda horizontal.
+                </p>
+              </div>
+              <div class="p-3 rounded-xl bg-blue-50/50 border border-blue-200">
+                <strong class="text-blue-900 block mb-1">3. Clasificación de Pendiente</strong>
+                <p class="text-[11px] leading-relaxed">
+                  La pendiente crítica \(S_c\) iguala el tirante normal al crítico (\(y_n = y_c\)).
+                  Si \(S_0 < S_c\) la pendiente es <strong>suave</strong> (flujo subcrítico); si \(S_0 > S_c\) es <strong>fuerte</strong> (flujo supercrítico).
+                </p>
+              </div>
+            </div>
+          </div>
+        </details>
+
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-500 shrink-0">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span>Universidad del Cauca • Departamento de Hidráulica • Laboratorio Virtual</span>
+        <span class="text-[11px] text-slate-400">Práctica III: Estudio de la Energía Específica en Canales Rectangulares y de Sección Variable</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- VUE 3 APPLICATION SCRIPT -->
+  <script>
+    const { createApp, ref, reactive, computed, watch, onMounted, nextTick } = Vue;
+
+    createApp({
+      setup() {
+        // --- PRESETS CATALOGUE ---
+        const selectedPreset = ref('unicauca_lab');
+
+        // --- GEOMETRY STATE ---
+        const geometry = reactive({
+          shape: 'rectangular', // 'rectangular', 'trapezoidal', 'circular'
+          b: 0.30,   // Ancho solera (m)
+          z: 1.0,    // Talud lateral (1:z)
+          H: 0.40,   // Altura de paredes (m)
+          D: 0.80    // Diámetro (m)
+        });
+
+        // --- HYDRAULIC FLOW STATE ---
+        const qUnit = ref('L/s');
+        const flowQ = ref(0.0185); // m3/s (18.5 L/s by default for Unicauca Lab)
+        const slopeS0 = ref(0.0010); // 0.1% m/m
+        const temperature = ref(20); // °C
+
+        // Displayer helpers for flowQ
+        const flowQSlider = computed({
+          get: () => qUnit.value === 'L/s' ? flowQ.value * 1000 : flowQ.value,
+          set: (val) => {
+            flowQ.value = qUnit.value === 'L/s' ? Math.max(0.0001, val / 1000) : Math.max(0.0001, val);
+          }
+        });
+
+        const flowQInput = computed({
+          get: () => qUnit.value === 'L/s' ? parseFloat((flowQ.value * 1000).toFixed(2)) : parseFloat(flowQ.value.toFixed(4)),
+          set: (val) => {
+            if (val > 0) {
+              flowQ.value = qUnit.value === 'L/s' ? val / 1000 : val;
+            }
+          }
+        });
+
+        const qSliderMin = computed(() => qUnit.value === 'L/s' ? 1.0 : 0.001);
+        const qSliderMax = computed(() => qUnit.value === 'L/s' ? 100.0 : 0.50);
+        const qSliderStep = computed(() => qUnit.value === 'L/s' ? 0.5 : 0.001);
+
+        // --- MATERIALS CATALOGUE ---
+        const materials = [
+          { key: 'acrylic', name: 'Acrílico / Vidrio / Cemento pulido', n: 0.010, eps: 0.15 },
+          { key: 'concrete_smooth', name: 'Concreto liso encofrado', n: 0.013, eps: 0.50 },
+          { key: 'concrete_rough', name: 'Concreto rugoso / ordinario', n: 0.016, eps: 1.50 },
+          { key: 'masonry', name: 'Mampostería de piedra o ladrillo', n: 0.020, eps: 5.00 },
+          { key: 'earth', name: 'Tierra limpia y regular', n: 0.023, eps: 12.0 },
+          { key: 'gravel', name: 'Grava uniforme / canto rodado', n: 0.028, eps: 25.0 },
+          { key: 'custom', name: 'Personalizado', n: 0.015, eps: 1.0 }
+        ];
+
+        const selectedMaterialKey = ref('acrylic');
+        const customN = ref(0.010);
+
+        const activeMaterial = computed(() => {
+          return materials.find(m => m.key === selectedMaterialKey.value) || materials[0];
+        });
+
+        const onMaterialChange = () => {
+          if (selectedMaterialKey.value !== 'custom') {
+            customN.value = activeMaterial.value.n;
+          }
+        };
+
+        const activeN = computed(() => {
+          return customN.value > 0 ? customN.value : 0.014;
+        });
+
+        const currentWallFill = computed(() => {
+          if (selectedMaterialKey.value === 'concrete_smooth' || selectedMaterialKey.value === 'concrete_rough') {
+            return 'url(#concretePat)';
+          } else if (selectedMaterialKey.value === 'earth') {
+            return 'url(#earthPat)';
+          } else if (selectedMaterialKey.value === 'gravel' || selectedMaterialKey.value === 'masonry') {
+            return 'url(#gravelPat)';
+          } else {
+            return 'url(#acrylicGrad)';
+          }
+        });
+
+        // --- NUMERICAL SOLVER FUNCTIONS ---
+        const g = 9.81;
+
+        // Area function
+        const getArea = (y) => {
+          if (y <= 0) return 0.00001;
+          if (geometry.shape === 'rectangular') {
+            return geometry.b * y;
+          } else if (geometry.shape === 'trapezoidal') {
+            return (geometry.b + geometry.z * y) * y;
+          } else { // circular
+            const yc = Math.min(geometry.D * 0.9999, Math.max(0.0001, y));
+            const th = 2 * Math.acos(Math.max(-1, Math.min(1, 1 - 2 * yc / geometry.D)));
+            return (Math.pow(geometry.D, 2) / 8) * (th - Math.sin(th));
+          }
+        };
+
+        // Top width function T(y)
+        const getTopWidth = (y) => {
+          if (y <= 0) return 0.01;
+          if (geometry.shape === 'rectangular') {
+            return geometry.b;
+          } else if (geometry.shape === 'trapezoidal') {
+            return geometry.b + 2 * geometry.z * y;
+          } else { // circular
+            const yc = Math.min(geometry.D * 0.9999, Math.max(0.0001, y));
+            const th = 2 * Math.acos(Math.max(-1, Math.min(1, 1 - 2 * yc / geometry.D)));
+            return geometry.D * Math.sin(th / 2);
+          }
+        };
+
+        // Wetted perimeter function P(y)
+        const getPerimeter = (y) => {
+          if (y <= 0) return 0.01;
+          if (geometry.shape === 'rectangular') {
+            return geometry.b + 2 * y;
+          } else if (geometry.shape === 'trapezoidal') {
+            return geometry.b + 2 * y * Math.sqrt(1 + geometry.z * geometry.z);
+          } else { // circular
+            const yc = Math.min(geometry.D * 0.9999, Math.max(0.0001, y));
+            const th = 2 * Math.acos(Math.max(-1, Math.min(1, 1 - 2 * yc / geometry.D)));
+            return (geometry.D / 2) * th;
+          }
+        };
+
+        // Specific energy function E(y) = y + Q^2 / (2 * g * A^2)
+        const calcSpecificEnergy = (y, Qval) => {
+          const A = getArea(y);
+          if (A <= 0) return 999;
+          const V = Qval / A;
+          return y + (V * V) / (2 * g);
+        };
+
+        // Solve critical depth yc and Emin
+        const solveCriticalDepth = (Qval) => {
+          if (geometry.shape === 'rectangular') {
+            const q = Qval / geometry.b;
+            const yc = Math.cbrt((q * q) / g);
+            const Ac = geometry.b * yc;
+            const Emin = yc + (Qval * Qval) / (2 * g * Ac * Ac);
+            return { yc, Emin };
+          } else if (geometry.shape === 'trapezoidal') {
+            let low = 0.001, high = 15.0;
+            for (let i = 0; i < 60; i++) {
+              const mid = (low + high) / 2;
+              const A = (geometry.b + geometry.z * mid) * mid;
+              const T = geometry.b + 2 * geometry.z * mid;
+              const f = g * Math.pow(A, 3) - (Qval * Qval) * T;
+              if (f < 0) low = mid;
+              else high = mid;
+            }
+            const yc = (low + high) / 2;
+            const Ac = (geometry.b + geometry.z * yc) * yc;
+            const Emin = yc + (Qval * Qval) / (2 * g * Ac * Ac);
+            return { yc, Emin };
+          } else { // circular
+            let low = 0.001 * geometry.D, high = 0.999 * geometry.D;
+            for (let i = 0; i < 60; i++) {
+              const mid = (low + high) / 2;
+              const th = 2 * Math.acos(1 - 2 * mid / geometry.D);
+              const A = (Math.pow(geometry.D, 2) / 8) * (th - Math.sin(th));
+              const T = geometry.D * Math.sin(th / 2);
+              const f = (Qval * Qval * T) / (g * Math.pow(A, 3)) - 1.0;
+              if (f > 0) low = mid;
+              else high = mid;
+            }
+            const yc = (low + high) / 2;
+            const th = 2 * Math.acos(1 - 2 * yc / geometry.D);
+            const Ac = (Math.pow(geometry.D, 2) / 8) * (th - Math.sin(th));
+            const Emin = yc + (Qval * Qval) / (2 * g * Ac * Ac);
+            return { yc, Emin };
+          }
+        };
+
+        // Solve normal depth yn via Manning
+        const solveNormalDepth = (Qval, nVal, sVal) => {
+          const manningRes = (y) => {
+            const A = getArea(y);
+            const P = getPerimeter(y);
+            if (P <= 0) return -Qval;
+            const Rh = A / P;
+            const Qcalc = (1.0 / nVal) * A * Math.pow(Rh, 2/3) * Math.sqrt(sVal);
+            return Qcalc - Qval;
+          };
+
+          let low = 0.0001;
+          let high = geometry.shape === 'circular' ? 0.999 * geometry.D : 15.0;
+          for (let i = 0; i < 60; i++) {
+            const mid = (low + high) / 2;
+            if (manningRes(mid) < 0) low = mid;
+            else high = mid;
+          }
+          return (low + high) / 2;
+        };
+
+        // Solve alternate depth y_alt for a target energy E_target
+        const solveAlternateDepth = (yBase, ETarget, ycVal, Qval) => {
+          if (ETarget <= 0 || isNaN(ETarget)) return ycVal;
+          if (Math.abs(yBase - ycVal) < 0.0005) return ycVal;
+
+          if (yBase > ycVal) {
+            // Target is subcritical -> alternate is supercritical (0, yc)
+            let low = 0.0005 * ycVal, high = 0.999 * ycVal;
+            for (let i = 0; i < 50; i++) {
+              const mid = (low + high) / 2;
+              const Emid = calcSpecificEnergy(mid, Qval);
+              if (Emid > ETarget) low = mid;
+              else high = mid;
+            }
+            return (low + high) / 2;
+          } else {
+            // Target is supercritical -> alternate is subcritical (yc, high)
+            let low = 1.001 * ycVal;
+            let high = Math.max(yBase * 4, ycVal * 4);
+            if (geometry.shape === 'circular') high = 0.999 * geometry.D;
+            let attempts = 0;
+            while (calcSpecificEnergy(high, Qval) < ETarget && attempts < 15 && geometry.shape !== 'circular') {
+              high *= 1.5;
+              attempts++;
+            }
+            for (let i = 0; i < 50; i++) {
+              const mid = (low + high) / 2;
+              const Emid = calcSpecificEnergy(mid, Qval);
+              if (Emid < ETarget) low = mid;
+              else high = mid;
+            }
+            return (low + high) / 2;
+          }
+        };
+
+        // --- PROBE DEPTH STATE ---
+        const probeDepth = ref(0.10);
+
+        // Clamping probe bounds
+        const probeMin = ref(0.005);
+        const probeMax = computed(() => {
+          if (geometry.shape === 'circular') return geometry.D * 0.98;
+          return Math.max(geometry.H * 1.1, 0.40);
+        });
+
+        // Snap to normal depth
+        const snapToNormalDepth = () => {
+          probeDepth.value = parseFloat(hydraulics.value.yn.toFixed(4));
+        };
+
+        // --- MASTER HYDRAULICS COMPUTED ENGINE ---
+        const hydraulics = computed(() => {
+          const Qval = flowQ.value;
+          const nVal = activeN.value;
+          const sVal = slopeS0.value;
+
+          // 1. Critical Depth & Minimum Energy
+          const { yc, Emin } = solveCriticalDepth(Qval);
+
+          // 2. Normal Depth
+          const yn = solveNormalDepth(Qval, nVal, sVal);
+          const En = calcSpecificEnergy(yn, Qval);
+
+          // 3. Operating/Probed conditions
+          const yAct = Math.max(0.002, probeDepth.value);
+          const A = getArea(yAct);
+          const T = getTopWidth(yAct);
+          const P = getPerimeter(yAct);
+          const Rh = P > 0 ? A / P : 0;
+          const Dh = T > 0 ? A / T : 0;
+          const V = A > 0 ? Qval / A : 0;
+          const hv = (V * V) / (2 * g);
+          const EAct = yAct + hv;
+          const Fr = Dh > 0 ? V / Math.sqrt(g * Dh) : 0;
+
+          // 4. Alternate Depth for EAct
+          const y_alt = solveAlternateDepth(yAct, EAct, yc, Qval);
+
+          // 5. Critical Slope Sc: Slope required for yn = yc
+          const Ac = getArea(yc);
+          const Pc = getPerimeter(yc);
+          const Rhc = Pc > 0 ? Ac / Pc : 0;
+          const Sc = Math.pow((nVal * Qval) / (Ac * Math.pow(Rhc, 2/3)), 2);
+
+          return {
+            yc,
+            Emin,
+            yn,
+            En,
+            yAct,
+            EAct,
+            y_alt,
+            A,
+            T,
+            P,
+            Rh,
+            Dh,
+            V,
+            hv,
+            Fr,
+            Sc
+          };
+        });
+
+        // Watchers to update probeDepth defaults on scenario change
+        watch([flowQ, () => geometry.shape, () => geometry.b, () => geometry.z, () => geometry.H, () => geometry.D, slopeS0, activeN], () => {
+          // If probeDepth was at or near yn, keep it snapped to yn
+          if (Math.abs(probeDepth.value - hydraulics.value.yn) < 0.015) {
+            probeDepth.value = parseFloat(hydraulics.value.yn.toFixed(4));
+          } else if (probeDepth.value > probeMax.value) {
+            probeDepth.value = parseFloat(hydraulics.value.yn.toFixed(4));
+          }
+          updateEnergyChart();
+        });
+
+        watch(probeDepth, () => {
+          updateEnergyChart();
+        });
+
+        const probeEnergy = computed(() => hydraulics.value.EAct);
+
+        const currentRegime = computed(() => {
+          const fr = hydraulics.value.Fr;
+          if (fr > 1.05) return 'Supercrítico';
+          if (fr < 0.95) return 'Subcrítico';
+          return 'Crítico';
+        });
+
+        const currentFroude = computed(() => hydraulics.value.Fr);
+
+        const slopeType = computed(() => {
+          const S0 = slopeS0.value;
+          const Sc = hydraulics.value.Sc;
+          const ratio = S0 / Sc;
+          if (ratio < 0.92) return 'Suave (Subcrítica - M)';
+          if (ratio > 1.08) return 'Fuerte (Supercrítica - S)';
+          return 'Crítica (C)';
+        });
+
+        const isOverflowing = computed(() => {
+          if (geometry.shape === 'circular') return probeDepth.value >= geometry.D;
+          return probeDepth.value > geometry.H;
+        });
+
+        // --- SVG 2D DRAWING CALCULATIONS ---
+        const channelSvg = ref(null);
+
+        const svgPaths = computed(() => {
+          const X_CTR = 300;
+          const Y_BED = 240;
+          const yVal = probeDepth.value;
+
+          // Determine scale: maximum width and height to fit comfortably in 520x220 box
+          let maxGeoW, maxGeoH;
+          if (geometry.shape === 'rectangular') {
+            maxGeoW = geometry.b;
+            maxGeoH = geometry.H;
+          } else if (geometry.shape === 'trapezoidal') {
+            maxGeoW = geometry.b + 2 * geometry.z * geometry.H;
+            maxGeoH = geometry.H;
+          } else {
+            maxGeoW = geometry.D;
+            maxGeoH = geometry.D;
+          }
+
+          // Scale factor (pixels per meter)
+          const scale = Math.min(380 / Math.max(0.2, maxGeoW), 180 / Math.max(0.2, maxGeoH));
+
+          if (geometry.shape === 'rectangular') {
+            const halfW = (geometry.b * scale) / 2;
+            const wallH = geometry.H * scale;
+            const xL = X_CTR - halfW;
+            const xR = X_CTR + halfW;
+            const yTop = Y_BED - wallH;
+
+            // Channel outer path (U shape with wall thickness)
+            const thk = 16;
+            const channelOuter = `M ${xL - thk} ${yTop} L ${xL} ${yTop} L ${xL} ${Y_BED} L ${xR} ${Y_BED} L ${xR} ${yTop} L ${xR + thk} ${yTop} L ${xR + thk} ${Y_BED + thk} L ${xL - thk} ${Y_BED + thk} Z`;
+
+            // Water body
+            const waterH = Math.min(wallH + 20, yVal * scale);
+            const yW = Y_BED - waterH;
+            const waterBody = waterH > 0 ? `M ${xL} ${Y_BED} L ${xR} ${Y_BED} L ${xR} ${yW} L ${xL} ${yW} Z` : '';
+            const waterSurface = waterH > 0 ? { x1: xL, x2: xR, y: yW } : null;
+
+            return { channelOuter, waterBody, waterSurface, scale };
+
+          } else if (geometry.shape === 'trapezoidal') {
+            const halfB = (geometry.b * scale) / 2;
+            const wallH = geometry.H * scale;
+            const topSpread = geometry.z * wallH;
+            const xBL = X_CTR - halfB;
+            const xBR = X_CTR + halfB;
+            const xTL = xBL - topSpread;
+            const xTR = xBR + topSpread;
+            const yTop = Y_BED - wallH;
+
+            const thk = 16;
+            const channelOuter = `M ${xTL - thk} ${yTop} L ${xTL} ${yTop} L ${xBL} ${Y_BED} L ${xBR} ${Y_BED} L ${xTR} ${yTop} L ${xTR + thk} ${yTop} L ${xBR + thk} ${Y_BED + thk} L ${xBL - thk} ${Y_BED + thk} Z`;
+
+            const waterH = Math.min(wallH + 20, yVal * scale);
+            const yW = Y_BED - waterH;
+            const wSpread = geometry.z * waterH;
+            const xWL = xBL - wSpread;
+            const xWR = xBR + wSpread;
+            const waterBody = waterH > 0 ? `M ${xBL} ${Y_BED} L ${xBR} ${Y_BED} L ${xWR} ${yW} L ${xWL} ${yW} Z` : '';
+            const waterSurface = waterH > 0 ? { x1: xWL, x2: xWR, y: yW } : null;
+
+            return { channelOuter, waterBody, waterSurface, scale };
+
+          } else { // Circular
+            const rPx = (geometry.D * scale) / 2;
+            const yCenter = Y_BED - rPx;
+            const thk = 16;
+
+            // Circular conduit outer pipe
+            const channelOuter = `M ${X_CTR} ${yCenter - rPx - thk} A ${rPx + thk} ${rPx + thk} 0 1 0 ${X_CTR} ${yCenter + rPx + thk} A ${rPx + thk} ${rPx + thk} 0 1 0 ${X_CTR} ${yCenter - rPx - thk} M ${X_CTR} ${yCenter - rPx} A ${rPx} ${rPx} 0 1 1 ${X_CTR} ${yCenter + rPx} A ${rPx} ${rPx} 0 1 1 ${X_CTR} ${yCenter - rPx} Z`;
+
+            // Water in circular pipe
+            const waterH = Math.min(geometry.D * scale, yVal * scale);
+            let waterBody = '';
+            let waterSurface = null;
+
+            if (waterH > 0) {
+              const yW = Y_BED - waterH;
+              const clampedH = Math.min(geometry.D * 0.999, Math.max(0.001, yVal));
+              const halfTh = Math.acos(Math.max(-1, Math.min(1, 1 - 2 * clampedH / geometry.D)));
+              const halfChord = rPx * Math.sin(halfTh);
+              const xWL = X_CTR - halfChord;
+              const xWR = X_CTR + halfChord;
+
+              const largeArcFlag = waterH > rPx ? 1 : 0;
+              waterBody = `M ${xWL} ${yW} A ${rPx} ${rPx} 0 ${largeArcFlag} 0 ${xWR} ${yW} Z`;
+              waterSurface = { x1: xWL, x2: xWR, y: yW };
+            }
+
+            return { channelOuter, waterBody, waterSurface, scale };
+          }
+        });
+
+        // Annotation metrics for SVG
+        const svgAnnotations = computed(() => {
+          const X_CTR = 300;
+          const Y_BED = 240;
+          const scale = svgPaths.value.scale || 100;
+          const yc = hydraulics.value.yc;
+          const yAlt = hydraulics.value.y_alt;
+          const yVal = probeDepth.value;
+
+          // Critical depth line yc
+          let ycY = null, ycX1 = 0, ycX2 = 0;
+          if (yc > 0 && yc < (geometry.shape === 'circular' ? geometry.D : geometry.H * 1.5)) {
+            ycY = Y_BED - yc * scale;
+            if (geometry.shape === 'rectangular') {
+              const halfW = (geometry.b * scale) / 2;
+              ycX1 = X_CTR - halfW - 10;
+              ycX2 = X_CTR + halfW + 10;
+            } else if (geometry.shape === 'trapezoidal') {
+              const halfW = ((geometry.b + 2 * geometry.z * yc) * scale) / 2;
+              ycX1 = X_CTR - halfW - 10;
+              ycX2 = X_CTR + halfW + 10;
+            } else {
+              ycX1 = X_CTR - (geometry.D * scale) / 2;
+              ycX2 = X_CTR + (geometry.D * scale) / 2;
+            }
+          }
+
+          // Alternate depth line y_alt
+          let yAltY = null, yAltX1 = 0, yAltX2 = 0;
+          if (yAlt > 0 && yAlt < (geometry.shape === 'circular' ? geometry.D : geometry.H * 1.5)) {
+            yAltY = Y_BED - yAlt * scale;
+            if (geometry.shape === 'rectangular') {
+              const halfW = (geometry.b * scale) / 2;
+              yAltX1 = X_CTR - halfW - 10;
+              yAltX2 = X_CTR + halfW + 10;
+            } else if (geometry.shape === 'trapezoidal') {
+              const halfW = ((geometry.b + 2 * geometry.z * yAlt) * scale) / 2;
+              yAltX1 = X_CTR - halfW - 10;
+              yAltX2 = X_CTR + halfW + 10;
+            } else {
+              yAltX1 = X_CTR - (geometry.D * scale) / 2;
+              yAltX2 = X_CTR + (geometry.D * scale) / 2;
+            }
+          }
+
+          // Operating depth y measurement arrow
+          const yMeasure = {
+            x: geometry.shape === 'rectangular' ? X_CTR - (geometry.b * scale) / 2 - 25 : X_CTR - 150,
+            yWater: Y_BED - yVal * scale
+          };
+
+          // Base width dimension
+          let bMeasure = null;
+          if (geometry.shape !== 'circular') {
+            const halfB = (geometry.b * scale) / 2;
+            bMeasure = {
+              x1: X_CTR - halfB,
+              x2: X_CTR + halfB
+            };
+          }
+
+          return { ycY, ycX1, ycX2, yAltY, yAltX1, yAltX2, yMeasure, bMeasure };
+        });
+
+        // --- CHART.JS SPECIFIC ENERGY CURVE ENGINE ---
+        const energyChartCanvas = ref(null);
+        let chartInstance = null;
+
+        const initEnergyChart = () => {
+          if (!energyChartCanvas.value) return;
+          const ctx = energyChartCanvas.value.getContext('2d');
+
+          chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+              datasets: [
+                // 1. Continuous theoretical curve E(y)
+                {
+                  label: 'Curva de Energía Específica E(y)',
+                  data: [],
+                  borderColor: '#002855',
+                  backgroundColor: 'rgba(0, 40, 85, 0.05)',
+                  borderWidth: 3,
+                  pointRadius: 0,
+                  fill: false,
+                  tension: 0.2
+                },
+                // 2. Asymptote 45° line: E = y
+                {
+                  label: 'Asíntota E = y (Línea de 45°)',
+                  data: [],
+                  borderColor: '#94a3b8',
+                  borderDash: [5, 5],
+                  borderWidth: 1.5,
+                  pointRadius: 0,
+                  fill: false
+                },
+                // 3. Minimum energy / Critical point (Emin, yc)
+                {
+                  label: 'Punto Crítico (Emin, yc)',
+                  data: [],
+                  borderColor: '#d97706',
+                  backgroundColor: '#f59e0b',
+                  pointRadius: 7,
+                  pointHoverRadius: 9,
+                  showLine: false
+                },
+                // 4. Operating / Probed depth point (E, y)
+                {
+                  label: 'Punto de Operación (E, y)',
+                  data: [],
+                  borderColor: '#ffffff',
+                  backgroundColor: '#0284c7',
+                  borderWidth: 2,
+                  pointRadius: 8,
+                  pointHoverRadius: 10,
+                  showLine: false
+                },
+                // 5. Alternate depth point (E, y_alt)
+                {
+                  label: 'Tirante Alterno (E, y_alt)',
+                  data: [],
+                  borderColor: '#ffffff',
+                  backgroundColor: '#9333ea',
+                  borderWidth: 2,
+                  pointRadius: 7,
+                  pointHoverRadius: 9,
+                  showLine: false
+                },
+                // 6. Horizontal connecting line between alternate depths
+                {
+                  label: 'Cuerda de Energía Constante',
+                  data: [],
+                  borderColor: '#9333ea',
+                  borderDash: [4, 4],
+                  borderWidth: 1.5,
+                  pointRadius: 0,
+                  fill: false
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 250 },
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: {
+                    font: { family: 'Inter', size: 10, weight: '600' },
+                    boxWidth: 12,
+                    filter: (legendItem) => legendItem.text !== 'Cuerda de Energía Constante'
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      const p = context.raw;
+                      return `${context.dataset.label}: E = ${(p.x * 100).toFixed(2)} cm, y = ${(p.y * 100).toFixed(2)} cm`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  type: 'linear',
+                  title: {
+                    display: true,
+                    text: 'Energía Específica E (m)',
+                    font: { family: 'Inter', size: 11, weight: 'bold' },
+                    color: '#002855'
+                  },
+                  grid: { color: '#e2e8f0' }
+                },
+                y: {
+                  title: {
+                    display: true,
+                    text: 'Tirante del Canal y (m)',
+                    font: { family: 'Inter', size: 11, weight: 'bold' },
+                    color: '#002855'
+                  },
+                  grid: { color: '#e2e8f0' }
+                }
+              }
+            }
+          });
+
+          updateEnergyChart();
+        };
+
+        const updateEnergyChart = () => {
+          if (!chartInstance) return;
+
+          const hyd = hydraulics.value;
+          const Qval = flowQ.value;
+          const yc = hyd.yc;
+          const Emin = hyd.Emin;
+          const yAct = hyd.yAct;
+          const EAct = hyd.EAct;
+          const yAlt = hyd.y_alt;
+
+          // Build continuous theoretical curve points
+          // To get a smooth turning point around yc, sample densely near yc
+          const pts = [];
+          const yMax = geometry.shape === 'circular' ? geometry.D * 0.98 : Math.max(geometry.H * 1.2, yc * 2.8, 0.40);
+          const yMin = 0.05 * yc;
+
+          // Supercritical branch: yMin to yc
+          const N1 = 40;
+          for (let i = 0; i <= N1; i++) {
+            const t = i / N1;
+            const yVal = yMin + t * (yc - yMin);
+            const Eval = calcSpecificEnergy(yVal, Qval);
+            if (Eval < 4.0) pts.push({ x: Eval, y: yVal });
+          }
+
+          // Subcritical branch: yc to yMax
+          const N2 = 50;
+          for (let i = 1; i <= N2; i++) {
+            const t = i / N2;
+            const yVal = yc + t * (yMax - yc);
+            const Eval = calcSpecificEnergy(yVal, Qval);
+            if (Eval < 4.0) pts.push({ x: Eval, y: yVal });
+          }
+
+          // Sort points by y
+          pts.sort((a, b) => a.y - b.y);
+
+          // Asymptote 45°: from 0 to max E
+          const maxEOnPlot = Math.min(3.0, Math.max(0.4, ...pts.map(p => p.x), EAct * 1.2));
+          const asymptote = [
+            { x: 0, y: 0 },
+            { x: maxEOnPlot, y: maxEOnPlot }
+          ];
+
+          // Point 1: Critical (Emin, yc)
+          const critPoint = [{ x: Emin, y: yc }];
+
+          // Point 2: Operating Point (EAct, yAct)
+          const opColor = hyd.Fr > 1.05 ? '#e11d48' : '#0284c7';
+          chartInstance.data.datasets[3].backgroundColor = opColor;
+          const opPoint = [{ x: EAct, y: yAct }];
+
+          // Point 3: Alternate depth point (EAct, yAlt)
+          const altPoint = [{ x: EAct, y: yAlt }];
+
+          // Point 4: Tie line
+          const tieLine = [
+            { x: EAct, y: Math.min(yAct, yAlt) },
+            { x: EAct, y: Math.max(yAct, yAlt) }
+          ];
+
+          chartInstance.data.datasets[0].data = pts;
+          chartInstance.data.datasets[1].data = asymptote;
+          chartInstance.data.datasets[2].data = critPoint;
+          chartInstance.data.datasets[3].data = opPoint;
+          chartInstance.data.datasets[4].data = altPoint;
+          chartInstance.data.datasets[5].data = tieLine;
+
+          chartInstance.options.scales.x.max = maxEOnPlot * 1.05;
+          chartInstance.options.scales.y.max = yMax * 1.05;
+
+          chartInstance.update();
+        };
+
+        // --- PRESETS APPLIER ---
+        const applyPreset = () => {
+          if (selectedPreset.value === 'unicauca_lab') {
+            geometry.shape = 'rectangular';
+            geometry.b = 0.30;
+            geometry.H = 0.40;
+            flowQ.value = 0.0185;
+            slopeS0.value = 0.0010;
+            selectedMaterialKey.value = 'acrylic';
+            customN.value = 0.010;
+            probeDepth.value = 0.119;
+          } else if (selectedPreset.value === 'riego_trapecial') {
+            geometry.shape = 'trapezoidal';
+            geometry.b = 1.00;
+            geometry.z = 1.50;
+            geometry.H = 1.20;
+            flowQ.value = 1.50;
+            slopeS0.value = 0.0008;
+            selectedMaterialKey.value = 'concrete_rough';
+            customN.value = 0.016;
+            probeDepth.value = 0.766;
+          } else if (selectedPreset.value === 'torrente_supercritico') {
+            geometry.shape = 'rectangular';
+            geometry.b = 0.50;
+            geometry.H = 0.60;
+            flowQ.value = 0.200;
+            slopeS0.value = 0.025; // 2.5% slope
+            selectedMaterialKey.value = 'concrete_smooth';
+            customN.value = 0.013;
+            probeDepth.value = 0.095;
+          } else if (selectedPreset.value === 'colector_circular') {
+            geometry.shape = 'circular';
+            geometry.D = 0.80;
+            flowQ.value = 0.200;
+            slopeS0.value = 0.0020;
+            selectedMaterialKey.value = 'concrete_smooth';
+            customN.value = 0.013;
+            probeDepth.value = 0.360;
+          }
+          nextTick(() => updateEnergyChart());
+        };
+
+        const formatNum = (val, dec = 2) => {
+          if (val === null || val === undefined || isNaN(val)) return '-';
+          return Number(val).toFixed(dec);
+        };
+
+        onMounted(() => {
+          if (channelSvg.value) {
+            channelSvg.value.setAttribute('viewBox', '0 0 600 360');
+          }
+          initEnergyChart();
+          // Initial default snap
+          snapToNormalDepth();
+        });
+
+        return {
+          selectedPreset,
+          geometry,
+          qUnit,
+          flowQ,
+          flowQSlider,
+          flowQInput,
+          qSliderMin,
+          qSliderMax,
+          qSliderStep,
+          slopeS0,
+          temperature,
+          materials,
+          selectedMaterialKey,
+          customN,
+          activeMaterial,
+          activeN,
+          currentWallFill,
+          onMaterialChange,
+          probeDepth,
+          probeMin,
+          probeMax,
+          probeEnergy,
+          snapToNormalDepth,
+          hydraulics,
+          currentRegime,
+          currentFroude,
+          slopeType,
+          isOverflowing,
+          channelSvg,
+          svgPaths,
+          svgAnnotations,
+          energyChartCanvas,
+          applyPreset,
+          formatNum
+        };
+      }
+    }).mount('#energyApp');
+  </script>
+</body>
+</html>

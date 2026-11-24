@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Sección de Control y Flujo Crítico | Laboratorio Virtual Unicauca</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            unicauca: {
+              blue: '#002855',
+              dark: '#001938',
+              light: '#0A4A8F',
+              accent: '#0284C7',
+              gold: '#D97706',
+              goldLight: '#FBBF24',
+              red: '#C8102E',
+              crimson: '#9E0B20',
+              surface: '#F8FAFC',
+              card: '#FFFFFF',
+              border: '#E2E8F0'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Courier New', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- KaTeX for math formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+  <style>
+    @keyframes flowLongitudinal {
+      0% { stroke-dashoffset: 32; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .water-flow-line {
+      stroke-dasharray: 8, 4;
+      animation: flowLongitudinal 1.2s linear infinite;
+    }
+    @keyframes jumpBubbles {
+      0%, 100% { transform: translateY(0px) scale(1); opacity: 0.7; }
+      50% { transform: translateY(-3px) scale(1.15); opacity: 1; }
+    }
+    .jump-turbulence {
+      animation: jumpBubbles 0.8s ease-in-out infinite;
+    }
+    @keyframes waveSubtle {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-1.5px); }
+    }
+    .wave-surface {
+      animation: waveSubtle 2s ease-in-out infinite;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+  <div id="controlApp" class="flex-1 flex flex-col">
+
+    <!-- TOP UNIVERSITY HEADER -->
+    <header class="bg-unicauca-blue text-white shadow-md border-b-2 border-unicauca-gold shrink-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        
+        <!-- Brand & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shadow-inner">
+            <span class="text-xl">🎛️</span>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-[10px] uppercase tracking-wider font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                Práctica IV • Laboratorio Virtual
+              </span>
+              <span class="text-xs text-blue-200 hidden md:inline">Universidad del Cauca</span>
+            </div>
+            <h1 class="text-base sm:text-lg font-bold leading-tight tracking-tight text-white">
+              Simulador de Sección de Control y Flujo Crítico
+            </h1>
+          </div>
+        </div>
+
+        <!-- Quick Actions & Presets -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <!-- Preset Selector -->
+          <div class="flex items-center space-x-1.5 bg-blue-950/70 px-2.5 py-1.5 rounded-xl border border-blue-800 text-slate-200">
+            <span class="text-[11px] text-blue-300 font-medium hidden sm:inline">Escenario:</span>
+            <select 
+              v-model="selectedPreset" 
+              @change="applyPreset"
+              class="bg-transparent text-xs font-semibold text-amber-300 focus:outline-none cursor-pointer"
+            >
+              <option value="control_libre" class="bg-slate-900 text-white">🔬 Control Libre en Cresta (Aguas Arriba Desacoplado)</option>
+              <option value="flujo_ahogado" class="bg-slate-900 text-white">💧 Flujo Ahogado por Compuerta (Acoplado)</option>
+              <option value="lecho_plano" class="bg-slate-900 text-white">🌊 Lecho Plano (Δz = 0, Control Total en Cola)</option>
+              <option value="resalto_pie" class="bg-slate-900 text-white">⚡ Resalto Hidráulico Estable al Pie del Escalón</option>
+            </select>
+          </div>
+
+          <!-- Unit Selector -->
+          <div class="inline-flex rounded-xl bg-blue-950/80 p-0.5 border border-blue-800 text-[11px]">
+            <button 
+              @click="qUnit = 'L/s'"
+              :class="qUnit === 'L/s' ? 'bg-amber-400 text-blue-950 font-bold' : 'text-slate-300 hover:text-white'"
+              class="px-2 py-1 rounded-lg transition"
+            >
+              L/s
+            </button>
+            <button 
+              @click="qUnit = 'm3/s'"
+              :class="qUnit === 'm3/s' ? 'bg-amber-400 text-blue-950 font-bold' : 'text-slate-300 hover:text-white'"
+              class="px-2 py-1 rounded-lg transition"
+            >
+              m³/s
+            </button>
+          </div>
+
+          <!-- Return to main app -->
+          <a 
+            href="index.html" 
+            class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex items-center space-x-1 border border-white/15"
+            title="Regresar a la guía de prácticas principal"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <span class="hidden sm:inline">Guía Principal</span>
+          </a>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- STATUS & HYDRAULIC CONTROL BANNER -->
+    <div class="bg-slate-900 text-white text-xs border-b border-slate-800 shrink-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        
+        <!-- Control Status Indicator Badge -->
+        <div class="flex items-center space-x-3">
+          <span class="text-slate-400 font-medium">Ubicación del Control:</span>
+          <span 
+            :class="isDecoupled ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-blue-500/20 text-blue-300 border-blue-500/40'"
+            class="px-3 py-1 rounded-full font-bold border flex items-center space-x-2 shadow-sm text-xs sm:text-sm"
+          >
+            <span class="w-2 h-2 rounded-full" :class="isDecoupled ? 'bg-emerald-400 animate-pulse' : 'bg-blue-400'"></span>
+            <span>{{ isDecoupled ? '🟢 SECCIÓN DE CONTROL EN LA CRESTA (Aguas Arriba Protegido)' : '🔵 CONTROL EN LA COMPUERTA DE COLA (Flujo Ahogado)' }}</span>
+          </span>
+        </div>
+
+        <!-- Key metrics on bar -->
+        <div class="flex items-center space-x-4 text-[11px] text-slate-300 font-mono">
+          <div><span>y₁:</span> <strong class="text-amber-400">{{ (hydraulics.y1 * 100).toFixed(2) }} cm</strong></div>
+          <div><span>yc cresta:</span> <strong class="text-amber-400">{{ (hydraulics.yc * 100).toFixed(2) }} cm</strong></div>
+          <div><span>Δz lecho:</span> <strong class="text-cyan-400">{{ (deltaZ * 100).toFixed(1) }} cm</strong></div>
+          <div><span>y₃ cola:</span> <strong class="text-purple-400">{{ (hydraulics.y3 * 100).toFixed(2) }} cm</strong></div>
+          <div><span>Compuerta a:</span> <strong class="text-white">{{ (tailgateA * 100).toFixed(1) }} cm</strong></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex-1 flex flex-col lg:flex-row gap-5">
+      
+      <!-- LEFT CONTROL COLUMN: Lecho Variable, Compuerta, Q & Geometría -->
+      <section class="w-full lg:w-80 shrink-0 space-y-4">
+        
+        <!-- 1. Central Variable Bed Height (Δz) Control -->
+        <div class="bg-gradient-to-br from-amber-500/10 via-white to-amber-500/5 rounded-2xl p-4 shadow-sm border-2 border-amber-300 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-amber-200">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center space-x-1.5">
+              <span>🪜 1. Lecho Variable (Escalón / Grada)</span>
+            </h2>
+            <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-900">
+              Δz
+            </span>
+          </div>
+
+          <p class="text-[11px] text-slate-600 leading-tight">
+            Eleva o desciende el bloque del lecho en la mitad del canal para generar la sección de control crítico:
+          </p>
+
+          <div class="space-y-1.5 pt-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-700 font-bold">Altura del lecho (Δz):</span>
+              <strong class="font-mono font-bold text-sm text-amber-900">{{ (deltaZ * 100).toFixed(1) }} cm</strong>
+            </div>
+            <input 
+              type="range" 
+              v-model.number="deltaZ" 
+              min="0.00" 
+              max="0.22" 
+              step="0.005" 
+              class="w-full accent-amber-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+            />
+            <div class="flex justify-between text-[10px] text-slate-600 font-mono">
+              <span>0 cm (Plano)</span>
+              <span class="text-amber-700 font-bold">Δz crítico ≈ {{ (hydraulics.deltaZCrit * 100).toFixed(1) }} cm</span>
+              <span>22 cm</span>
+            </div>
+          </div>
+
+          <div class="p-2 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-950 space-y-1">
+            <div class="flex justify-between">
+              <span>Tirante sobre cresta (y₂):</span>
+              <strong class="font-mono">{{ (hydraulics.y2 * 100).toFixed(2) }} cm</strong>
+            </div>
+            <div class="flex justify-between text-[10px]">
+              <span>Régimen sobre cresta:</span>
+              <strong :class="isDecoupled ? 'text-emerald-700 font-bold' : 'text-blue-700'">
+                {{ isDecoupled ? 'Crítico (Fr = 1.00)' : 'Subcrítico Ahogado' }}
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Downstream Tailgate (Compuerta de Cola) Control -->
+        <div class="bg-gradient-to-br from-blue-500/10 via-white to-blue-500/5 rounded-2xl p-4 shadow-sm border-2 border-blue-300 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-blue-200">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+              <span>🚪 2. Compuerta de Cola (Aguas Abajo)</span>
+            </h2>
+            <span class="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-blue-100 text-blue-900">
+              a_cola
+            </span>
+          </div>
+
+          <p class="text-[11px] text-slate-600 leading-tight">
+            Ajuste la apertura para regular el nivel aguas abajo. ¡Observe si afecta o no a la profundidad aguas arriba!
+          </p>
+
+          <div class="space-y-1.5 pt-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-700 font-bold">Apertura compuerta (a):</span>
+              <strong class="font-mono font-bold text-sm text-unicauca-blue">{{ (tailgateA * 100).toFixed(1) }} cm</strong>
+            </div>
+            <input 
+              type="range" 
+              v-model.number="tailgateA" 
+              min="0.01" 
+              max="0.22" 
+              step="0.005" 
+              class="w-full accent-unicauca-blue h-2 bg-slate-200 rounded-lg cursor-pointer"
+            />
+            <div class="flex justify-between text-[10px] text-slate-600 font-mono">
+              <span>1 cm (Casi cerrada)</span>
+              <span>10 cm</span>
+              <span>22 cm (Abierta)</span>
+            </div>
+          </div>
+
+          <div class="p-2 bg-blue-50 rounded-xl border border-blue-200 text-[11px] text-blue-950 space-y-1">
+            <div class="flex justify-between">
+              <span>Tirante aguas abajo (y₃):</span>
+              <strong class="font-mono">{{ (hydraulics.y3 * 100).toFixed(2) }} cm</strong>
+            </div>
+            <div class="flex justify-between text-[10px]">
+              <span>Influencia en aguas arriba:</span>
+              <strong :class="isDecoupled ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold'">
+                {{ isDecoupled ? '🚫 CERO INFLUENCIA' : '⚠️ AFECTA DIRECTAMENTE' }}
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Channel Geometry & Constant Discharge -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+              <span>📐 Caudal & Ancho de Canal</span>
+            </h2>
+            <span class="text-[10px] text-slate-600 font-mono">Q, b</span>
+          </div>
+
+          <!-- Flow rate Q -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600 font-medium">Caudal constante (Q):</span>
+              <span class="font-mono font-bold text-unicauca-blue">
+                {{ qUnit === 'L/s' ? (flowQ * 1000).toFixed(1) + ' L/s' : flowQ.toFixed(4) + ' m³/s' }}
+              </span>
+            </div>
+            <input 
+              type="range" 
+              v-model.number="flowQSlider" 
+              :min="qSliderMin" 
+              :max="qSliderMax" 
+              :step="qSliderStep" 
+              class="w-full accent-unicauca-blue h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+            />
+          </div>
+
+          <!-- Channel width b -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600 font-medium">Ancho solera rectangular (b):</span>
+              <span class="font-mono font-bold text-unicauca-blue">{{ channelB.toFixed(2) }} m ({{ (channelB * 100).toFixed(0) }} cm)</span>
+            </div>
+            <input 
+              type="range" 
+              v-model.number="channelB" 
+              min="0.15" 
+              max="0.80" 
+              step="0.01" 
+              class="w-full accent-unicauca-blue h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+            />
+          </div>
+
+          <!-- Unit flow q -->
+          <div class="pt-1 text-[11px] flex justify-between items-center text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-200">
+            <span>Caudal unitario (q = Q/b):</span>
+            <strong class="font-mono text-unicauca-blue">{{ (flowQ / channelB).toFixed(4) }} m²/s</strong>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT VISUALIZATION & ANALYSIS COLUMN -->
+      <section class="flex-1 flex flex-col space-y-4 min-w-0">
+        
+        <!-- PANEL A: LONGITUDINAL PROFILE 2D (SVG ANIMATED) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-2">
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+                <span>🌊 Perfil Longitudinal del Canal con Lecho Variable y Compuerta de Cola</span>
+              </h3>
+              <p class="text-[11px] text-slate-600">Vista lateral física a lo largo del canal mostrando la formación del flujo crítico y resalto</p>
+            </div>
+            
+            <!-- Real-time Decoupling Badge -->
+            <div class="px-2.5 py-1 rounded-xl font-bold text-[11px] flex items-center space-x-1.5" :class="isDecoupled ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-rose-100 text-rose-900 border border-rose-300'">
+              <span>{{ isDecoupled ? '🔒 Aguas Arriba Desacoplado' : '🔗 Aguas Arriba Acoplado a Cola' }}</span>
+            </div>
+          </div>
+
+          <!-- SVG Canvas Container -->
+          <div class="relative w-full h-[300px] sm:h-[340px] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center shadow-inner">
+            
+            <svg 
+              ref="longitudinalSvg"
+              viewBox="0 0 800 360" 
+              class="w-full h-full select-none"
+            >
+              <defs>
+                <!-- Gradients -->
+                <linearGradient id="waterFlowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#0284c7" stop-opacity="0.85"/>
+                  <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.90"/>
+                  <stop offset="100%" stop-color="#0369a1" stop-opacity="0.85"/>
+                </linearGradient>
+
+                <linearGradient id="bedGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#475569"/>
+                  <stop offset="100%" stop-color="#1e293b"/>
+                </linearGradient>
+
+                <linearGradient id="stepGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#f59e0b"/>
+                  <stop offset="30%" stop-color="#d97706"/>
+                  <stop offset="100%" stop-color="#b45309"/>
+                </linearGradient>
+
+                <linearGradient id="gateGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#64748b"/>
+                  <stop offset="50%" stop-color="#94a3b8"/>
+                  <stop offset="100%" stop-color="#475569"/>
+                </linearGradient>
+              </defs>
+
+              <!-- 1. Canal Structure / Bed Profile (Longitudinal) -->
+              <!-- Base horizon ground at Y = 280 -->
+              <rect x="0" y="280" width="800" height="80" fill="#0f172a"/>
+
+              <!-- Channel Bed Solid Path with Central Step (Lecho Variable) -->
+              <path 
+                :d="svgProfilePaths.bed" 
+                fill="url(#bedGrad)" 
+                stroke="#64748b" 
+                stroke-width="2"
+              />
+
+              <!-- Step Block Highlight -->
+              <path 
+                v-if="deltaZ > 0.005"
+                :d="svgProfilePaths.stepBlock" 
+                fill="url(#stepGrad)" 
+                stroke="#fbbf24" 
+                stroke-width="1.5"
+                opacity="0.95"
+              />
+
+              <!-- 2. Water Body (Longitudinal Polygon) -->
+              <path 
+                :d="svgProfilePaths.water" 
+                fill="url(#waterFlowGrad)" 
+                stroke="#38bdf8" 
+                stroke-width="2"
+              />
+
+              <!-- Flow animation streamlines -->
+              <path 
+                :d="svgProfilePaths.waterCenterLine" 
+                fill="none" 
+                stroke="#ffffff" 
+                stroke-width="1.5" 
+                class="water-flow-line"
+                opacity="0.75"
+              />
+
+              <!-- 3. Hydraulic Jump Turbulence Bubbles (if active) -->
+              <g v-if="hydraulics.hasJump && svgProfilePaths.jumpCoords" class="jump-turbulence">
+                <circle :cx="svgProfilePaths.jumpCoords.x" :cy="svgProfilePaths.jumpCoords.y" r="5" fill="#ffffff" opacity="0.8"/>
+                <circle :cx="svgProfilePaths.jumpCoords.x + 12" :cy="svgProfilePaths.jumpCoords.y - 4" r="4" fill="#ffffff" opacity="0.9"/>
+                <circle :cx="svgProfilePaths.jumpCoords.x + 22" :cy="svgProfilePaths.jumpCoords.y - 2" r="6" fill="#e0f2fe" opacity="0.8"/>
+                <circle :cx="svgProfilePaths.jumpCoords.x + 35" :cy="svgProfilePaths.jumpCoords.y - 6" r="3.5" fill="#ffffff" opacity="0.7"/>
+                <text 
+                  :x="svgProfilePaths.jumpCoords.x + 15" 
+                  :y="svgProfilePaths.jumpCoords.y - 14" 
+                  fill="#fde047" 
+                  font-size="10" 
+                  font-family="JetBrains Mono" 
+                  font-weight="bold"
+                  text-anchor="middle"
+                >
+                  Resalto Hidráulico
+                </text>
+              </g>
+
+              <!-- 4. Tailgate (Compuerta de Cola) at Downstream End -->
+              <!-- Vertical Frame / Guides -->
+              <rect x="716" y="20" width="16" height="260" fill="#334155" stroke="#475569" stroke-width="1.5"/>
+              <!-- Gate Leaf (Moving plate) -->
+              <rect 
+                x="718" 
+                y="20" 
+                width="12" 
+                :height="svgProfilePaths.gateLeafHeight" 
+                fill="url(#gateGrad)" 
+                stroke="#cbd5e1" 
+                stroke-width="1.5"
+              />
+              <!-- Gate Aperture Arrow & Label -->
+              <line x1="724" :y1="280 - svgProfilePaths.gateAperturePx" x2="724" y2="280" stroke="#f43f5e" stroke-width="2"/>
+              <text 
+                x="740" 
+                :y="280 - svgProfilePaths.gateAperturePx / 2 + 3" 
+                fill="#f43f5e" 
+                font-size="10" 
+                font-family="JetBrains Mono" 
+                font-weight="bold"
+              >
+                a = {{ (tailgateA * 100).toFixed(1) }} cm
+              </text>
+
+              <!-- 5. Annotations & Depth Measure Lines -->
+              
+              <!-- Upstream Depth y1 -->
+              <g>
+                <line x1="120" y1="280" x2="120" :y2="280 - svgProfilePaths.y1Px" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3,2"/>
+                <text x="120" :y="280 - svgProfilePaths.y1Px - 8" fill="#38bdf8" font-size="11" font-family="JetBrains Mono" font-weight="bold" text-anchor="middle">
+                  y₁ = {{ (hydraulics.y1 * 100).toFixed(1) }} cm
+                </text>
+              </g>
+
+              <!-- Step Height Δz on Crest -->
+              <g v-if="deltaZ > 0.01">
+                <line x1="280" y1="280" x2="280" :y2="280 - svgProfilePaths.deltaZPx" stroke="#f59e0b" stroke-width="2"/>
+                <text x="272" :y="280 - svgProfilePaths.deltaZPx / 2 + 4" fill="#fbbf24" font-size="10" font-family="JetBrains Mono" font-weight="bold" text-anchor="end">
+                  Δz = {{ (deltaZ * 100).toFixed(1) }} cm
+                </text>
+              </g>
+
+              <!-- Depth Over Crest y2 -->
+              <g v-if="deltaZ > 0.005">
+                <line x1="370" :y1="280 - svgProfilePaths.deltaZPx" x2="370" :y2="280 - svgProfilePaths.deltaZPx - svgProfilePaths.y2Px" stroke="#a3e635" stroke-width="1.5" stroke-dasharray="3,2"/>
+                <text x="370" :y="280 - svgProfilePaths.deltaZPx - svgProfilePaths.y2Px - 8" fill="#a3e635" font-size="11" font-family="JetBrains Mono" font-weight="bold" text-anchor="middle">
+                  y₂ = {{ (hydraulics.y2 * 100).toFixed(1) }} cm
+                </text>
+                <!-- Critical Depth Dashed Line over crest -->
+                <line 
+                  x1="320" 
+                  :y1="280 - svgProfilePaths.deltaZPx - svgProfilePaths.ycPx" 
+                  x2="420" 
+                  :y2="280 - svgProfilePaths.deltaZPx - svgProfilePaths.ycPx" 
+                  stroke="#fbbf24" 
+                  stroke-width="1.5" 
+                  stroke-dasharray="4,4"
+                />
+              </g>
+
+              <!-- Tailwater Depth y3 before gate -->
+              <g>
+                <line x1="660" y1="280" x2="660" :y2="280 - svgProfilePaths.y3Px" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="3,2"/>
+                <text x="660" :y="280 - svgProfilePaths.y3Px - 8" fill="#c084fc" font-size="11" font-family="JetBrains Mono" font-weight="bold" text-anchor="middle">
+                  y₃ = {{ (hydraulics.y3 * 100).toFixed(1) }} cm
+                </text>
+              </g>
+
+              <!-- Zone Labels -->
+              <text x="120" y="320" fill="#64748b" font-size="10" font-family="Inter" text-anchor="middle">Zona 1: Aguas Arriba</text>
+              <text x="370" y="320" fill="#64748b" font-size="10" font-family="Inter" text-anchor="middle">Zona 2: Lecho Variable (Cresta)</text>
+              <text x="620" y="320" fill="#64748b" font-size="10" font-family="Inter" text-anchor="middle">Zona 3: Aguas Abajo</text>
+
+            </svg>
+          </div>
+
+          <!-- SVG Legend -->
+          <div class="flex flex-wrap items-center justify-between text-[11px] pt-3 text-slate-600 border-t border-slate-100 gap-2">
+            <div class="flex flex-wrap items-center gap-3 font-medium">
+              <span class="flex items-center space-x-1.5 text-sky-600">
+                <span class="w-3 h-3 rounded bg-sky-500"></span>
+                <span>Tirante Aguas Arriba (y₁)</span>
+              </span>
+              <span class="flex items-center space-x-1.5 text-amber-600">
+                <span class="w-3 h-3 rounded bg-amber-500"></span>
+                <span>Elevación del Lecho (Δz)</span>
+              </span>
+              <span class="flex items-center space-x-1.5 text-lime-600">
+                <span class="w-3 h-3 rounded bg-lime-500"></span>
+                <span>Tirante sobre Cresta (y₂)</span>
+              </span>
+              <span class="flex items-center space-x-1.5 text-purple-600">
+                <span class="w-3 h-3 rounded bg-purple-500"></span>
+                <span>Tirante Aguas Abajo (y₃)</span>
+              </span>
+            </div>
+            <div class="text-[10px] text-slate-600 font-mono">
+              yc teórico = {{ (hydraulics.yc * 100).toFixed(2) }} cm
+            </div>
+          </div>
+        </div>
+
+        <!-- DUAL LOWER VIEW: SPECIFIC ENERGY TRANSITION CHART + HYDRAULIC METRICS -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          
+          <!-- CHART: Specific Energy Diagram with Step Δz -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-2">
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+                  <span>📈 Diagrama de Energía Específica (E vs y)</span>
+                </h3>
+                <p class="text-[11px] text-slate-600">Muestra el desplazamiento energético E₁ = E₂ + Δz en la transición</p>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900">
+                Emin = {{ (hydraulics.Emin * 100).toFixed(2) }} cm
+              </span>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="relative w-full h-[240px] sm:h-[260px]">
+              <canvas ref="controlChartCanvas"></canvas>
+            </div>
+
+            <div class="text-[11px] pt-2 text-slate-500 flex justify-between border-t border-slate-100">
+              <span class="font-medium">Δz actual = {{ (deltaZ * 100).toFixed(1) }} cm</span>
+              <span class="font-mono text-slate-400 text-[10px]">E₁ = {{ (hydraulics.E1 * 100).toFixed(2) }} cm</span>
+            </div>
+          </div>
+
+          <!-- DASHBOARD: Hydraulic Metrics & Physical Diagnostics -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-center justify-between pb-2 border-b border-slate-100 mb-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+                  <span>📊 Diagnóstico de Control y Froude</span>
+                </h3>
+                <span class="text-[10px] text-slate-400 font-mono">Canal Rectangular b = {{ channelB }} m</span>
+              </div>
+
+              <!-- Metrics Grid -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                
+                <!-- y1 -->
+                <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
+                  <span class="text-[10px] text-slate-600 block">Aguas Arriba (y₁):</span>
+                  <strong class="font-mono font-bold text-sm text-unicauca-blue">{{ (hydraulics.y1 * 100).toFixed(2) }} cm</strong>
+                  <span class="text-[10px] text-slate-600 block font-mono">Fr₁ = {{ hydraulics.Fr1.toFixed(2) }}</span>
+                </div>
+
+                <!-- y2 -->
+                <div class="p-2 rounded-xl border" :class="isDecoupled ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'">
+                  <span class="text-[10px] block" :class="isDecoupled ? 'text-emerald-700 font-bold' : 'text-slate-600'">Sobre Cresta (y₂):</span>
+                  <strong class="font-mono font-bold text-sm" :class="isDecoupled ? 'text-emerald-800' : 'text-slate-800'">{{ (hydraulics.y2 * 100).toFixed(2) }} cm</strong>
+                  <span class="text-[10px] block font-mono" :class="isDecoupled ? 'text-emerald-600 font-bold' : 'text-slate-600'">Fr₂ = {{ hydraulics.Fr2.toFixed(2) }}</span>
+                </div>
+
+                <!-- y3 -->
+                <div class="p-2 bg-purple-50/70 rounded-xl border border-purple-200">
+                  <span class="text-[10px] text-purple-700 block font-semibold">Aguas Abajo (y₃):</span>
+                  <strong class="font-mono font-bold text-sm text-purple-900">{{ (hydraulics.y3 * 100).toFixed(2) }} cm</strong>
+                  <span class="text-[10px] text-purple-600 block font-mono">Fr₃ = {{ hydraulics.Fr3.toFixed(2) }}</span>
+                </div>
+
+                <!-- Step status -->
+                <div class="p-2 bg-amber-50/70 rounded-xl border border-amber-200">
+                  <span class="text-[10px] text-amber-700 block font-semibold">Escalón (Δz):</span>
+                  <strong class="font-mono font-bold text-sm text-amber-900">{{ (deltaZ * 100).toFixed(1) }} cm</strong>
+                  <span class="text-[10px] text-amber-600 block font-mono">Δz_crit = {{ (hydraulics.deltaZCrit * 100).toFixed(1) }} cm</span>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Pedagogical Explanation Banner -->
+            <div class="p-3 rounded-xl border text-xs leading-relaxed" :class="isDecoupled ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950' : 'bg-blue-50/80 border-blue-200 text-blue-950'">
+              <div class="font-bold flex items-center space-x-1 mb-1">
+                <span>{{ isDecoupled ? '💡 Conclusión Física: Aguas Arriba Protegido' : '💡 Conclusión Física: Aguas Arriba Dominado por la Cola' }}</span>
+              </div>
+              <p v-if="isDecoupled">
+                Al ser <strong>Δz ≥ Δz_crit</strong> y el nivel aguas abajo no ahogar la cresta, se establece <strong>flujo crítico (y₂ = yc)</strong> sobre el lecho elevado. Las ondas gravitacionales no pueden viajar aguas arriba (Fr ≥ 1). <em>Si mueve la compuerta de cola, la profundidad aguas arriba y₁ se mantendrá inmutable</em>.
+              </p>
+              <p v-else>
+                El escalón es muy bajo o la compuerta de cola está muy cerrada, provocando <strong>flujo subcrítico continuo / ahogado</strong> sobre la cresta. Las ondas de remanso viajan libremente aguas arriba. <em>Cualquier movimiento de la compuerta de cola afectará inmediatamente a y₁</em>.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- EDUCATIONAL ACCORDION: Theoretical Fundamentals & Formulas -->
+        <details class="group bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <summary class="p-4 cursor-pointer flex items-center justify-between text-xs font-bold text-slate-800 hover:bg-slate-50 select-none">
+            <span class="flex items-center space-x-2">
+              <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+              <span>Fundamentos Físicos de la Sección de Control y Grada (Práctica IV)</span>
+            </span>
+            <span class="text-slate-400 group-open:rotate-180 transition-transform duration-200">▼</span>
+          </summary>
+          <div class="p-5 pt-2 text-xs text-slate-600 space-y-3 border-t border-slate-100">
+            <p>
+              Una <strong>sección de control</strong> es aquella sección transversal del canal donde existe una relación unívoca e independiente entre el tirante y el caudal, independizando las condiciones hidráulicas de aguas arriba de las perturbaciones de aguas abajo:
+            </p>
+            <div class="p-3 bg-slate-50 rounded-xl font-mono text-center text-unicauca-blue border border-slate-200">
+              \(E_1 = E_2 + \Delta z \implies y_1 + \frac{q^2}{2g \, y_1^2} = y_2 + \frac{q^2}{2g \, y_2^2} + \Delta z\)
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+              <div class="p-3 rounded-xl bg-amber-50/50 border border-amber-200">
+                <strong class="text-amber-900 block mb-1">1. Límite de Modularidad</strong>
+                <p class="text-[11px] leading-relaxed">
+                  Para que la grada funcione como vertedero de pared gruesa con descarga libre, el tirante aguas abajo no debe exceder el umbral de ahogamiento \(y_3 \le \Delta z + 0.85 \, y_c\).
+                </p>
+              </div>
+              <div class="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200">
+                <strong class="text-emerald-900 block mb-1">2. Bloqueo de Ondas</strong>
+                <p class="text-[11px] leading-relaxed">
+                  Alcanzado el estado crítico (\(Fr = 1\)), la celeridad de las ondas de gravedad \(c = \sqrt{g y_c}\) iguala a la velocidad de la corriente \(V_c\), impidiendo que cualquier onda remonte el flujo hacia aguas arriba.
+                </p>
+              </div>
+              <div class="p-3 rounded-xl bg-blue-50/50 border border-blue-200">
+                <strong class="text-blue-900 block mb-1">3. Resalto Hidráulico</strong>
+                <p class="text-[11px] leading-relaxed">
+                  Aguas abajo del escalón se genera una lámina supercrítica (\(Fr > 1\)). La compuerta de cola impone el nivel de aguas abajo \(y_3\), forzando la disipación de energía mediante un resalto hidráulico estacionario.
+                </p>
+              </div>
+            </div>
+          </div>
+        </details>
+
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-500 shrink-0">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span>Universidad del Cauca • Departamento de Hidráulica • Laboratorio Virtual</span>
+        <span class="text-[11px] text-slate-400">Práctica IV: Sección de Control, Lecho Variable y Flujo Crítico con Compuerta de Cola</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- VUE 3 APPLICATION SCRIPT -->
+  <script>
+    const { createApp, ref, reactive, computed, watch, onMounted, nextTick } = Vue;
+
+    createApp({
+      setup() {
+        const selectedPreset = ref('control_libre');
+
+        // Parameters
+        const flowQ = ref(0.015); // m3/s (15 L/s)
+        const qUnit = ref('L/s');
+        const channelB = ref(0.30); // Ancho b = 30 cm
+        const deltaZ = ref(0.12); // Escalón lecho = 12 cm
+        const tailgateA = ref(0.08); // Apertura compuerta = 8 cm
+
+        const g = 9.81;
+
+        // Displayer helpers for flowQ
+        const flowQSlider = computed({
+          get: () => qUnit.value === 'L/s' ? flowQ.value * 1000 : flowQ.value,
+          set: (val) => {
+            flowQ.value = qUnit.value === 'L/s' ? Math.max(0.001, val / 1000) : Math.max(0.0001, val);
+          }
+        });
+
+        const qSliderMin = computed(() => qUnit.value === 'L/s' ? 1.0 : 0.001);
+        const qSliderMax = computed(() => qUnit.value === 'L/s' ? 50.0 : 0.05);
+        const qSliderStep = computed(() => qUnit.value === 'L/s' ? 0.5 : 0.001);
+
+        // Core Hydraulic Solver
+        const hydraulics = computed(() => {
+          const Qval = flowQ.value;
+          const bVal = channelB.value;
+          const dz = deltaZ.value;
+          const aGate = tailgateA.value;
+
+          const q = Qval / bVal;
+          const yc = Math.cbrt((q * q) / g);
+          const Emin = 1.5 * yc;
+
+          // Downstream tailgate depth y3 (sluice gate head)
+          const Cd = 0.60;
+          let y3 = Math.pow(q / (Cd * aGate), 2) / (2 * g);
+          // Bounds clamping
+          y3 = Math.max(aGate * 0.85, Math.min(y3, 0.45));
+
+          // Reference undisturbed upstream energy for uniform channel before step
+          const yRef = 0.08;
+          const E0 = yRef + (q * q) / (2 * g * yRef * yRef);
+          const deltaZCrit = Math.max(0.01, E0 - Emin);
+
+          // Submergence check: does tailwater drown the crest?
+          const isSubmergedByTailwater = (y3 > dz + 0.85 * yc);
+          const hasCriticalOverCrest = (dz >= deltaZCrit) && (!isSubmergedByTailwater);
+
+          let y1, y2, E1, E2, yToe, yConj, hasJump;
+
+          if (hasCriticalOverCrest) {
+            // Decoupled / Modular flow
+            y2 = yc;
+            E2 = Emin;
+            E1 = dz + Emin;
+
+            // Solve subcritical y1 from y1 + q^2 / (2*g*y1^2) = E1
+            let low = yc, high = Math.max(E1 * 1.5, 0.80);
+            for (let i = 0; i < 50; i++) {
+              const mid = (low + high) / 2;
+              const Em = mid + (q * q) / (2 * g * mid * mid);
+              if (Em < E1) low = mid;
+              else high = mid;
+            }
+            y1 = (low + high) / 2;
+
+            // Supercritical plunging depth at toe of step (falling back to z=0)
+            let lowT = 0.005 * yc, highT = 0.999 * yc;
+            for (let i = 0; i < 50; i++) {
+              const mid = (lowT + highT) / 2;
+              const Em = mid + (q * q) / (2 * g * mid * mid);
+              if (Em > E1) lowT = mid;
+              else highT = mid;
+            }
+            yToe = (lowT + highT) / 2;
+            const VToe = q / yToe;
+            const FrToe = VToe / Math.sqrt(g * yToe);
+            yConj = (yToe / 2.0) * (Math.sqrt(1 + 8 * FrToe * FrToe) - 1.0);
+            hasJump = (y3 >= yToe * 1.05);
+
+          } else {
+            // Coupled / Drowned / Subcritical flow throughout
+            const E3 = y3 + (q * q) / (2 * g * y3 * y3);
+            E2 = Math.max(Emin, E3 - dz * 0.15);
+
+            let low = yc, high = Math.max(E2 * 1.5, 0.80);
+            for (let i = 0; i < 50; i++) {
+              const mid = (low + high) / 2;
+              const Em = mid + (q * q) / (2 * g * mid * mid);
+              if (Em < E2) low = mid;
+              else high = mid;
+            }
+            y2 = (low + high) / 2;
+
+            E1 = E2 + dz;
+            low = yc; high = Math.max(E1 * 1.5, 0.80);
+            for (let i = 0; i < 50; i++) {
+              const mid = (low + high) / 2;
+              const Em = mid + (q * q) / (2 * g * mid * mid);
+              if (Em < E1) low = mid;
+              else high = mid;
+            }
+            y1 = (low + high) / 2;
+
+            yToe = y2;
+            yConj = y2;
+            hasJump = false;
+          }
+
+          const V1 = q / y1;
+          const Fr1 = V1 / Math.sqrt(g * y1);
+          const V2 = q / y2;
+          const Fr2 = V2 / Math.sqrt(g * y2);
+          const V3 = q / y3;
+          const Fr3 = V3 / Math.sqrt(g * y3);
+
+          return {
+            q,
+            yc,
+            Emin,
+            deltaZCrit,
+            hasCriticalOverCrest,
+            hasJump,
+            y1,
+            y2,
+            y3,
+            yToe,
+            yConj,
+            E1,
+            E2,
+            Fr1,
+            Fr2,
+            Fr3
+          };
+        });
+
+        const isDecoupled = computed(() => hydraulics.value.hasCriticalOverCrest);
+
+        // SVG Profile Paths Calculation
+        const longitudinalSvg = ref(null);
+
+        const svgProfilePaths = computed(() => {
+          const hyd = hydraulics.value;
+          const dz = deltaZ.value;
+          const aGate = tailgateA.value;
+
+          // Scale: 400 pixels height available, bed at Y=280
+          // 1 meter = 450 pixels
+          const scale = 450;
+          const BED_Y = 280;
+
+          const deltaZPx = Math.min(120, dz * scale);
+          const y1Px = Math.min(220, hyd.y1 * scale);
+          const y2Px = Math.min(220, hyd.y2 * scale);
+          const y3Px = Math.min(220, hyd.y3 * scale);
+          const ycPx = Math.min(220, hyd.yc * scale);
+          const gateAperturePx = Math.min(120, aGate * scale);
+          const gateLeafHeight = Math.max(20, (BED_Y - 20) - gateAperturePx);
+
+          // Geometry coordinates (X axis from 0 to 800)
+          // X: [40, 260] upstream -> [260, 310] ramp -> [310, 440] crest -> [440, 480] drop -> [480, 760] downstream
+          const bedPath = `M 40 ${BED_Y} L 260 ${BED_Y} L 310 ${BED_Y - deltaZPx} L 440 ${BED_Y - deltaZPx} L 480 ${BED_Y} L 760 ${BED_Y} L 760 340 L 40 340 Z`;
+          const stepBlock = `M 260 ${BED_Y} L 310 ${BED_Y - deltaZPx} L 440 ${BED_Y - deltaZPx} L 480 ${BED_Y} Z`;
+
+          // Water surface profile path
+          // Upstream: surface at BED_Y - y1Px
+          // Crest: surface at (BED_Y - deltaZPx) - y2Px
+          // Downstream:
+          let waterPath = '';
+          let jumpCoords = null;
+          let waterCenterLine = '';
+
+          const y1SurfaceY = BED_Y - y1Px;
+          const y2SurfaceY = (BED_Y - deltaZPx) - y2Px;
+          const y3SurfaceY = BED_Y - y3Px;
+
+          if (hyd.hasCriticalOverCrest) {
+            // Plunge to supercritical toe, then jump
+            const yToePx = Math.min(120, hyd.yToe * scale);
+            const toeY = BED_Y - yToePx;
+            const jumpX = Math.min(620, Math.max(510, 480 + (hyd.y3 / (hyd.yConj || 0.1)) * 50));
+            jumpCoords = { x: jumpX, y: toeY };
+
+            waterPath = `M 40 ${BED_Y} L 260 ${BED_Y} L 310 ${BED_Y - deltaZPx} L 440 ${BED_Y - deltaZPx} L 480 ${BED_Y} L 720 ${BED_Y} L 720 ${BED_Y - gateAperturePx} L 720 ${y3SurfaceY} L ${jumpX + 40} ${y3SurfaceY} Q ${jumpX} ${toeY} ${480} ${toeY} L 440 ${y2SurfaceY} L 310 ${y2SurfaceY} Q 280 ${y2SurfaceY} 260 ${y1SurfaceY} L 40 ${y1SurfaceY} Z`;
+            waterCenterLine = `M 40 ${y1SurfaceY + y1Px/2} L 260 ${y1SurfaceY + y1Px/2} L 310 ${y2SurfaceY + y2Px/2} L 440 ${y2SurfaceY + y2Px/2} L ${jumpX} ${toeY} L 720 ${y3SurfaceY + y3Px/2}`;
+          } else {
+            // Drowned / continuous subcritical flow
+            waterPath = `M 40 ${BED_Y} L 260 ${BED_Y} L 310 ${BED_Y - deltaZPx} L 440 ${BED_Y - deltaZPx} L 480 ${BED_Y} L 720 ${BED_Y} L 720 ${BED_Y - gateAperturePx} L 720 ${y3SurfaceY} L 480 ${y3SurfaceY} L 440 ${y2SurfaceY} L 310 ${y2SurfaceY} Q 280 ${y2SurfaceY} 260 ${y1SurfaceY} L 40 ${y1SurfaceY} Z`;
+            waterCenterLine = `M 40 ${y1SurfaceY + y1Px/2} L 260 ${y1SurfaceY + y1Px/2} L 310 ${y2SurfaceY + y2Px/2} L 440 ${y2SurfaceY + y2Px/2} L 720 ${y3SurfaceY + y3Px/2}`;
+          }
+
+          return {
+            bed: bedPath,
+            stepBlock,
+            water: waterPath,
+            waterCenterLine,
+            jumpCoords,
+            deltaZPx,
+            y1Px,
+            y2Px,
+            y3Px,
+            ycPx,
+            gateAperturePx,
+            gateLeafHeight
+          };
+        });
+
+        // --- SPECIFIC ENERGY TRANSITION CHART (CHART.JS) ---
+        const controlChartCanvas = ref(null);
+        let chartInstance = null;
+
+        const initControlChart = () => {
+          if (!controlChartCanvas.value) return;
+          const ctx = controlChartCanvas.value.getContext('2d');
+
+          chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+              datasets: [
+                // 1. Continuous theoretical curve E(y)
+                {
+                  label: 'Curva E(y)',
+                  data: [],
+                  borderColor: '#002855',
+                  backgroundColor: 'rgba(0, 40, 85, 0.05)',
+                  borderWidth: 2.5,
+                  pointRadius: 0,
+                  fill: false,
+                  tension: 0.2
+                },
+                // 2. Critical Point (Emin, yc)
+                {
+                  label: 'Punto Crítico (Emin, yc)',
+                  data: [],
+                  borderColor: '#d97706',
+                  backgroundColor: '#f59e0b',
+                  pointRadius: 6,
+                  showLine: false
+                },
+                // 3. Upstream Point (E1, y1)
+                {
+                  label: 'Aguas Arriba (E₁, y₁)',
+                  data: [],
+                  borderColor: '#ffffff',
+                  backgroundColor: '#0284c7',
+                  borderWidth: 2,
+                  pointRadius: 7,
+                  showLine: false
+                },
+                // 4. Crest Point (E2, y2)
+                {
+                  label: 'Sobre Cresta (E₂, y₂)',
+                  data: [],
+                  borderColor: '#ffffff',
+                  backgroundColor: '#10b981',
+                  borderWidth: 2,
+                  pointRadius: 7,
+                  showLine: false
+                },
+                // 5. Delta z shift line between E2 and E1
+                {
+                  label: 'Desplazamiento Δz',
+                  data: [],
+                  borderColor: '#f59e0b',
+                  borderDash: [4, 4],
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  fill: false
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 250 },
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: { font: { family: 'Inter', size: 10, weight: 'bold' }, boxWidth: 10 }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      const p = context.raw;
+                      return `${context.dataset.label}: E = ${(p.x * 100).toFixed(2)} cm, y = ${(p.y * 100).toFixed(2)} cm`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  type: 'linear',
+                  title: { display: true, text: 'Energía Específica E (m)', font: { size: 10, weight: 'bold' }, color: '#002855' },
+                  grid: { color: '#f1f5f9' }
+                },
+                y: {
+                  title: { display: true, text: 'Tirante y (m)', font: { size: 10, weight: 'bold' }, color: '#002855' },
+                  grid: { color: '#f1f5f9' }
+                }
+              }
+            }
+          });
+
+          updateControlChart();
+        };
+
+        const updateControlChart = () => {
+          if (!chartInstance) return;
+
+          const hyd = hydraulics.value;
+          const q = hyd.q;
+          const yc = hyd.yc;
+          const Emin = hyd.Emin;
+          const E1 = hyd.E1;
+          const y1 = hyd.y1;
+          const E2 = hyd.E2;
+          const y2 = hyd.y2;
+
+          // Continuous curve points
+          const pts = [];
+          const yMax = Math.max(0.35, y1 * 1.3, yc * 3.0);
+          const yMin = 0.08 * yc;
+
+          for (let i = 0; i <= 60; i++) {
+            const yVal = yMin + (i / 60) * (yMax - yMin);
+            const Eval = yVal + (q * q) / (2 * 9.81 * yVal * yVal);
+            if (Eval < 3.0) pts.push({ x: Eval, y: yVal });
+          }
+
+          const critPoint = [{ x: Emin, y: yc }];
+          const pt1 = [{ x: E1, y: y1 }];
+          const pt2 = [{ x: E2, y: y2 }];
+
+          // Delta connector line at height y2 between E2 and E1
+          const deltaLine = [
+            { x: E2, y: y2 },
+            { x: E1, y: y2 }
+          ];
+
+          chartInstance.data.datasets[0].data = pts;
+          chartInstance.data.datasets[1].data = critPoint;
+          chartInstance.data.datasets[2].data = pt1;
+          chartInstance.data.datasets[3].data = pt2;
+          chartInstance.data.datasets[4].data = deltaLine;
+
+          const maxX = Math.max(0.25, E1 * 1.15, ...pts.map(p => p.x));
+          chartInstance.options.scales.x.max = maxX;
+          chartInstance.options.scales.y.max = yMax * 1.05;
+
+          chartInstance.update();
+        };
+
+        watch([flowQ, channelB, deltaZ, tailgateA], () => {
+          updateControlChart();
+        });
+
+        const applyPreset = () => {
+          if (selectedPreset.value === 'control_libre') {
+            flowQ.value = 0.015;
+            channelB.value = 0.30;
+            deltaZ.value = 0.12;
+            tailgateA.value = 0.08;
+          } else if (selectedPreset.value === 'flujo_ahogado') {
+            flowQ.value = 0.015;
+            channelB.value = 0.30;
+            deltaZ.value = 0.08;
+            tailgateA.value = 0.03; // Very closed tailgate causes drowning
+          } else if (selectedPreset.value === 'lecho_plano') {
+            flowQ.value = 0.015;
+            channelB.value = 0.30;
+            deltaZ.value = 0.00; // Flat bed
+            tailgateA.value = 0.05;
+          } else if (selectedPreset.value === 'resalto_pie') {
+            flowQ.value = 0.018;
+            channelB.value = 0.30;
+            deltaZ.value = 0.14;
+            tailgateA.value = 0.09;
+          }
+          nextTick(() => updateControlChart());
+        };
+
+        onMounted(() => {
+          if (longitudinalSvg.value) {
+            longitudinalSvg.value.setAttribute('viewBox', '0 0 800 360');
+          }
+          initControlChart();
+        });
+
+        return {
+          selectedPreset,
+          flowQ,
+          qUnit,
+          flowQSlider,
+          qSliderMin,
+          qSliderMax,
+          qSliderStep,
+          channelB,
+          deltaZ,
+          tailgateA,
+          hydraulics,
+          isDecoupled,
+          longitudinalSvg,
+          svgProfilePaths,
+          controlChartCanvas,
+          applyPreset
+        };
+      }
+    }).mount('#controlApp');
+  </script>
+</body>
+</html>

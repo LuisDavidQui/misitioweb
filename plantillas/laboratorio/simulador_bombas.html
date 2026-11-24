@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Sistemas de Bombeo: Individual, Serie y Paralelo | Laboratorio Virtual Unicauca</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            unicauca: {
+              blue: '#002855',
+              dark: '#001938',
+              light: '#0A4A8F',
+              accent: '#0284C7',
+              gold: '#D97706',
+              goldLight: '#FBBF24',
+              red: '#C8102E',
+              surface: '#F8FAFC',
+              border: '#E2E8F0'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}]});"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Top Header Navigation -->
+  <header class="bg-unicauca-blue text-white shadow-lg border-b border-unicauca-gold/40 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center shadow-md border border-white/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-unicauca-gold bg-black/20 px-2 py-0.5 rounded border border-unicauca-gold/30">Práctica IX</span>
+            <span class="text-xs text-blue-200">Laboratorio Virtual de Hidráulica</span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            Sistemas de Bombeo: Individual, Serie y Paralelo
+            <span class="text-xs font-normal bg-blue-500/30 text-blue-200 border border-blue-400/30 px-2 py-0.5 rounded-full">Banco Gunt HM 150.16</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Mode Selector Tabs -->
+      <div class="flex items-center bg-blue-950/60 p-1 rounded-xl border border-white/10 shadow-inner">
+        <button id="tabIndividual" onclick="setPumpMode('individual')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-unicauca-blue shadow">
+          Bomba Individual
+        </button>
+        <button id="tabSerie" onclick="setPumpMode('serie')" class="px-3 py-1.5 rounded-lg text-xs font-medium text-blue-200 hover:text-white transition-all">
+          Bombas en SERIE
+        </button>
+        <button id="tabParalelo" onclick="setPumpMode('paralelo')" class="px-3 py-1.5 rounded-lg text-xs font-medium text-blue-200 hover:text-white transition-all">
+          Bombas en PARALELO
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Simulator Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Left Controls Sidebar (4 Cols) -->
+    <section class="lg:col-span-4 space-y-5">
+
+      <!-- Presets for Practica IX Tables -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4 text-unicauca-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Formatos de Laboratorio
+        </h2>
+        <div class="grid grid-cols-1 gap-2">
+          <button onclick="loadLabTable('IX.2')" class="text-left px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 hover:border-blue-400 hover:bg-blue-50/60 transition-all flex items-center justify-between">
+            <span class="text-slate-700">📋 Tabla IX.2: Bomba 1 Individual</span>
+            <span class="text-[10px] text-blue-600 bg-blue-100/70 px-2 py-0.5 rounded font-mono">Qmax ~ 60 L/min</span>
+          </button>
+          <button onclick="loadLabTable('IX.3')" class="text-left px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 hover:border-blue-400 hover:bg-blue-50/60 transition-all flex items-center justify-between">
+            <span class="text-slate-700">📋 Tabla IX.3: Bombas en SERIE</span>
+            <span class="text-[10px] text-indigo-600 bg-indigo-100/70 px-2 py-0.5 rounded font-mono">Hmax ~ 30 m</span>
+          </button>
+          <button onclick="loadLabTable('IX.4')" class="text-left px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 hover:border-blue-400 hover:bg-blue-50/60 transition-all flex items-center justify-between">
+            <span class="text-slate-700">📋 Tabla IX.4: Bombas en PARALELO</span>
+            <span class="text-[10px] text-emerald-600 bg-emerald-100/70 px-2 py-0.5 rounded font-mono">Qmax ~ 120 L/min</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Pump & System Parameters -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+          <svg class="w-4 h-4 text-unicauca-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          </svg>
+          Variables de Operación
+        </h2>
+
+        <!-- Válvula de Regulación (Pérdida del Sistema) -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Apertura Válvula de Descarga:</span>
+            <span class="font-mono text-blue-700 font-bold" id="valveVal">65%</span>
+          </div>
+          <input type="range" id="valveSlider" min="5" max="100" step="1" value="65"
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="updateSimulation()">
+          <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
+            <span>Casi cerrada (0 L/min)</span>
+            <span>Totalmente abierta</span>
+          </div>
+        </div>
+
+        <!-- Altura Estática Hg -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Desnivel Geométrico ($H_g$):</span>
+            <span class="font-mono text-blue-700 font-bold" id="hgVal">2.00 m</span>
+          </div>
+          <input type="range" id="hgSlider" min="0.5" max="15.0" step="0.5" value="2.0"
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="updateSimulation()">
+        </div>
+
+        <!-- Velocidad de Giro (RPM) -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Velocidad de Motores ($N$):</span>
+            <span class="font-mono text-indigo-700 font-bold" id="rpmVal">2850 RPM (Nominal)</span>
+          </div>
+          <input type="range" id="rpmSlider" min="1500" max="3600" step="50" value="2850"
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" oninput="updateSimulation()">
+          <p class="text-[10px] text-slate-500 mt-0.5">Leyes de afinidad: $Q \propto N$, $H \propto N^2$, $P \propto N^3$</p>
+        </div>
+
+        <!-- Interruptores de Bombas -->
+        <div class="pt-2 border-t border-slate-100 grid grid-cols-2 gap-3">
+          <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="text-xs font-semibold text-slate-700">Bomba 1:</span>
+            <span class="text-[11px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded">ON</span>
+          </div>
+          <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="text-xs font-semibold text-slate-700">Bomba 2:</span>
+            <span id="pump2StateBadge" class="text-[11px] font-bold text-slate-400 bg-slate-200 px-2 py-0.5 rounded">OFF</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Theory Tip -->
+      <div class="bg-blue-50/70 rounded-2xl p-4 border border-blue-200/80 text-xs text-blue-900 space-y-1.5">
+        <h4 class="font-bold flex items-center gap-1 text-blue-950">
+          💡 Criterio de Selección Serie vs Paralelo
+        </h4>
+        <p class="text-[11px] text-blue-800 leading-relaxed">
+          • <strong>Serie:</strong> Recomendado en sistemas con tuberías largas y pérdidas elevadas (curva del sistema muy empinada). Duplica la altura $H$.
+        </p>
+        <p class="text-[11px] text-blue-800 leading-relaxed">
+          • <strong>Paralelo:</strong> Recomendado en sistemas con bajo desnivel y poca resistencia (curva del sistema plana). Duplica el caudal $Q$.
+        </p>
+      </div>
+
+    </section>
+
+    <!-- Right Visual Simulation & Charts (8 Cols) -->
+    <section class="lg:col-span-8 space-y-5">
+
+      <!-- Interactive SVG Pump Test Bench -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
+              Banco de Ensayo Hidráulico en Tiempo Real
+            </h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="systemModeTag" class="text-xs font-bold font-mono px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 border border-blue-300">
+              MODO: BOMBA INDIVIDUAL
+            </span>
+          </div>
+        </div>
+
+        <!-- SVG Visual Bench -->
+        <div class="w-full bg-gradient-to-b from-slate-900 via-slate-850 to-slate-900 rounded-xl border border-slate-800 overflow-hidden relative shadow-2xl p-2">
+          <svg id="benchSvg" viewBox="0 0 780 340" class="w-full h-auto select-none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="pipeGradActive" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#0284C7"/>
+                <stop offset="50%" stop-color="#38BDF8"/>
+                <stop offset="100%" stop-color="#0284C7"/>
+              </linearGradient>
+              <linearGradient id="pipeGradInactive" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#334155"/>
+                <stop offset="100%" stop-color="#1E293B"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Suction Reservoir (Left) -->
+            <rect x="20" y="80" width="90" height="220" fill="#1E293B" stroke="#475569" stroke-width="2" rx="6"/>
+            <rect id="svgSuctionWater" x="22" y="120" width="86" height="178" fill="#0284C7" fill-opacity="0.6"/>
+            <text x="65" y="105" text-anchor="middle" fill="#94A3B8" font-size="11" font-weight="bold">Depósito Succión</text>
+
+            <!-- Main Suction Line -->
+            <path d="M 110 220 L 170 220" stroke="#38BDF8" stroke-width="12" fill="none" stroke-linecap="round"/>
+
+            <!-- PUMP 1 -->
+            <g id="pump1Group" transform="translate(230, 220)">
+              <!-- Pump Casing Volute -->
+              <circle cx="0" cy="0" r="42" fill="#0F172A" stroke="#38BDF8" stroke-width="4"/>
+              <!-- Motor Body Behind -->
+              <rect x="-30" y="-28" width="20" height="56" fill="#1E293B" stroke="#475569" stroke-width="2" rx="3"/>
+              <!-- Rotating Impeller Blades -->
+              <g id="impeller1" class="transition-transform">
+                <circle cx="0" cy="0" r="8" fill="#FBBF24"/>
+                <line x1="-28" y1="0" x2="28" y2="0" stroke="#FBBF24" stroke-width="3"/>
+                <line x1="0" y1="-28" x2="0" y2="28" stroke="#FBBF24" stroke-width="3"/>
+                <line x1="-20" y1="-20" x2="20" y2="20" stroke="#FBBF24" stroke-width="3"/>
+                <line x1="-20" y1="20" x2="20" y2="-20" stroke="#FBBF24" stroke-width="3"/>
+              </g>
+              <text x="0" y="58" text-anchor="middle" fill="#E2E8F0" font-size="12" font-weight="bold">BOMBA 1</text>
+            </g>
+
+            <!-- PUMP 2 -->
+            <g id="pump2Group" transform="translate(420, 220)">
+              <!-- Pump Casing Volute -->
+              <circle id="pump2Casing" cx="0" cy="0" r="42" fill="#0F172A" stroke="#475569" stroke-width="4"/>
+              <rect x="-30" y="-28" width="20" height="56" fill="#1E293B" stroke="#475569" stroke-width="2" rx="3"/>
+              <!-- Rotating Impeller Blades -->
+              <g id="impeller2" class="transition-transform">
+                <circle cx="0" cy="0" r="8" fill="#64748B"/>
+                <line x1="-28" y1="0" x2="28" y2="0" stroke="#64748B" stroke-width="3"/>
+                <line x1="0" y1="-28" x2="0" y2="28" stroke="#64748B" stroke-width="3"/>
+                <line x1="-20" y1="-20" x2="20" y2="20" stroke="#64748B" stroke-width="3"/>
+                <line x1="-20" y1="20" x2="20" y2="-20" stroke="#64748B" stroke-width="3"/>
+              </g>
+              <text id="pump2Label" x="0" y="58" text-anchor="middle" fill="#64748B" font-size="12" font-weight="bold">BOMBA 2 (OFF)</text>
+            </g>
+
+            <!-- Manifold Pipes & Interconnections -->
+            <!-- Bypass / Series Connection Line: From Pump 1 discharge to Pump 2 suction -->
+            <path id="pipeSeries" d="M 230 178 L 230 140 L 350 140 L 350 220 L 378 220" stroke="#334155" stroke-width="8" fill="none"/>
+
+            <!-- Bypass Direct Line (Individual Mode: Pump 1 goes straight to main discharge) -->
+            <path id="pipeIndividual" d="M 230 178 L 230 80 L 580 80 L 580 180" stroke="#38BDF8" stroke-width="8" fill="none"/>
+
+            <!-- Parallel Suction Line: branches from suction to Pump 2 -->
+            <path id="pipeParallelSuction" d="M 150 220 L 150 280 L 350 280 L 350 220 L 378 220" stroke="#334155" stroke-width="8" fill="none"/>
+
+            <!-- Parallel Discharge Line: Pump 2 discharges upward to main discharge header -->
+            <path id="pipeParallelDischarge" d="M 420 178 L 420 80 L 580 80" stroke="#334155" stroke-width="8" fill="none"/>
+
+            <!-- Discharge Header & Regulating Valve -->
+            <g transform="translate(580, 180)">
+              <!-- Main pipe down into measuring tank -->
+              <line x1="0" y1="0" x2="0" y2="70" stroke="#38BDF8" stroke-width="12"/>
+              <!-- Throttle Valve -->
+              <circle cx="0" cy="30" r="14" fill="#E2E8F0" stroke="#002855" stroke-width="3"/>
+              <line id="svgValveHandwheel" x1="-12" y1="30" x2="12" y2="30" stroke="#C8102E" stroke-width="4"/>
+              <text x="25" y="34" fill="#FBBF24" font-size="10" font-family="monospace">Válvula Reguladora</text>
+            </g>
+
+            <!-- Discharge & Volumetric Measuring Tank (Right) -->
+            <rect x="630" y="80" width="120" height="220" fill="#1E293B" stroke="#475569" stroke-width="2" rx="6"/>
+            <rect id="svgDischargeWater" x="632" y="210" width="116" height="88" fill="#0284C7" fill-opacity="0.6"/>
+            <!-- Water Level Scale -->
+            <line x1="640" y1="100" x2="640" y2="280" stroke="#475569" stroke-width="2"/>
+            <text x="690" y="105" text-anchor="middle" fill="#94A3B8" font-size="11" font-weight="bold">Tanque Aforo</text>
+
+            <!-- Live Pressure Gauges Readouts -->
+            <!-- Suction Gauge (Ps) -->
+            <g transform="translate(170, 190)">
+              <circle cx="0" cy="0" r="16" fill="#FFFFFF" stroke="#002855" stroke-width="2"/>
+              <text x="0" y="3" text-anchor="middle" fill="#002855" font-size="8" font-weight="bold">Ps</text>
+              <text id="svgPsText" x="0" y="-22" text-anchor="middle" fill="#38BDF8" font-size="10" font-family="monospace">-0.08 bar</text>
+            </g>
+
+            <!-- Discharge Gauge (Pd) -->
+            <g transform="translate(530, 80)">
+              <circle cx="0" cy="0" r="16" fill="#FFFFFF" stroke="#002855" stroke-width="2"/>
+              <text x="0" y="3" text-anchor="middle" fill="#002855" font-size="8" font-weight="bold">Pd</text>
+              <text id="svgPdText" x="0" y="-22" text-anchor="middle" fill="#FBBF24" font-size="10" font-family="monospace">1.35 bar</text>
+            </g>
+
+          </svg>
+        </div>
+      </div>
+
+      <!-- Real-time Telemetry Readouts -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <!-- Caudal de Operación -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-slate-200">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Caudal ($Q$)</p>
+          <p id="telemetryQ" class="text-xl font-extrabold font-mono text-blue-700 mt-1">32.4 <span class="text-xs font-medium text-slate-500">L/min</span></p>
+          <p id="telemetryQM3s" class="text-[10px] text-slate-500 font-mono mt-0.5">0.00054 m³/s (0.54 L/s)</p>
+        </div>
+
+        <!-- Altura Manométrica He -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-slate-200">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Altura Manométrica ($H_e$)</p>
+          <p id="telemetryHe" class="text-xl font-extrabold font-mono text-indigo-700 mt-1">13.12 <span class="text-xs font-medium text-slate-500">m.c.a.</span></p>
+          <p id="telemetryDeltaP" class="text-[10px] text-slate-500 font-mono mt-0.5">ΔP = 1.29 bar</p>
+        </div>
+
+        <!-- Potencias -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-slate-200">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Potencia Hidráulica ($P_h$)</p>
+          <p id="telemetryPh" class="text-xl font-extrabold font-mono text-cyan-700 mt-1">69.5 <span class="text-xs font-medium text-slate-500">W</span></p>
+          <p id="telemetryPe" class="text-[10px] text-slate-500 font-mono mt-0.5">P_eléctrica = 275 W</p>
+        </div>
+
+        <!-- Eficiencia Global -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-emerald-300">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Eficiencia Global ($\eta$)</p>
+          <p id="telemetryEta" class="text-xl font-extrabold font-mono text-emerald-600 mt-1">25.3 <span class="text-xs font-medium text-slate-500">%</span></p>
+          <p id="telemetryEtaSub" class="text-[10px] text-slate-500 font-mono mt-0.5">Pto. de Rendimiento</p>
+        </div>
+      </div>
+
+      <!-- Pump Characteristic Curves Chart (Chart.js) -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
+              Curvas Características $H-Q$ y Punto de Funcionamiento
+            </h3>
+            <p class="text-xs text-slate-500">
+              Intersección entre la curva de la bomba/combinación y la curva de la instalación ($H_{sis} = H_g + K Q^2$).
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-50 text-amber-900 border border-amber-300 text-xs font-mono font-bold">
+              <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+              Pto. Operación: (<span id="ptOpQ">32.4</span> L/min, <span id="ptOpH">13.1</span> m)
+            </span>
+          </div>
+        </div>
+
+        <div class="h-72 w-full">
+          <canvas id="pumpChartCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Technical Equations Footer -->
+      <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 text-xs text-slate-700 space-y-2">
+        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-unicauca-blue" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+          </svg>
+          Fundamento Teórico & Acoplamiento (Práctica IX)
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+          <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+            <strong class="text-blue-900 font-bold block mb-1">1. Bomba Individual:</strong>
+            $$H_e = \frac{P_d - P_s}{\gamma} + \Delta Z + \frac{V_d^2 - V_s^2}{2g}$$
+          </div>
+          <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+            <strong class="text-indigo-900 font-bold block mb-1">2. Bombas en SERIE:</strong>
+            $$H_T(Q) = H_1(Q) + H_2(Q)$$
+            $$Q_T = Q_1 = Q_2$$
+          </div>
+          <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+            <strong class="text-emerald-900 font-bold block mb-1">3. Bombas en PARALELO:</strong>
+            $$Q_T(H) = Q_1(H) + Q_2(H)$$
+            $$H_T = H_1 = H_2$$
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- JavaScript Simulator Logic -->
+  <script>
+    // System Constants & Baseline Pump Parameters (Single Pump at 2850 RPM)
+    const H0_BASE = 15.0; // Shutoff head (m)
+    const A_BASE = 0.0038; // Head curve decay: H = H0 - A * Q^2 (with Q in L/min)
+    const QMAX_BASE = Math.sqrt(H0_BASE / A_BASE); // ~62.8 L/min
+
+    let currentMode = 'individual'; // 'individual' | 'serie' | 'paralelo'
+    let chartInstance = null;
+    let impellerAngle1 = 0;
+    let impellerAngle2 = 0;
+    let animFrameId = null;
+
+    // Operating Point Results
+    const op = {
+      qLpm: 32.4,
+      qM3s: 0.00054,
+      heM: 13.12,
+      psBar: -0.09,
+      pdBar: 1.20,
+      phWatts: 69.5,
+      peWatts: 275.0,
+      etaPercent: 25.3,
+      rpm: 2850,
+      hg: 2.0,
+      valveOpenPercent: 65
+    };
+
+    function init() {
+      initChart();
+      updateSimulation();
+      startImpellerAnimation();
+    }
+
+    function setPumpMode(mode) {
+      currentMode = mode;
+
+      const tabInd = document.getElementById('tabIndividual');
+      const tabSer = document.getElementById('tabSerie');
+      const tabPar = document.getElementById('tabParalelo');
+      const tag = document.getElementById('systemModeTag');
+
+      [tabInd, tabSer, tabPar].forEach(t => {
+        t.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-blue-200 hover:text-white transition-all';
+      });
+
+      if (mode === 'individual') {
+        tabInd.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-unicauca-blue shadow';
+        tag.innerText = 'MODO: BOMBA INDIVIDUAL';
+        tag.className = 'text-xs font-bold font-mono px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 border border-blue-300';
+      } else if (mode === 'serie') {
+        tabSer.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-unicauca-blue shadow';
+        tag.innerText = 'MODO: BOMBAS EN SERIE';
+        tag.className = 'text-xs font-bold font-mono px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 border border-indigo-300';
+      } else if (mode === 'paralelo') {
+        tabPar.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-unicauca-blue shadow';
+        tag.innerText = 'MODO: BOMBAS EN PARALELO';
+        tag.className = 'text-xs font-bold font-mono px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300';
+      }
+
+      updateSimulation();
+    }
+
+    function calculateOperatingPoint() {
+      op.valveOpenPercent = parseFloat(document.getElementById('valveSlider').value);
+      op.hg = parseFloat(document.getElementById('hgSlider').value);
+      op.rpm = parseFloat(document.getElementById('rpmSlider').value);
+
+      document.getElementById('valveVal').innerText = op.valveOpenPercent + '%';
+      document.getElementById('hgVal').innerText = op.hg.toFixed(2) + ' m';
+      document.getElementById('rpmVal').innerText = op.rpm + ' RPM';
+
+      // Affinity scaling factor
+      const speedRatio = op.rpm / 2850.0;
+      const h0 = H0_BASE * Math.pow(speedRatio, 2);
+      const aCoeff = A_BASE; // quadratic coefficient remains nearly invariant when Q is proportional to speed
+
+      // System resistance coefficient K (inversely proportional to valve opening squared)
+      // When valve = 100%, K is minimal; when valve = 5%, K is very high
+      const valveFactor = op.valveOpenPercent / 100.0;
+      const kSys = 0.002 + (0.05 / Math.pow(valveFactor, 2));
+
+      // Solve intersection: H_pump(Q) = H_sys(Q)
+      // Individual: H = h0 - a * Q^2 = Hg + K * Q^2 => (a + K) * Q^2 = h0 - Hg
+      // Serie: H = 2 * h0 - 2 * a * Q^2 = Hg + K * Q^2 => (2*a + K) * Q^2 = 2*h0 - Hg
+      // Paralelo: Q_tot = 2 * Q_single => H = h0 - a * (Q/2)^2 = h0 - (a/4) * Q^2 = Hg + K * Q^2
+
+      let qSol = 0;
+      let hSol = op.hg;
+
+      if (currentMode === 'individual') {
+        if (h0 > op.hg) {
+          qSol = Math.sqrt((h0 - op.hg) / (aCoeff + kSys));
+          hSol = h0 - aCoeff * Math.pow(qSol, 2);
+        }
+      } else if (currentMode === 'serie') {
+        const h0Serie = 2.0 * h0;
+        if (h0Serie > op.hg) {
+          qSol = Math.sqrt((h0Serie - op.hg) / (2.0 * aCoeff + kSys));
+          hSol = h0Serie - (2.0 * aCoeff) * Math.pow(qSol, 2);
+        }
+      } else if (currentMode === 'paralelo') {
+        const aParalelo = aCoeff / 4.0;
+        if (h0 > op.hg) {
+          qSol = Math.sqrt((h0 - op.hg) / (aParalelo + kSys));
+          hSol = h0 - aParalelo * Math.pow(qSol, 2);
+        }
+      }
+
+      op.qLpm = Math.max(0, qSol);
+      op.heM = Math.max(op.hg, hSol);
+      op.qM3s = op.qLpm / 60000.0; // m³/s
+
+      // Pressures
+      op.psBar = -(0.0025 * op.qLpm);
+      op.pdBar = op.psBar + (op.heM / 10.197); // 1 bar ≈ 10.197 m.c.a.
+
+      // Power & Efficiency
+      // Ph = gamma * Q * H = 9810 * qM3s * He
+      op.phWatts = 9810 * op.qM3s * op.heM;
+
+      // Pump Efficiency curve peak ~30%
+      const qMaxLocal = (currentMode === 'paralelo' ? 2.0 : 1.0) * (QMAX_BASE * speedRatio);
+      const qFrac = qMaxLocal > 0 ? (op.qLpm / qMaxLocal) : 0;
+      const etaMax = 0.32;
+      const etaTheoretical = 4.0 * etaMax * qFrac * Math.max(0, 1.0 - qFrac);
+      op.etaPercent = Math.max(0, etaTheoretical * 100);
+
+      // Electric Power Pe
+      const baseMotorIdle = (currentMode === 'individual' ? 220 : 440) * Math.pow(speedRatio, 3);
+      if (op.etaPercent > 0.5) {
+        op.peWatts = baseMotorIdle + (op.phWatts / (op.etaPercent / 100.0));
+      } else {
+        op.peWatts = baseMotorIdle;
+      }
+    }
+
+    function updateSimulation() {
+      calculateOperatingPoint();
+      renderUI();
+      updateSvgVisuals();
+      updateChart();
+    }
+
+    function renderUI() {
+      // Telemetry
+      document.getElementById('telemetryQ').innerHTML = op.qLpm.toFixed(1) + ' <span class="text-xs font-medium text-slate-500">L/min</span>';
+      document.getElementById('telemetryQM3s').innerText = op.qM3s.toFixed(5) + ' m³/s (' + (op.qLpm / 60.0).toFixed(2) + ' L/s)';
+
+      document.getElementById('telemetryHe').innerHTML = op.heM.toFixed(2) + ' <span class="text-xs font-medium text-slate-500">m.c.a.</span>';
+      document.getElementById('telemetryDeltaP').innerText = 'ΔP = ' + (op.pdBar - op.psBar).toFixed(2) + ' bar';
+
+      document.getElementById('telemetryPh').innerHTML = op.phWatts.toFixed(1) + ' <span class="text-xs font-medium text-slate-500">W</span>';
+      document.getElementById('telemetryPe').innerText = 'P_eléctrica = ' + Math.round(op.peWatts) + ' W';
+
+      document.getElementById('telemetryEta').innerHTML = op.etaPercent.toFixed(1) + ' <span class="text-xs font-medium text-slate-500">%</span>';
+
+      document.getElementById('ptOpQ').innerText = op.qLpm.toFixed(1);
+      document.getElementById('ptOpH').innerText = op.heM.toFixed(1);
+
+      // Pump 2 State Badge
+      const p2Badge = document.getElementById('pump2StateBadge');
+      if (currentMode === 'individual') {
+        p2Badge.className = 'text-[11px] font-bold text-slate-400 bg-slate-200 px-2 py-0.5 rounded';
+        p2Badge.innerText = 'OFF';
+      } else {
+        p2Badge.className = 'text-[11px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded';
+        p2Badge.innerText = 'ON';
+      }
+    }
+
+    function updateSvgVisuals() {
+      // Pressure text on SVG
+      document.getElementById('svgPsText').textContent = op.psBar.toFixed(2) + ' bar';
+      document.getElementById('svgPdText').textContent = op.pdBar.toFixed(2) + ' bar';
+
+      // Valve handwheel angle
+      const handwheel = document.getElementById('svgValveHandwheel');
+      const angle = (op.valveOpenPercent / 100.0) * 90 - 45;
+      handwheel.setAttribute('transform', `rotate(${angle}, 0, 30)`);
+
+      // Discharge Tank Water Height
+      const dWater = document.getElementById('svgDischargeWater');
+      const hPix = Math.min(180, 50 + (op.qLpm / 120.0) * 110);
+      dWater.setAttribute('y', 300 - hPix);
+      dWater.setAttribute('height', hPix - 2);
+
+      // Colors of pipes and Pump 2 according to mode
+      const p2Casing = document.getElementById('pump2Casing');
+      const p2Label = document.getElementById('pump2Label');
+      const pipeSeries = document.getElementById('pipeSeries');
+      const pipeInd = document.getElementById('pipeIndividual');
+      const pipeParSucc = document.getElementById('pipeParallelSuction');
+      const pipeParDisc = document.getElementById('pipeParallelDischarge');
+
+      if (currentMode === 'individual') {
+        p2Casing.setAttribute('stroke', '#475569');
+        p2Label.textContent = 'BOMBA 2 (OFF)';
+        p2Label.setAttribute('fill', '#64748B');
+
+        pipeInd.setAttribute('stroke', '#38BDF8');
+        pipeSeries.setAttribute('stroke', '#334155');
+        pipeParSucc.setAttribute('stroke', '#334155');
+        pipeParDisc.setAttribute('stroke', '#334155');
+      } else if (currentMode === 'serie') {
+        p2Casing.setAttribute('stroke', '#6366F1');
+        p2Label.textContent = 'BOMBA 2 (ON - SERIE)';
+        p2Label.setAttribute('fill', '#A5B4FC');
+
+        pipeInd.setAttribute('stroke', '#334155');
+        pipeSeries.setAttribute('stroke', '#6366F1');
+        pipeParSucc.setAttribute('stroke', '#334155');
+        pipeParDisc.setAttribute('stroke', '#6366F1');
+      } else if (currentMode === 'paralelo') {
+        p2Casing.setAttribute('stroke', '#10B981');
+        p2Label.textContent = 'BOMBA 2 (ON - PARALELO)';
+        p2Label.setAttribute('fill', '#6EE7B7');
+
+        pipeInd.setAttribute('stroke', '#38BDF8');
+        pipeSeries.setAttribute('stroke', '#334155');
+        pipeParSucc.setAttribute('stroke', '#10B981');
+        pipeParDisc.setAttribute('stroke', '#10B981');
+      }
+    }
+
+    function startImpellerAnimation() {
+      function animate() {
+        const speedRatio = op.rpm / 2850.0;
+        const delta = speedRatio * 8.0;
+
+        impellerAngle1 = (impellerAngle1 + delta) % 360;
+        document.getElementById('impeller1').setAttribute('transform', `rotate(${impellerAngle1})`);
+
+        if (currentMode !== 'individual') {
+          impellerAngle2 = (impellerAngle2 + delta) % 360;
+          document.getElementById('impeller2').setAttribute('transform', `rotate(${impellerAngle2})`);
+        }
+
+        animFrameId = requestAnimationFrame(animate);
+      }
+      animFrameId = requestAnimationFrame(animate);
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('pumpChartCanvas').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [
+            {
+              label: 'Bomba Individual (H₁)',
+              data: [],
+              borderColor: '#0284C7',
+              backgroundColor: 'transparent',
+              borderWidth: 2.5,
+              pointRadius: 0
+            },
+            {
+              label: 'Bombas en SERIE (H_serie)',
+              data: [],
+              borderColor: '#6366F1',
+              backgroundColor: 'transparent',
+              borderWidth: 2.5,
+              borderDash: [5, 4],
+              pointRadius: 0
+            },
+            {
+              label: 'Bombas en PARALELO (H_paralelo)',
+              data: [],
+              borderColor: '#10B981',
+              backgroundColor: 'transparent',
+              borderWidth: 2.5,
+              borderDash: [2, 2],
+              pointRadius: 0
+            },
+            {
+              label: 'Curva del Sistema (H_sis)',
+              data: [],
+              borderColor: '#DC2626',
+              backgroundColor: 'rgba(220, 38, 38, 0.05)',
+              borderWidth: 2,
+              fill: true,
+              pointRadius: 0
+            },
+            {
+              label: 'Punto de Operación Actual',
+              data: [],
+              borderColor: '#F59E0B',
+              backgroundColor: '#F59E0B',
+              pointRadius: 7,
+              pointHoverRadius: 9,
+              showLine: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { boxWidth: 12, font: { size: 11, family: 'Inter' } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(c) {
+                  return c.dataset.label + ': ' + c.parsed.y.toFixed(2) + ' m a ' + c.parsed.x.toFixed(1) + ' L/min';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: 'linear',
+              min: 0,
+              max: 130,
+              title: { display: true, text: 'Caudal Q (L/min)', font: { size: 11 } }
+            },
+            y: {
+              min: 0,
+              max: 35,
+              title: { display: true, text: 'Altura Manométrica He (m)', font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    function updateChart() {
+      if (!chartInstance) return;
+
+      const speedRatio = op.rpm / 2850.0;
+      const h0 = H0_BASE * Math.pow(speedRatio, 2);
+      const aCoeff = A_BASE;
+
+      const valveFactor = op.valveOpenPercent / 100.0;
+      const kSys = 0.002 + (0.05 / Math.pow(valveFactor, 2));
+
+      // 1. Single pump points
+      const ptsSingle = [];
+      for (let q = 0; q <= 65 * speedRatio; q += 2) {
+        const h = h0 - aCoeff * Math.pow(q, 2);
+        if (h >= 0) ptsSingle.push({ x: q, y: h });
+      }
+
+      // 2. Serie pump points
+      const ptsSerie = [];
+      for (let q = 0; q <= 65 * speedRatio; q += 2) {
+        const h = (2.0 * h0) - (2.0 * aCoeff) * Math.pow(q, 2);
+        if (h >= 0) ptsSerie.push({ x: q, y: h });
+      }
+
+      // 3. Paralelo pump points
+      const ptsParalelo = [];
+      for (let q = 0; q <= 130 * speedRatio; q += 4) {
+        const h = h0 - (aCoeff / 4.0) * Math.pow(q, 2);
+        if (h >= 0) ptsParalelo.push({ x: q, y: h });
+      }
+
+      // 4. System curve points
+      const ptsSys = [];
+      for (let q = 0; q <= 130; q += 5) {
+        const h = op.hg + kSys * Math.pow(q, 2);
+        if (h <= 35) ptsSys.push({ x: q, y: h });
+      }
+
+      // 5. Operating point
+      const ptOp = [{ x: op.qLpm, y: op.heM }];
+
+      chartInstance.data.datasets[0].data = ptsSingle;
+      chartInstance.data.datasets[1].data = ptsSerie;
+      chartInstance.data.datasets[2].data = ptsParalelo;
+      chartInstance.data.datasets[3].data = ptsSys;
+      chartInstance.data.datasets[4].data = ptOp;
+
+      chartInstance.update('none');
+    }
+
+    function loadLabTable(tableId) {
+      if (tableId === 'IX.2') {
+        setPumpMode('individual');
+        document.getElementById('valveSlider').value = 65;
+        document.getElementById('hgSlider').value = 2.0;
+        document.getElementById('rpmSlider').value = 2850;
+      } else if (tableId === 'IX.3') {
+        setPumpMode('serie');
+        document.getElementById('valveSlider').value = 75;
+        document.getElementById('hgSlider').value = 4.0;
+        document.getElementById('rpmSlider').value = 2850;
+      } else if (tableId === 'IX.4') {
+        setPumpMode('paralelo');
+        document.getElementById('valveSlider').value = 85;
+        document.getElementById('hgSlider').value = 2.0;
+        document.getElementById('rpmSlider').value = 2850;
+      }
+      updateSimulation();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      init();
+    });
+  </script>
+</body>
+</html>

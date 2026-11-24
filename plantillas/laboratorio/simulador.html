@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador Hidráulico de Canales Abiertos | Laboratorio Virtual Unicauca</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            unicauca: {
+              blue: '#002855',
+              dark: '#001938',
+              light: '#0A4A8F',
+              accent: '#0284C7',
+              gold: '#D97706',
+              goldLight: '#FBBF24',
+              red: '#C8102E',
+              crimson: '#9E0B20',
+              surface: '#F8FAFC',
+              card: '#FFFFFF',
+              border: '#E2E8F0'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Courier New', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <style>
+    @keyframes flowArrows {
+      0% { stroke-dashoffset: 24; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .water-flow-line {
+      stroke-dasharray: 8, 4;
+      animation: flowArrows 1.2s linear infinite;
+    }
+    @keyframes waveSubtle {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-1.5px); }
+    }
+    .wave-surface {
+      animation: waveSubtle 2.5s ease-in-out infinite;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+  <div id="simApp" class="flex-1 flex flex-col">
+
+    <!-- TOP HEADER / NAVIGATION -->
+    <header class="bg-unicauca-blue text-white shadow-md border-b-4 border-unicauca-gold sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center p-1.5 border border-white/20">
+            <svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-bold uppercase tracking-wider bg-unicauca-gold text-blue-950 px-2 py-0.5 rounded font-mono">
+                Laboratorio Virtual
+              </span>
+              <span class="text-xs text-blue-200">Práctica II: Fricción & Tirante Hidráulico</span>
+            </div>
+            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+              Simulador Hidráulico de Canales Abiertos
+            </h1>
+          </div>
+        </div>
+
+        <!-- Header Actions: Presets & Return Link -->
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Preset Dropdown -->
+          <div class="relative">
+            <button 
+              @click="showPresets = !showPresets"
+              class="px-3 py-1.5 rounded-lg bg-blue-900/80 hover:bg-blue-800 text-xs font-semibold border border-blue-600 flex items-center space-x-1.5 transition text-blue-100"
+            >
+              <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+              <span>Escenarios Prediseñados</span>
+              <svg class="w-3 h-3 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+
+            <!-- Presets Menu -->
+            <div 
+              v-if="showPresets" 
+              class="absolute right-0 mt-1 w-72 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 text-slate-800"
+            >
+              <div class="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                Cargar Caso de Estudio
+              </div>
+              <button 
+                v-for="(preset, pKey) in presets" 
+                :key="pKey"
+                @click="applyPreset(preset)"
+                class="w-full text-left px-3 py-2 hover:bg-blue-50 transition text-xs flex flex-col space-y-0.5 border-b border-slate-50 last:border-0"
+              >
+                <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                  <span>{{ preset.icon }}</span>
+                  <span>{{ preset.title }}</span>
+                </span>
+                <span class="text-[11px] text-slate-500">{{ preset.desc }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Return to main lab link -->
+          <a 
+            href="index.html" 
+            class="px-3 py-1.5 rounded-lg bg-unicauca-gold hover:bg-amber-500 text-blue-950 text-xs font-bold transition flex items-center space-x-1 shadow-sm"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <span>Volver a Prácticas</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT COLUMN: CONTROLS & HYDRAULIC PARAMETERS (5 COLS) -->
+      <section class="lg:col-span-5 space-y-5">
+
+        <!-- CARD 1: SECTION GEOMETRY SELECTOR -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+              <span>1. Geometría de la Sección Transversal</span>
+            </h2>
+            <span class="text-xs font-mono font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded">
+              {{ sim.shape }}
+            </span>
+          </div>
+
+          <!-- Shape Pills -->
+          <div class="grid grid-cols-3 gap-2">
+            <button 
+              @click="sim.shape = 'Rectangular'"
+              :class="sim.shape === 'Rectangular' ? 'bg-unicauca-blue text-white shadow-md border-blue-900 ring-2 ring-blue-500/20' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'"
+              class="p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center justify-center space-y-1 transition"
+            >
+              <span class="text-base">▱</span>
+              <span>Rectangular</span>
+            </button>
+
+            <button 
+              @click="sim.shape = 'Trapezoidal'"
+              :class="sim.shape === 'Trapezoidal' ? 'bg-unicauca-blue text-white shadow-md border-blue-900 ring-2 ring-blue-500/20' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'"
+              class="p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center justify-center space-y-1 transition"
+            >
+              <span class="text-base">⏢</span>
+              <span>Trapecial</span>
+            </button>
+
+            <button 
+              @click="sim.shape = 'Circular'"
+              :class="sim.shape === 'Circular' ? 'bg-unicauca-blue text-white shadow-md border-blue-900 ring-2 ring-blue-500/20' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'"
+              class="p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center justify-center space-y-1 transition"
+            >
+              <span class="text-base">◯</span>
+              <span>Circular</span>
+            </button>
+          </div>
+
+          <!-- Dimension Sliders and Inputs -->
+          <div class="space-y-3.5 pt-1">
+            <!-- Rectangular & Trapezoidal: Ancho de Solera b -->
+            <div v-if="sim.shape !== 'Circular'" class="space-y-1">
+              <div class="flex justify-between items-center text-xs">
+                <label class="font-semibold text-slate-700">Ancho de Solera (b):</label>
+                <div class="flex items-center space-x-1">
+                  <input 
+                    type="number" 
+                    v-model.number="sim.b" 
+                    step="0.05" 
+                    min="0.05" 
+                    max="15" 
+                    class="w-20 px-2 py-0.5 text-right font-mono font-bold text-xs rounded border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <span class="text-slate-500 font-mono text-[11px]">m</span>
+                </div>
+              </div>
+              <input 
+                type="range" 
+                v-model.number="sim.b" 
+                min="0.1" 
+                max="5.0" 
+                step="0.05" 
+                class="w-full accent-blue-700 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+              />
+            </div>
+
+            <!-- Trapezoidal Only: Talud Lateral z (1:z) -->
+            <div v-if="sim.shape === 'Trapezoidal'" class="space-y-1">
+              <div class="flex justify-between items-center text-xs">
+                <label class="font-semibold text-slate-700">Talud Lateral (z = H : V = z : 1):</label>
+                <div class="flex items-center space-x-1">
+                  <input 
+                    type="number" 
+                    v-model.number="sim.z" 
+                    step="0.1" 
+                    min="0" 
+                    max="5" 
+                    class="w-20 px-2 py-0.5 text-right font-mono font-bold text-xs rounded border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <span class="text-slate-500 font-mono text-[11px]">-</span>
+                </div>
+              </div>
+              <input 
+                type="range" 
+                v-model.number="sim.z" 
+                min="0" 
+                max="3.0" 
+                step="0.05" 
+                class="w-full accent-blue-700 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+              />
+              <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                <span>0 (Vertical)</span>
+                <span>1 (45°)</span>
+                <span>1.5 (Tierra firme)</span>
+                <span>2 (Grava)</span>
+              </div>
+            </div>
+
+            <!-- Rectangular & Trapezoidal: Altura Total de Paredes H -->
+            <div v-if="sim.shape !== 'Circular'" class="space-y-1">
+              <div class="flex justify-between items-center text-xs">
+                <label class="font-semibold text-slate-700">Altura de Paredes (H canal):</label>
+                <div class="flex items-center space-x-1">
+                  <input 
+                    type="number" 
+                    v-model.number="sim.H" 
+                    step="0.05" 
+                    min="0.1" 
+                    max="10" 
+                    class="w-20 px-2 py-0.5 text-right font-mono font-bold text-xs rounded border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <span class="text-slate-500 font-mono text-[11px]">m</span>
+                </div>
+              </div>
+              <input 
+                type="range" 
+                v-model.number="sim.H" 
+                min="0.1" 
+                max="4.0" 
+                step="0.05" 
+                class="w-full accent-blue-700 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+              />
+            </div>
+
+            <!-- Circular Only: Diámetro D -->
+            <div v-if="sim.shape === 'Circular'" class="space-y-1">
+              <div class="flex justify-between items-center text-xs">
+                <label class="font-semibold text-slate-700">Diámetro Interno (D):</label>
+                <div class="flex items-center space-x-1">
+                  <input 
+                    type="number" 
+                    v-model.number="sim.D" 
+                    step="0.05" 
+                    min="0.1" 
+                    max="5" 
+                    class="w-20 px-2 py-0.5 text-right font-mono font-bold text-xs rounded border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <span class="text-slate-500 font-mono text-[11px]">m</span>
+                </div>
+              </div>
+              <input 
+                type="range" 
+                v-model.number="sim.D" 
+                min="0.2" 
+                max="3.0" 
+                step="0.05" 
+                class="w-full accent-blue-700 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2: MATERIAL & ROUGHNESS -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+              <span>2. Material de las Paredes & Fricción</span>
+            </h2>
+            <span class="text-xs font-mono font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
+              n = {{ sim.manning_n.toFixed(4) }}
+            </span>
+          </div>
+
+          <!-- Material Selector Dropdown -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-semibold text-slate-700">Tipo de Material / Revestimiento:</label>
+            <select 
+              v-model="sim.selectedMaterialKey" 
+              @change="onMaterialSelected"
+              class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-slate-50 font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            >
+              <option v-for="(mat, mKey) in materialsCatalogue" :key="mKey" :value="mKey">
+                {{ mat.label }} (n ≈ {{ mat.n }}, ε ≈ {{ mat.eps }} mm)
+              </option>
+            </select>
+          </div>
+
+          <!-- Manual Manning n & Roughness epsilon -->
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">Manning (n):</label>
+              <input 
+                type="number" 
+                v-model.number="sim.manning_n" 
+                step="0.001" 
+                min="0.008" 
+                max="0.090"
+                class="w-full bg-white px-2 py-1 rounded border border-slate-300 font-mono font-bold text-xs text-right text-slate-900 focus:ring-1 focus:ring-blue-500"
+              />
+              <span class="text-[10px] text-slate-400 block mt-0.5 text-right font-mono">s / m<sup>1/3</sup></span>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">Rugosidad Abs. (ε):</label>
+              <input 
+                type="number" 
+                v-model.number="sim.eps_mm" 
+                step="0.1" 
+                min="0.01" 
+                max="100"
+                class="w-full bg-white px-2 py-1 rounded border border-slate-300 font-mono font-bold text-xs text-right text-slate-900 focus:ring-1 focus:ring-blue-500"
+              />
+              <span class="text-[10px] text-slate-400 block mt-0.5 text-right font-mono">milímetros (mm)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 3: HYDRAULIC OPERATING PARAMETERS (Q, S0, T) -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-600"></span>
+              <span>3. Caudal, Pendiente & Temperatura</span>
+            </h2>
+          </div>
+
+          <!-- Caudal Q with Unit Switcher -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center text-xs">
+              <div class="flex items-center space-x-1.5">
+                <label class="font-semibold text-slate-700">Caudal Transportado (Q):</label>
+                <div class="inline-flex rounded-lg p-0.5 bg-slate-100 border border-slate-200 text-[10px]">
+                  <button 
+                    @click="sim.qUnit = 'lps'" 
+                    :class="sim.qUnit === 'lps' ? 'bg-white font-bold shadow-sm text-blue-900' : 'text-slate-500'" 
+                    class="px-1.5 py-0.5 rounded"
+                  >L/s</button>
+                  <button 
+                    @click="sim.qUnit = 'm3s'" 
+                    :class="sim.qUnit === 'm3s' ? 'bg-white font-bold shadow-sm text-blue-900' : 'text-slate-500'" 
+                    class="px-1.5 py-0.5 rounded"
+                  >m³/s</button>
+                </div>
+              </div>
+              <div class="flex items-center space-x-1">
+                <input 
+                  type="number" 
+                  v-model.number="sim.displayQ" 
+                  @input="onDisplayQChanged"
+                  step="any" 
+                  min="0.001" 
+                  class="w-24 px-2 py-0.5 text-right font-mono font-bold text-xs rounded border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+                <span class="text-slate-500 font-mono text-[11px]">{{ sim.qUnit === 'lps' ? 'L/s' : 'm³/s' }}</span>
+              </div>
+            </div>
+
+            <!-- Range Slider for Q -->
+            <input 
+              type="range" 
+              v-model.number="sim.displayQ" 
+              @input="onDisplayQChanged"
+              :min="sim.qUnit === 'lps' ? 1 : 0.005" 
+              :max="sim.qUnit === 'lps' ? 3000 : 5.0" 
+              :step="sim.qUnit === 'lps' ? 1 : 0.01" 
+              class="w-full accent-cyan-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+            />
+          </div>
+
+          <!-- Pendiente Longitudinal S0 -->
+          <div class="space-y-1.5 pt-1">
+            <div class="flex justify-between items-center text-xs">
+              <label class="font-semibold text-slate-700">Pendiente del Fondo (S₀):</label>
+              <div class="flex items-center space-x-1">
+                <input 
+                  type="number" 
+                  v-model.number="sim.slope_m_m" 
+                  step="0.0005" 
+                  min="0.00001" 
+                  max="0.1" 
+                  class="w-24 px-2 py-0.5 text-right font-mono font-bold text-xs rounded border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+                <span class="text-slate-500 font-mono text-[11px]">m/m</span>
+              </div>
+            </div>
+            <input 
+              type="range" 
+              v-model.number="sim.slope_m_m" 
+              min="0.0002" 
+              max="0.02" 
+              step="0.0002" 
+              class="w-full accent-cyan-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+            />
+            <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+              <span>0.0002 (Muy suave)</span>
+              <span>Equiv: {{ (sim.slope_m_m * 100).toFixed(2) }} %</span>
+              <span>0.020 (Empinado)</span>
+            </div>
+          </div>
+
+          <!-- Water Temperature T -->
+          <div class="space-y-1.5 pt-1">
+            <div class="flex justify-between items-center text-xs">
+              <label class="font-semibold text-slate-700">Temperatura del Agua (T):</label>
+              <div class="flex items-center space-x-1">
+                <input 
+                  type="number" 
+                  v-model.number="sim.temp_c" 
+                  step="0.5" 
+                  min="4" 
+                  max="40" 
+                  class="w-16 px-2 py-0.5 text-right font-mono font-bold text-xs rounded border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+                <span class="text-slate-500 font-mono text-[11px]">°C</span>
+              </div>
+            </div>
+            <input 
+              type="range" 
+              v-model.number="sim.temp_c" 
+              min="5" 
+              max="35" 
+              step="1" 
+              class="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+            />
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>ν = {{ calculatedViscosity.toExponential(3) }} m²/s</span>
+              <span>ρ = {{ calculatedDensity.toFixed(1) }} kg/m³</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT COLUMN: HYDRAULIC SIMULATOR ENGINE & VISUAL CANVAS (7 COLS) -->
+      <section class="lg:col-span-7 space-y-5 flex flex-col">
+
+        <!-- TOP METRICS GAUGES -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <!-- Metric 1: Tirante Normal yn -->
+          <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-blue-800">Tirante Normal (yₙ)</span>
+              <span class="text-xs">💧</span>
+            </div>
+            <div class="text-xl sm:text-2xl font-black font-mono text-blue-950">
+              <template v-if="results.valid">
+                {{ (results.yn * 100).toFixed(2) }} <span class="text-xs font-semibold text-slate-500">cm</span>
+              </template>
+              <template v-else>
+                <span class="text-sm text-rose-600">Rebose</span>
+              </template>
+            </div>
+            <div class="text-[11px] font-mono text-slate-500">
+              {{ results.valid ? results.yn.toFixed(4) + ' m' : 'Excede canal' }}
+            </div>
+          </div>
+
+          <!-- Metric 2: Tirante Crítico yc -->
+          <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-purple-800">Tirante Crítico (y꜀)</span>
+              <span class="text-xs">⚡</span>
+            </div>
+            <div class="text-xl sm:text-2xl font-black font-mono text-purple-950">
+              <template v-if="results.valid">
+                {{ (results.yc * 100).toFixed(2) }} <span class="text-xs font-semibold text-slate-500">cm</span>
+              </template>
+              <template v-else>-</template>
+            </div>
+            <div class="text-[11px] font-mono text-slate-500">
+              {{ results.valid ? results.yc.toFixed(4) + ' m' : '-' }}
+            </div>
+          </div>
+
+          <!-- Metric 3: Velocidad Media V -->
+          <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Velocidad (V)</span>
+              <span class="text-xs">🌊</span>
+            </div>
+            <div class="text-xl sm:text-2xl font-black font-mono text-emerald-950">
+              <template v-if="results.valid">
+                {{ results.V.toFixed(2) }} <span class="text-xs font-semibold text-slate-500">m/s</span>
+              </template>
+              <template v-else>-</template>
+            </div>
+            <div class="text-[11px] font-mono text-slate-500">
+              {{ results.valid ? (results.V * 100).toFixed(1) + ' cm/s' : '-' }}
+            </div>
+          </div>
+
+          <!-- Metric 4: Número de Froude Fr -->
+          <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-700">Froude (Fr)</span>
+              <span 
+                :class="froudeBadgeClass"
+                class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase font-mono"
+              >
+                {{ froudeLabel }}
+              </span>
+            </div>
+            <div class="text-xl sm:text-2xl font-black font-mono text-slate-900">
+              <template v-if="results.valid">
+                {{ results.Fr.toFixed(3) }}
+              </template>
+              <template v-else>-</template>
+            </div>
+            <div class="text-[11px] font-medium text-slate-500">
+              {{ froudeDescription }}
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN INTERACTIVE SECTION GRAPHIC (SVG DYNAMIC RENDERER) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3 flex-1 flex flex-col">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-slate-100 gap-2">
+            <div>
+              <h3 class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+                <span>Corte Transversal del Canal & Nivel de Agua</span>
+                <span class="text-xs font-normal text-slate-500">| Escala automática dinámica</span>
+              </h3>
+              <p class="text-[11px] text-slate-500">
+                La sección se redibuja en tiempo real reflejando el material ({{ selectedMaterialName }}) y el tirante calculado.
+              </p>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <span 
+                v-if="results.isOverflow" 
+                class="bg-rose-500 text-white font-bold text-xs px-2.5 py-1 rounded-lg animate-pulse flex items-center gap-1 shadow-sm"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span>¡DESBORDAMIENTO!</span>
+              </span>
+              <span 
+                v-else
+                class="bg-emerald-50 text-emerald-800 border border-emerald-300 font-semibold text-xs px-2 py-0.5 rounded-lg flex items-center gap-1 font-mono"
+              >
+                Bordo Libre: {{ results.bordoLibreCm.toFixed(1) }} cm
+              </span>
+            </div>
+          </div>
+
+          <!-- SVG Canvas Container -->
+          <div class="relative w-full h-[320px] sm:h-[370px] bg-slate-900 rounded-xl overflow-hidden shadow-inner flex items-center justify-center p-3 border border-slate-800">
+            <!-- Background Grid Pattern -->
+            <svg class="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#38bdf8" stroke-width="0.5"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
+
+            <!-- Dynamic SVG Channel View -->
+            <svg 
+              ref="channelSvg"
+              viewBox="0 0 600 360" 
+              class="w-full h-full max-h-[350px] select-none"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <defs>
+                <!-- Water Linear Gradient -->
+                <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.85" />
+                  <stop offset="100%" stop-color="#0284c7" stop-opacity="0.95" />
+                </linearGradient>
+
+                <!-- Concrete Texture Pattern -->
+                <pattern id="concretePat" width="30" height="30" patternUnits="userSpaceOnUse">
+                  <rect width="30" height="30" fill="#64748b"/>
+                  <circle cx="5" cy="5" r="1.5" fill="#475569"/>
+                  <circle cx="20" cy="18" r="2.0" fill="#475569"/>
+                  <circle cx="12" cy="25" r="1.0" fill="#334155"/>
+                  <circle cx="26" cy="8" r="1.2" fill="#94a3b8"/>
+                </pattern>
+
+                <!-- Earth Texture Pattern -->
+                <pattern id="earthPat" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <rect width="40" height="40" fill="#78350f"/>
+                  <circle cx="10" cy="8" r="2" fill="#92400e"/>
+                  <circle cx="28" cy="24" r="2.5" fill="#582407"/>
+                  <circle cx="18" cy="32" r="1.8" fill="#b45309"/>
+                  <circle cx="34" cy="10" r="1.5" fill="#451a03"/>
+                </pattern>
+
+                <!-- Gravel Texture Pattern -->
+                <pattern id="gravelPat" width="35" height="35" patternUnits="userSpaceOnUse">
+                  <rect width="35" height="35" fill="#52525b"/>
+                  <circle cx="8" cy="8" r="4.0" fill="#a1a1aa" stroke="#3f3f46" stroke-width="0.8"/>
+                  <circle cx="24" cy="14" r="5.0" fill="#71717a" stroke="#27272a" stroke-width="0.8"/>
+                  <circle cx="15" cy="27" r="4.5" fill="#d4d4d8" stroke="#3f3f46" stroke-width="0.8"/>
+                  <circle cx="30" cy="29" r="3.2" fill="#a1a1aa" stroke="#27272a" stroke-width="0.8"/>
+                </pattern>
+
+                <!-- Smooth Cement Gradient -->
+                <linearGradient id="smoothCementGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#94a3b8"/>
+                  <stop offset="100%" stop-color="#64748b"/>
+                </linearGradient>
+
+                <!-- Dimension Marker Arrowhead -->
+                <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
+                </marker>
+                <marker id="arrowBlue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+                </marker>
+              </defs>
+
+              <!-- CHANNEL WALLS & BED -->
+              <!-- 1. Rectangular & Trapezoidal Channel Cross-Section Solid Body -->
+              <g v-if="sim.shape !== 'Circular'">
+                <!-- Outer channel embankment polygon -->
+                <polygon 
+                  :points="svgPaths.outerBed" 
+                  :fill="channelFillPattern"
+                  stroke="#1e293b" 
+                  stroke-width="2"
+                />
+
+                <!-- Water Layer Polygon -->
+                <polygon 
+                  v-if="results.valid && svgPaths.waterPoly"
+                  :points="svgPaths.waterPoly" 
+                  fill="url(#waterGrad)"
+                  class="wave-surface"
+                  stroke="#0284c7"
+                  stroke-width="1.5"
+                />
+
+                <!-- Water Flow Dynamic Streamlines -->
+                <path 
+                  v-if="results.valid && svgPaths.streamline"
+                  :d="svgPaths.streamline"
+                  fill="none"
+                  stroke="#ffffff"
+                  stroke-width="2"
+                  stroke-opacity="0.6"
+                  class="water-flow-line"
+                />
+
+                <!-- Channel Inner Lining Border Line -->
+                <polyline 
+                  :points="svgPaths.innerBorder" 
+                  fill="none" 
+                  stroke="#0f172a" 
+                  stroke-width="4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+
+                <!-- Critical Depth Line (Dashed) -->
+                <line 
+                  v-if="results.valid && svgPaths.ycLine"
+                  :x1="svgPaths.ycLine.x1" 
+                  :y1="svgPaths.ycLine.y" 
+                  :x2="svgPaths.ycLine.x2" 
+                  :y2="svgPaths.ycLine.y" 
+                  stroke="#c084fc" 
+                  stroke-width="2" 
+                  stroke-dasharray="6,4"
+                />
+              </g>
+
+              <!-- 2. Circular Channel View -->
+              <g v-else>
+                <!-- Pipe Outer Rim -->
+                <circle 
+                  :cx="svgPaths.circ.cx" 
+                  :cy="svgPaths.circ.cy" 
+                  :r="svgPaths.circ.r + svgPaths.circ.wallThick" 
+                  :fill="channelFillPattern"
+                  stroke="#1e293b"
+                  stroke-width="2"
+                />
+
+                <!-- Pipe Inner Empty Bore -->
+                <circle 
+                  :cx="svgPaths.circ.cx" 
+                  :cy="svgPaths.circ.cy" 
+                  :r="svgPaths.circ.r" 
+                  fill="#0f172a"
+                  stroke="#334155"
+                  stroke-width="3"
+                />
+
+                <!-- Water Sector (Circular Segment Path) -->
+                <path 
+                  v-if="results.valid && svgPaths.circ.waterPath"
+                  :d="svgPaths.circ.waterPath"
+                  fill="url(#waterGrad)"
+                  stroke="#0284c7"
+                  stroke-width="1.5"
+                />
+
+                <!-- Critical Depth Line for Pipe (Dashed) -->
+                <line 
+                  v-if="results.valid && svgPaths.circ.ycLine"
+                  :x1="svgPaths.circ.ycLine.x1" 
+                  :y1="svgPaths.circ.ycLine.y" 
+                  :x2="svgPaths.circ.ycLine.x2" 
+                  :y2="svgPaths.circ.ycLine.y" 
+                  stroke="#c084fc" 
+                  stroke-width="2" 
+                  stroke-dasharray="6,4"
+                />
+              </g>
+
+              <!-- DIMENSION ANNOTATIONS & LABELS -->
+              <!-- Water Level Indicator Arrow & Label -->
+              <g v-if="results.valid && svgAnnotations.waterLevel">
+                <!-- Water level surface triangle marker -->
+                <polygon 
+                  :points="svgAnnotations.waterLevel.markerPoints"
+                  fill="#38bdf8"
+                />
+                <!-- Water surface line -->
+                <line 
+                  :x1="svgAnnotations.waterLevel.x1" 
+                  :y1="svgAnnotations.waterLevel.y" 
+                  :x2="svgAnnotations.waterLevel.x2" 
+                  :y2="svgAnnotations.waterLevel.y" 
+                  stroke="#38bdf8" 
+                  stroke-width="1.5" 
+                />
+                <!-- Vertical Dimension Line for yn -->
+                <line 
+                  :x1="svgAnnotations.waterLevel.dimX" 
+                  :y1="svgAnnotations.waterLevel.bedY" 
+                  :x2="svgAnnotations.waterLevel.dimX" 
+                  :y2="svgAnnotations.waterLevel.y" 
+                  stroke="#38bdf8" 
+                  stroke-width="1.5"
+                  marker-start="url(#arrowBlue)"
+                  marker-end="url(#arrowBlue)"
+                />
+                <!-- yn Text Tag -->
+                <text 
+                  :x="svgAnnotations.waterLevel.dimX - 8" 
+                  :y="(svgAnnotations.waterLevel.bedY + svgAnnotations.waterLevel.y) / 2" 
+                  fill="#38bdf8" 
+                  font-size="12" 
+                  font-family="JetBrains Mono" 
+                  font-weight="bold" 
+                  text-anchor="end" 
+                  dominant-baseline="middle"
+                >
+                  yₙ = {{ (results.yn * 100).toFixed(1) }} cm
+                </text>
+              </g>
+
+              <!-- Critical Depth yc Label -->
+              <g v-if="results.valid && svgAnnotations.ycLabel">
+                <text 
+                  :x="svgAnnotations.ycLabel.x" 
+                  :y="svgAnnotations.ycLabel.y - 4" 
+                  fill="#c084fc" 
+                  font-size="11" 
+                  font-family="JetBrains Mono" 
+                  font-weight="bold"
+                >
+                  - - y꜀ = {{ (results.yc * 100).toFixed(1) }} cm
+                </text>
+              </g>
+
+              <!-- Base Width b Dimension -->
+              <g v-if="sim.shape !== 'Circular' && svgAnnotations.baseDim">
+                <line 
+                  :x1="svgAnnotations.baseDim.x1" 
+                  :y1="svgAnnotations.baseDim.y" 
+                  :x2="svgAnnotations.baseDim.x2" 
+                  :y2="svgAnnotations.baseDim.y" 
+                  stroke="#f59e0b" 
+                  stroke-width="1.5"
+                  marker-start="url(#arrow)"
+                  marker-end="url(#arrow)"
+                />
+                <text 
+                  :x="(svgAnnotations.baseDim.x1 + svgAnnotations.baseDim.x2)/2" 
+                  :y="svgAnnotations.baseDim.y + 14" 
+                  fill="#f59e0b" 
+                  font-size="11" 
+                  font-family="JetBrains Mono" 
+                  font-weight="bold" 
+                  text-anchor="middle"
+                >
+                  b = {{ sim.b.toFixed(2) }} m
+                </text>
+              </g>
+
+              <!-- Pipe Diameter D Dimension -->
+              <g v-if="sim.shape === 'Circular' && svgAnnotations.circDim">
+                <text 
+                  :x="svgPaths.circ.cx" 
+                  :y="svgPaths.circ.cy + svgPaths.circ.r + 20" 
+                  fill="#f59e0b" 
+                  font-size="11" 
+                  font-family="JetBrains Mono" 
+                  font-weight="bold" 
+                  text-anchor="middle"
+                >
+                  D = {{ sim.D.toFixed(2) }} m
+                </text>
+              </g>
+
+              <!-- Talud Indicator for Trapezoidal -->
+              <g v-if="sim.shape === 'Trapezoidal' && svgAnnotations.taludTriangle">
+                <polyline 
+                  :points="svgAnnotations.taludTriangle.points" 
+                  fill="none" 
+                  stroke="#94a3b8" 
+                  stroke-width="1.2"
+                />
+                <text 
+                  :x="svgAnnotations.taludTriangle.textX" 
+                  :y="svgAnnotations.taludTriangle.textY" 
+                  fill="#cbd5e1" 
+                  font-size="10" 
+                  font-family="JetBrains Mono"
+                >
+                  1:{{ sim.z.toFixed(2) }}
+                </text>
+              </g>
+
+              <!-- Overflow Banner in SVG -->
+              <g v-if="results.isOverflow">
+                <rect x="110" y="15" width="380" height="34" rx="8" fill="#e11d48" opacity="0.95" />
+                <text x="300" y="37" fill="#ffffff" font-size="12" font-family="Inter" font-weight="bold" text-anchor="middle">
+                  ⚠️ ¡ALERTA: EL TIRANTE NORMAL EXCEDE LA ALTURA DEL CANAL!
+                </text>
+              </g>
+            </svg>
+          </div>
+
+          <!-- Bottom Legend & Quick Explanation -->
+          <div class="flex flex-wrap items-center justify-between gap-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div class="flex items-center space-x-4">
+              <div class="flex items-center space-x-1.5">
+                <span class="w-3 h-3 rounded-full bg-cyan-400"></span>
+                <span class="text-slate-700 font-medium">Tirante Normal yₙ</span>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <span class="w-3 h-0.5 border-t-2 border-dashed border-purple-500"></span>
+                <span class="text-slate-700 font-medium">Tirante Crítico y꜀</span>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <span class="w-3 h-3 rounded" :style="{ backgroundColor: materialColorDot }"></span>
+                <span class="text-slate-700 font-medium">Pared: {{ selectedMaterialName }}</span>
+              </div>
+            </div>
+
+            <div class="text-[11px] font-mono text-slate-500">
+              Energía Específica E = {{ results.valid ? results.E.toFixed(4) : '-' }} m
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAILED HYDRAULIC RESULTS TABLE & FLOW REGIME CLASSIFICATION -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center justify-between">
+            <span>Propiedades Geométricas e Hidrodinámicas del Flujo</span>
+            <span class="text-[10px] font-mono font-normal text-slate-400">Ecuaciones de Manning, Chézy & Darcy-Weisbach</span>
+          </h4>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
+              <span class="text-slate-500 text-[11px]">Área Hidráulica (A):</span>
+              <div class="font-mono font-bold text-slate-900">{{ results.valid ? results.A.toFixed(4) : '-' }} m²</div>
+              <div class="text-[10px] text-slate-400 font-mono">{{ results.valid ? (results.A * 10000).toFixed(0) : '-' }} cm²</div>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
+              <span class="text-slate-500 text-[11px]">Perímetro Mojado (P):</span>
+              <div class="font-mono font-bold text-slate-900">{{ results.valid ? results.P.toFixed(4) : '-' }} m</div>
+              <div class="text-[10px] text-slate-400 font-mono">{{ results.valid ? (results.P * 100).toFixed(1) : '-' }} cm</div>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
+              <span class="text-slate-500 text-[11px]">Radio Hidráulico (Rₕ):</span>
+              <div class="font-mono font-bold text-slate-900">{{ results.valid ? results.Rh.toFixed(4) : '-' }} m</div>
+              <div class="text-[10px] text-slate-400 font-mono">{{ results.valid ? (results.Rh * 100).toFixed(2) : '-' }} cm</div>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
+              <span class="text-slate-500 text-[11px]">Ancho Superficial (T):</span>
+              <div class="font-mono font-bold text-slate-900">{{ results.valid ? results.T.toFixed(4) : '-' }} m</div>
+              <div class="text-[10px] text-slate-400 font-mono">{{ results.valid ? (results.T * 100).toFixed(1) : '-' }} cm</div>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
+              <span class="text-slate-500 text-[11px]">Número de Reynolds (Re):</span>
+              <div class="font-mono font-bold text-slate-900">{{ results.valid ? results.Re.toLocaleString() : '-' }}</div>
+              <div class="text-[10px] text-slate-400 font-medium">Flujo Turbulento</div>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
+              <span class="text-slate-500 text-[11px]">Subcapa Laminar (δ₀):</span>
+              <div class="font-mono font-bold text-slate-900">{{ results.valid ? results.delta0_mm.toFixed(3) : '-' }} mm</div>
+              <div class="text-[10px] text-cyan-700 font-medium">{{ results.valid ? results.regimenConducto : '-' }}</div>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
+              <span class="text-slate-500 text-[11px]">Darcy-Weisbach (f):</span>
+              <div class="font-mono font-bold text-slate-900">{{ results.valid ? results.darcy_f.toFixed(4) : '-' }}</div>
+              <div class="text-[10px] text-slate-400 font-mono">f = 8gRₕS₀ / V²</div>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-0.5">
+              <span class="text-slate-500 text-[11px]">Tensión Tractriz (τ₀):</span>
+              <div class="font-mono font-bold text-slate-900">{{ results.valid ? results.tau0.toFixed(2) : '-' }} N/m²</div>
+              <div class="text-[10px] text-slate-400 font-mono">τ₀ = γ · Rₕ · S₀</div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-xs text-slate-500 text-center">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div>
+          <span class="font-bold text-slate-700">Universidad del Cauca</span> · Laboratorio de Hidráulica (040533)
+        </div>
+        <div>
+          Simulador de Canales Abiertos · Resuelve la Ecuación de Flujo Uniforme de Manning por Métodos Numéricos
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- SCRIPT ENGINE (VUE 3 APP) -->
+  <script>
+    const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        // --- PRESETS DATABASE ---
+        const presets = {
+          unicauca_lab: {
+            title: 'Canal de Laboratorio Unicauca',
+            desc: 'Canal rectangular de acrílico/vidrio (b=30 cm, Q=20 L/s)',
+            icon: '🔬',
+            shape: 'Rectangular',
+            b: 0.30,
+            H: 0.40,
+            material: 'acrylic',
+            q_m3s: 0.020,
+            slope: 0.0025,
+            temp: 18.0
+          },
+          riego_concreto: {
+            title: 'Canal de Riego (Concreto Rugoso)',
+            desc: 'Sección trapecial en concreto (b=1.0 m, z=1.0, Q=1.5 m³/s)',
+            icon: '🌾',
+            shape: 'Trapezoidal',
+            b: 1.00,
+            z: 1.0,
+            H: 1.50,
+            material: 'concrete_rough',
+            q_m3s: 1.50,
+            slope: 0.0010,
+            temp: 20.0
+          },
+          tierra_limpia: {
+            title: 'Canal en Tierra Limpia',
+            desc: 'Sección trapecial en tierra (b=2.0 m, z=1.5, Q=3.0 m³/s)',
+            icon: '🌱',
+            shape: 'Trapezoidal',
+            b: 2.00,
+            z: 1.5,
+            H: 2.00,
+            material: 'earth_clean',
+            q_m3s: 3.00,
+            slope: 0.0006,
+            temp: 22.0
+          },
+          colector_pluvial: {
+            title: 'Colector Pluvial Circular',
+            desc: 'Tubería de concreto liso (D=1.2 m, Q=450 L/s)',
+            icon: '🔘',
+            shape: 'Circular',
+            D: 1.20,
+            material: 'concrete_smooth',
+            q_m3s: 0.450,
+            slope: 0.0030,
+            temp: 16.0
+          }
+        };
+
+        // --- MATERIALS CATALOGUE ---
+        const materialsCatalogue = {
+          acrylic: { label: 'Acrílico / Vidrio / Cemento muy liso', n: 0.010, eps: 0.15, colorDot: '#38bdf8', pat: 'smooth' },
+          concrete_smooth: { label: 'Concreto liso encofrado', n: 0.013, eps: 0.50, colorDot: '#94a3b8', pat: 'concrete' },
+          concrete_rough: { label: 'Concreto rugoso / acabado ordinario', n: 0.016, eps: 1.50, colorDot: '#64748b', pat: 'concrete' },
+          masonry: { label: 'Mampostería de piedra / ladrillo', n: 0.020, eps: 5.00, colorDot: '#78716c', pat: 'concrete' },
+          earth_clean: { label: 'Tierra limpia y uniforme', n: 0.023, eps: 12.0, colorDot: '#b45309', pat: 'earth' },
+          gravel: { label: 'Grava uniforme / canto rodado', n: 0.028, eps: 25.0, colorDot: '#71717a', pat: 'gravel' },
+          earth_rough: { label: 'Tierra con vegetación / piedras', n: 0.035, eps: 50.0, colorDot: '#78350f', pat: 'earth' },
+          custom: { label: 'Personalizado (editar n y ε)', n: 0.015, eps: 1.00, colorDot: '#a855f7', pat: 'concrete' }
+        };
+
+        const showPresets = ref(false);
+
+        // --- SIMULATOR REACTIVE STATE ---
+        const sim = reactive({
+          shape: 'Rectangular', // 'Rectangular', 'Trapezoidal', 'Circular'
+          b: 0.50,              // Ancho de solera (m)
+          H: 0.80,              // Altura paredes canal (m)
+          z: 1.0,               // Talud lateral H:V = z:1
+          D: 1.00,              // Diámetro interno si circular (m)
+          
+          selectedMaterialKey: 'concrete_rough',
+          manning_n: 0.016,
+          eps_mm: 1.50,
+
+          q_m3s: 0.250,         // Caudal interno en m³/s
+          displayQ: 250,        // Caudal en la unidad elegida
+          qUnit: 'lps',         // 'lps' o 'm3s'
+          
+          slope_m_m: 0.0020,    // Pendiente longitudinal m/m
+          temp_c: 18.0          // Temperatura del agua °C
+        });
+
+        // Sync displayQ with q_m3s
+        const syncDisplayQ = () => {
+          if (sim.qUnit === 'lps') {
+            sim.displayQ = Number((sim.q_m3s * 1000).toFixed(2));
+          } else {
+            sim.displayQ = Number(sim.q_m3s.toFixed(4));
+          }
+        };
+
+        const onDisplayQChanged = () => {
+          if (sim.qUnit === 'lps') {
+            sim.q_m3s = Math.max(0.0001, sim.displayQ / 1000);
+          } else {
+            sim.q_m3s = Math.max(0.0001, sim.displayQ);
+          }
+        };
+
+        watch(() => sim.qUnit, () => {
+          syncDisplayQ();
+        });
+
+        // When material dropdown changes
+        const onMaterialSelected = () => {
+          const mat = materialsCatalogue[sim.selectedMaterialKey];
+          if (mat && sim.selectedMaterialKey !== 'custom') {
+            sim.manning_n = mat.n;
+            sim.eps_mm = mat.eps;
+          }
+        };
+
+        const selectedMaterialName = computed(() => {
+          return materialsCatalogue[sim.selectedMaterialKey]?.label || 'Personalizado';
+        });
+
+        const materialColorDot = computed(() => {
+          return materialsCatalogue[sim.selectedMaterialKey]?.colorDot || '#64748b';
+        });
+
+        const channelFillPattern = computed(() => {
+          const matKey = sim.selectedMaterialKey;
+          const pat = materialsCatalogue[matKey]?.pat || 'concrete';
+          if (pat === 'earth') return 'url(#earthPat)';
+          if (pat === 'gravel') return 'url(#gravelPat)';
+          if (pat === 'smooth') return 'url(#smoothCementGrad)';
+          return 'url(#concretePat)';
+        });
+
+        // Apply a preset
+        const applyPreset = (preset) => {
+          sim.shape = preset.shape;
+          if (preset.b !== undefined) sim.b = preset.b;
+          if (preset.H !== undefined) sim.H = preset.H;
+          if (preset.z !== undefined) sim.z = preset.z;
+          if (preset.D !== undefined) sim.D = preset.D;
+          sim.selectedMaterialKey = preset.material;
+          onMaterialSelected();
+          sim.q_m3s = preset.q_m3s;
+          sim.slope_m_m = preset.slope;
+          sim.temp_c = preset.temp;
+          syncDisplayQ();
+          showPresets.value = false;
+        };
+
+        // Viscosity & Density computations from temperature
+        const calculatedViscosity = computed(() => {
+          const T = sim.temp_c;
+          return 1.777e-6 / (1 + 0.0337 * T + 0.000221 * T * T);
+        });
+
+        const calculatedDensity = computed(() => {
+          const T = sim.temp_c;
+          return 1000 * (1 - (T + 288.9414) / (508929.2 * (T + 68.12963)) * Math.pow(T - 3.9863, 2));
+        });
+
+        // --- NUMERICAL SOLVER CORE ---
+        const calcSectionProps = (shape, y, b, z, D) => {
+          let A = 0, P = 0, T = 0;
+          if (shape === 'Rectangular') {
+            A = b * y;
+            P = b + 2 * y;
+            T = b;
+          } else if (shape === 'Trapezoidal') {
+            A = (b + z * y) * y;
+            P = b + 2 * y * Math.sqrt(1 + z * z);
+            T = b + 2 * z * y;
+          } else if (shape === 'Circular') {
+            if (y <= 0) return { A: 1e-7, P: 1e-7, T: 1e-7, Rh: 1e-7 };
+            const effectiveY = Math.min(D, y);
+            const cosVal = Math.max(-1.0, Math.min(1.0, 1.0 - (2.0 * effectiveY / D)));
+            const theta = 2.0 * Math.acos(cosVal);
+            A = (D * D / 8.0) * (theta - Math.sin(theta));
+            P = (D / 2.0) * theta;
+            T = Math.max(1e-5, D * Math.sin(theta / 2.0));
+          }
+          const Rh = P > 0 ? A / P : 0;
+          return { A, P, T, Rh };
+        };
+
+        // Normal Depth yn solver by bisection
+        const solveNormalDepth = (shape, b, z, D, n, S0, Q) => {
+          if (Q <= 0 || S0 <= 0 || n <= 0) return 0.01;
+          const target = (n * Q) / Math.sqrt(S0);
+
+          // For circular, check maximum capacity at y = 0.938 D
+          if (shape === 'Circular') {
+            const maxProps = calcSectionProps('Circular', 0.938 * D, b, z, D);
+            const qMax = (1.0 / n) * Math.pow(maxProps.A, 5/3) / Math.pow(maxProps.P, 2/3) * Math.sqrt(S0);
+            if (Q > qMax) {
+              return D * 1.05; // indicates overflow
+            }
+          }
+
+          let low = 1e-5;
+          let high = shape === 'Circular' ? D * 0.999 : 25.0;
+
+          for (let i = 0; i < 90; i++) {
+            const mid = (low + high) / 2.0;
+            const props = calcSectionProps(shape, mid, b, z, D);
+            const val = Math.pow(props.A, 5/3) / Math.pow(props.P, 2/3);
+            if (val < target) {
+              low = mid;
+            } else {
+              high = mid;
+            }
+            if ((high - low) < 1e-6) break;
+          }
+          return (low + high) / 2.0;
+        };
+
+        // Critical Depth yc solver: A^3 / T = Q^2 / g
+        const solveCriticalDepth = (shape, b, z, D, Q) => {
+          if (Q <= 0) return 0.01;
+          const critTarget = (Q * Q) / 9.81;
+
+          let low = 1e-5;
+          let high = shape === 'Circular' ? D * 0.999 : 25.0;
+
+          for (let i = 0; i < 90; i++) {
+            const mid = (low + high) / 2.0;
+            const props = calcSectionProps(shape, mid, b, z, D);
+            const val = Math.pow(props.A, 3) / props.T;
+            if (val < critTarget) {
+              low = mid;
+            } else {
+              high = mid;
+            }
+            if ((high - low) < 1e-6) break;
+          }
+          return (low + high) / 2.0;
+        };
+
+        // --- OVERALL HYDRAULIC RESULTS COMPUTATION ---
+        const results = computed(() => {
+          const shape = sim.shape;
+          const b = Math.max(0.05, sim.b);
+          const z = Math.max(0, sim.z);
+          const H = Math.max(0.05, sim.H);
+          const D = Math.max(0.05, sim.D);
+          const n = Math.max(0.005, sim.manning_n);
+          const S0 = Math.max(0.00001, sim.slope_m_m);
+          const Q = Math.max(0.0001, sim.q_m3s);
+          const nu = calculatedViscosity.value;
+          const rho = calculatedDensity.value;
+          const eps_m = sim.eps_mm / 1000;
+
+          const yn = solveNormalDepth(shape, b, z, D, n, S0, Q);
+          const yc = solveCriticalDepth(shape, b, z, D, Q);
+
+          const maxDepthAllowed = shape === 'Circular' ? D : H;
+          const isOverflow = yn > maxDepthAllowed;
+
+          const props = calcSectionProps(shape, yn, b, z, D);
+          const A = props.A;
+          const P = props.P;
+          const T = props.T;
+          const Rh = props.Rh;
+          const Dh = T > 0 ? A / T : yn;
+
+          const V = A > 0 ? Q / A : 0;
+          const Fr = (Dh > 0 && V > 0) ? V / Math.sqrt(9.81 * Dh) : 0;
+          const E = yn + (V * V) / (2 * 9.81);
+
+          // Reynolds Re = 4 * Rh * V / nu
+          const Re = nu > 0 ? (4 * Rh * V) / nu : 0;
+
+          // Darcy f = 8 * g * Rh * S0 / V^2
+          const darcy_f = (V > 0 && Rh > 0) ? (8 * 9.81 * Rh * S0) / (V * V) : 0;
+
+          // Shear stress tau0 = rho * g * Rh * S0
+          const tau0 = rho * 9.81 * Rh * S0;
+
+          // Viscous sublayer delta0 = 11.6 * nu / u_star
+          const u_star = Math.sqrt(9.81 * Rh * S0);
+          const delta0 = u_star > 0 ? (11.6 * nu) / u_star : 0.0001; // m
+          const delta0_mm = delta0 * 1000;
+
+          // Classification of hydraulic regime
+          const ratio = delta0 > 0 ? eps_m / delta0 : 1;
+          let regimenConducto = 'En Transición';
+          if (ratio < 0.305) regimenConducto = 'Hidráulicamente Liso';
+          else if (ratio > 6.1) regimenConducto = 'Hidráulicamente Rugoso';
+
+          const bordoLibreCm = (maxDepthAllowed - yn) * 100;
+
+          return {
+            valid: true,
+            isOverflow,
+            yn,
+            yc,
+            A,
+            P,
+            T,
+            Rh,
+            Dh,
+            V,
+            Fr,
+            E,
+            Re,
+            darcy_f,
+            tau0,
+            delta0_mm,
+            regimenConducto,
+            bordoLibreCm
+          };
+        });
+
+        // Froude Badges & Text
+        const froudeLabel = computed(() => {
+          const fr = results.value.Fr;
+          if (fr < 0.98) return 'Subcrítico';
+          if (fr > 1.02) return 'Supercrítico';
+          return 'Crítico';
+        });
+
+        const froudeDescription = computed(() => {
+          const fr = results.value.Fr;
+          if (fr < 0.98) return 'Flujo lento y tranquilo (Tipo Río)';
+          if (fr > 1.02) return 'Flujo rápido y torrencial (Tipo Torrente)';
+          return 'Flujo en estado crítico de energía mínima';
+        });
+
+        const froudeBadgeClass = computed(() => {
+          const fr = results.value.Fr;
+          if (fr < 0.98) return 'bg-blue-100 text-blue-800 border border-blue-300';
+          if (fr > 1.02) return 'bg-rose-100 text-rose-800 border border-rose-300';
+          return 'bg-amber-100 text-amber-800 border border-amber-300';
+        });
+
+        // --- SVG GRAPHICS GENERATION ENGINE ---
+        const channelSvg = ref(null);
+
+        const svgPaths = computed(() => {
+          const shape = sim.shape;
+          const b = Math.max(0.05, sim.b);
+          const z = Math.max(0, sim.z);
+          const H = Math.max(0.05, sim.H);
+          const D = Math.max(0.05, sim.D);
+          const yn = results.value.yn;
+          const yc = results.value.yc;
+
+          // Compute max dimension to establish dynamic auto-scaling
+          let maxWidth = 1.0;
+          let maxHeight = 1.0;
+
+          if (shape === 'Rectangular') {
+            maxWidth = Math.max(0.2, b * 1.5);
+            maxHeight = Math.max(0.2, H * 1.35);
+          } else if (shape === 'Trapezoidal') {
+            const topCanalWidth = b + 2 * z * H;
+            maxWidth = Math.max(0.3, topCanalWidth * 1.25);
+            maxHeight = Math.max(0.2, H * 1.35);
+          } else if (shape === 'Circular') {
+            maxWidth = Math.max(0.3, D * 1.35);
+            maxHeight = Math.max(0.3, D * 1.35);
+          }
+
+          // Screen mapping scale: fit inside 420px width, 160px height
+          const scaleX = 420 / maxWidth;
+          const scaleY = 160 / maxHeight;
+          const scale = Math.min(scaleX, scaleY);
+
+          // Center coordinates inside 600x360 viewBox
+          const cx = 300;
+          const bedY = 240;
+
+          if (shape !== 'Circular') {
+            const b_px = b * scale;
+            const H_px = H * scale;
+            const yn_px = Math.min(H * 1.4, yn) * scale;
+            const yc_px = Math.min(H * 1.4, yc) * scale;
+            const z_eff = shape === 'Trapezoidal' ? z : 0;
+
+            const x_bottom_left = cx - b_px / 2;
+            const x_bottom_right = cx + b_px / 2;
+            const x_top_left = x_bottom_left - z_eff * H_px;
+            const x_top_right = x_bottom_right + z_eff * H_px;
+            const topY = bedY - H_px;
+
+            const wallThick = 24;
+            const groundExt = 35;
+
+            // Inner channel outline
+            const innerBorder = `${x_top_left - groundExt},${topY} ${x_top_left},${topY} ${x_bottom_left},${bedY} ${x_bottom_right},${bedY} ${x_top_right},${topY} ${x_top_right + groundExt},${topY}`;
+
+            // Outer embankment polygon
+            const outerBed = `${x_top_left - groundExt},${topY} ${x_top_left},${topY} ${x_bottom_left},${bedY} ${x_bottom_right},${bedY} ${x_top_right},${topY} ${x_top_right + groundExt},${topY} ${x_top_right + groundExt},${topY + wallThick} ${x_bottom_right + wallThick},${bedY + wallThick} ${x_bottom_left - wallThick},${bedY + wallThick} ${x_top_left - groundExt},${topY + wallThick}`;
+
+            // Water Polygon
+            const waterWaterY = bedY - yn_px;
+            const waterLeftX = x_bottom_left - z_eff * yn_px;
+            const waterRightX = x_bottom_right + z_eff * yn_px;
+            const waterPoly = `${waterLeftX},${waterWaterY} ${x_bottom_left},${bedY} ${x_bottom_right},${bedY} ${waterRightX},${waterWaterY}`;
+
+            // Critical depth line
+            const ycWaterY = bedY - yc_px;
+            const ycLeftX = x_bottom_left - z_eff * yc_px;
+            const ycRightX = x_bottom_right + z_eff * yc_px;
+
+            // Streamline
+            const streamY = bedY - yn_px * 0.5;
+            const streamLeft = x_bottom_left - z_eff * (yn_px * 0.5) + 10;
+            const streamRight = x_bottom_right + z_eff * (yn_px * 0.5) - 10;
+            const streamline = `M ${streamLeft} ${streamY} L ${streamRight} ${streamY}`;
+
+            return {
+              scale,
+              cx,
+              bedY,
+              topY,
+              x_bottom_left,
+              x_bottom_right,
+              x_top_left,
+              x_top_right,
+              innerBorder,
+              outerBed,
+              waterPoly,
+              streamline,
+              waterWaterY,
+              waterLeftX,
+              waterRightX,
+              ycLine: { x1: ycLeftX, x2: ycRightX, y: ycWaterY }
+            };
+          } else {
+            // Circular section
+            const D_px = D * scale;
+            const r = D_px / 2;
+            const cy = bedY - r;
+            const wallThick = 20;
+
+            const effectiveY = Math.min(D, yn);
+            const yn_px = effectiveY * scale;
+            const waterY = bedY - yn_px;
+
+            let waterPath = '';
+            if (effectiveY > 0 && effectiveY < D) {
+              const cosVal = Math.max(-1.0, Math.min(1.0, 1.0 - (2.0 * effectiveY / D)));
+              const theta = 2.0 * Math.acos(cosVal);
+              const halfChord = r * Math.sin(theta / 2.0);
+              const leftX = cx - halfChord;
+              const rightX = cx + halfChord;
+
+              const largeArcFlag = theta > Math.PI ? 1 : 0;
+              waterPath = `M ${rightX} ${waterY} A ${r} ${r} 0 ${largeArcFlag} 1 ${leftX} ${waterY} Z`;
+            } else if (effectiveY >= D) {
+              waterPath = `M ${cx - r} ${cy} A ${r} ${r} 0 1 0 ${cx + r} ${cy} A ${r} ${r} 0 1 0 ${cx - r} ${cy} Z`;
+            }
+
+            // yc line in circle
+            const effectiveYc = Math.min(D, yc);
+            const yc_px = effectiveYc * scale;
+            const ycWaterY = bedY - yc_px;
+            const ycCos = Math.max(-1.0, Math.min(1.0, 1.0 - (2.0 * effectiveYc / D)));
+            const ycTheta = 2.0 * Math.acos(ycCos);
+            const ycHalfChord = r * Math.sin(ycTheta / 2.0);
+
+            return {
+              scale,
+              circ: {
+                cx,
+                cy,
+                r,
+                wallThick,
+                waterPath,
+                waterY,
+                ycLine: { x1: cx - ycHalfChord, x2: cx + ycHalfChord, y: ycWaterY }
+              }
+            };
+          }
+        });
+
+        // Annotations (Dimension Lines, arrows, labels)
+        const svgAnnotations = computed(() => {
+          const shape = sim.shape;
+          const p = svgPaths.value;
+          const yn = results.value.yn;
+          const yc = results.value.yc;
+
+          if (shape !== 'Circular') {
+            const bedY = p.bedY;
+            const waterY = p.waterWaterY;
+            const dimX = Math.max(30, p.waterLeftX - 45);
+
+            return {
+              waterLevel: {
+                y: waterY,
+                bedY: bedY,
+                x1: p.waterLeftX - 10,
+                x2: p.waterRightX + 10,
+                dimX: dimX,
+                markerPoints: `${p.waterRightX + 12},${waterY - 8} ${p.waterRightX + 22},${waterY - 8} ${p.waterRightX + 17},${waterY}`
+              },
+              ycLabel: {
+                x: p.ycLine.x2 + 8,
+                y: p.ycLine.y
+              },
+              baseDim: {
+                x1: p.x_bottom_left,
+                x2: p.x_bottom_right,
+                y: bedY + 24
+              },
+              taludTriangle: shape === 'Trapezoidal' ? {
+                points: `${p.x_top_left},${p.topY} ${p.x_top_left + 24},${p.topY} ${p.x_top_left + 24},${p.topY + 24 / Math.max(0.1, sim.z)}`,
+                textX: p.x_top_left + 28,
+                textY: p.topY + 12
+              } : null
+            };
+          } else {
+            const c = p.circ;
+            const bedY = c.cy + c.r;
+            const dimX = Math.max(30, c.cx - c.r - 45);
+
+            return {
+              waterLevel: {
+                y: c.waterY,
+                bedY: bedY,
+                x1: c.cx - c.r,
+                x2: c.cx + c.r,
+                dimX: dimX,
+                markerPoints: `${c.cx + c.r + 5},${c.waterY - 8} ${c.cx + c.r + 15},${c.waterY - 8} ${c.cx + c.r + 10},${c.waterY}`
+              },
+              ycLabel: {
+                x: c.ycLine.x2 + 8,
+                y: c.ycLine.y
+              },
+              circDim: true
+            };
+          }
+        });
+
+        onMounted(() => {
+          syncDisplayQ();
+          if (channelSvg.value) {
+            channelSvg.value.setAttribute('viewBox', '0 0 600 360');
+          }
+        });
+
+        return {
+          presets,
+          materialsCatalogue,
+          showPresets,
+          sim,
+          syncDisplayQ,
+          onDisplayQChanged,
+          onMaterialSelected,
+          selectedMaterialName,
+          materialColorDot,
+          channelFillPattern,
+          applyPreset,
+          calculatedViscosity,
+          calculatedDensity,
+          results,
+          froudeLabel,
+          froudeDescription,
+          froudeBadgeClass,
+          channelSvg,
+          svgPaths,
+          svgAnnotations
+        };
+      }
+    }).mount('#simApp');
+  </script>
+</body>
+</html>

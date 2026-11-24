@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Golpe de Ariete y Chimenea de Equilibrio | Laboratorio Virtual Unicauca</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            unicauca: {
+              blue: '#002855',
+              dark: '#001938',
+              light: '#0A4A8F',
+              accent: '#0284C7',
+              gold: '#D97706',
+              goldLight: '#FBBF24',
+              red: '#C8102E',
+              surface: '#F8FAFC',
+              border: '#E2E8F0'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}]});"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Top Header Navigation -->
+  <header class="bg-unicauca-blue text-white shadow-lg border-b border-unicauca-gold/40 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-red-700 flex items-center justify-center shadow-md border border-white/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-unicauca-gold bg-black/20 px-2 py-0.5 rounded border border-unicauca-gold/30">Práctica X</span>
+            <span class="text-xs text-blue-200">Laboratorio Virtual de Hidráulica</span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            Golpe de Ariete y Chimenea de Equilibrio
+            <span class="text-xs font-normal bg-amber-500/30 text-amber-200 border border-amber-400/30 px-2 py-0.5 rounded-full">Transitorios & Sobrepresión</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2">
+        <button id="btnTriggerValve" onclick="triggerFastClosure()" class="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1.5 animate-pulse">
+          🛑 Cierre Rápido
+        </button>
+        <button onclick="resetToSteadyFlow()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-semibold shadow transition-all flex items-center gap-1">
+          🔄 Régimen Permanente
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Simulator Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Left Controls Sidebar (4 Cols) -->
+    <section class="lg:col-span-4 space-y-5">
+
+      <!-- Preset Selection Formato X.1 -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4 text-unicauca-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          Formatos y Condiciones de Ensayo
+        </h2>
+        <div class="grid grid-cols-1 gap-2">
+          <button onclick="loadPreset('formatoX1')" class="text-left px-3 py-2 rounded-xl text-xs font-semibold border border-blue-200 bg-blue-50/50 hover:bg-blue-100/60 transition-all flex items-center justify-between">
+            <span class="text-blue-950 font-bold">📋 Formato X.1: Datos Oficiales de Guía</span>
+            <span class="text-[10px] text-blue-700 bg-blue-200/80 px-2 py-0.5 rounded font-mono">L=18.5m | Q=0.65 L/s</span>
+          </button>
+          <button onclick="loadPreset('alta_presion')" class="text-left px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 hover:border-amber-400 hover:bg-amber-50/60 transition-all flex items-center justify-between">
+            <span class="text-slate-700">⚡ Ensayo de Alta Velocidad (V0 = 2.5 m/s)</span>
+            <span class="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded font-mono">Δh &gt; 50 cm</span>
+          </button>
+          <button onclick="loadPreset('sin_chimenea')" class="text-left px-3 py-2 rounded-xl text-xs font-semibold border border-red-200 bg-red-50/50 hover:bg-red-100/60 transition-all flex items-center justify-between">
+            <span class="text-red-900 font-bold">💥 Sin Chimenea (Onda Joukowsky Pura)</span>
+            <span class="text-[10px] text-red-700 bg-red-200 px-2 py-0.5 rounded font-mono">ΔH = 135 m.c.a.</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Geometry & Hydraulic Parameters -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+          <svg class="w-4 h-4 text-unicauca-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          </svg>
+          Parámetros Físicos de la Instalación
+        </h2>
+
+        <!-- Caudal Inicial Q0 -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Caudal Inicial Permanente ($Q_0$):</span>
+            <span class="font-mono text-blue-700 font-bold" id="q0Val">0.65 L/s</span>
+          </div>
+          <input type="range" id="q0Slider" min="0.10" max="1.50" step="0.05" value="0.65"
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="onParamChange()">
+          <p class="text-[10px] text-slate-500 mt-0.5">Velocidad inicial en tubería: $V_0 = $ <span id="v0Label" class="font-mono font-bold text-slate-700">1.32 m/s</span></p>
+        </div>
+
+        <!-- Longitud Tubería L -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Longitud de Conducción ($L$):</span>
+            <span class="font-mono text-blue-700 font-bold" id="lVal">18.5 m</span>
+          </div>
+          <input type="range" id="lSlider" min="5.0" max="40.0" step="0.5" value="18.5"
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="onParamChange()">
+        </div>
+
+        <!-- Diámetro Tubería D -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Diámetro Tubería ($D$):</span>
+            <span class="font-mono text-blue-700 font-bold" id="dVal">25 mm (1")</span>
+          </div>
+          <select id="dSelect" onchange="onParamChange()" class="w-full text-xs font-medium bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="0.019">19 mm (3/4")</option>
+            <option value="0.025" selected>25 mm (1") - Laboratorio</option>
+            <option value="0.038">38 mm (1 1/2")</option>
+            <option value="0.050">50 mm (2")</option>
+          </select>
+        </div>
+
+        <!-- Diámetro Chimenea D_ch -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Diámetro Chimenea ($D_{ch}$):</span>
+            <span class="font-mono text-indigo-700 font-bold" id="dchVal">50 mm</span>
+          </div>
+          <select id="dchSelect" onchange="onParamChange()" class="w-full text-xs font-medium bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="0.032">32 mm (Estrecha - Alta Oscilación)</option>
+            <option value="0.050" selected>50 mm (Oficial Formato X.1)</option>
+            <option value="0.075">75 mm (Media)</option>
+            <option value="0.100">100 mm (Amplia - Fuerte Amortiguamiento)</option>
+          </select>
+        </div>
+
+        <!-- Estado de la Chimenea de Equilibrio Toggle -->
+        <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-slate-800">Chimenea Activada</span>
+            <p class="text-[10px] text-slate-500">Amortigua el golpe de masa</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="surgeTankActive" checked onchange="toggleSurgeTank()" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+
+      </div>
+
+      <!-- Live Oscillating Period Card -->
+      <div class="bg-indigo-50/70 rounded-2xl p-4 border border-indigo-200/80 space-y-1.5">
+        <div class="flex justify-between items-center text-xs font-bold text-indigo-950">
+          <span>Periodo Teórico ($T_{teo}$):</span>
+          <span id="periodTeoLabel" class="font-mono text-indigo-700">17.25 s</span>
+        </div>
+        <div class="flex justify-between items-center text-xs text-indigo-900">
+          <span>Celeridad Onda ($a$):</span>
+          <span id="celerityLabel" class="font-mono font-semibold">1000 m/s</span>
+        </div>
+        <div class="flex justify-between items-center text-xs text-indigo-900">
+          <span>Tiempo Crítico ($T_c = 2L/a$):</span>
+          <span id="tcLabel" class="font-mono font-semibold">0.037 s (37 ms)</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Right Visual Simulation & Oscillogram (8 Cols) -->
+    <section class="lg:col-span-8 space-y-5">
+
+      <!-- Interactive SVG Transients Simulation -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></span>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
+              Simulación Dinámica del Golpe de Ariete y Chimenea
+            </h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="transientBadge" class="text-xs font-bold font-mono px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300">
+              ESTADO: FLUJO PERMANENTE
+            </span>
+          </div>
+        </div>
+
+        <!-- SVG Container -->
+        <div class="w-full bg-gradient-to-b from-slate-900 via-slate-850 to-slate-900 rounded-xl border border-slate-800 overflow-hidden relative shadow-2xl p-2">
+          <svg id="transientSvg" viewBox="0 0 780 340" class="w-full h-auto select-none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="pipeWaterGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#0284C7"/>
+                <stop offset="100%" stop-color="#38BDF8"/>
+              </linearGradient>
+              <linearGradient id="tankWaterGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" stop-color="#0284C7"/>
+                <stop offset="100%" stop-color="#38BDF8"/>
+              </linearGradient>
+              <linearGradient id="shockWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#EF4444" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.3"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Upstream Reservoir (Left) -->
+            <rect x="20" y="40" width="110" height="260" fill="#1E293B" stroke="#475569" stroke-width="2" rx="4"/>
+            <!-- Water Body -->
+            <rect x="22" y="80" width="106" height="218" fill="url(#tankWaterGrad)" fill-opacity="0.75"/>
+            <!-- Water Meniscus -->
+            <line x1="22" y1="80" x2="128" y2="80" stroke="#38BDF8" stroke-width="3"/>
+            <text x="75" y="65" text-anchor="middle" fill="#94A3B8" font-size="11" font-weight="bold">Tanque Superior</text>
+            <text x="75" y="105" text-anchor="middle" fill="#E2E8F0" font-size="10" font-family="monospace">Nivel Constante H₀</text>
+
+            <!-- Long Penstock / Conduction Pipe -->
+            <rect x="130" y="240" width="450" height="24" fill="#0F172A" stroke="#475569" stroke-width="2"/>
+            <rect id="svgPenstockWater" x="130" y="242" width="450" height="20" fill="url(#pipeWaterGrad)"/>
+
+            <!-- Moving Flow Particles / Shockwave in Penstock -->
+            <rect id="svgShockWave" x="500" y="242" width="80" height="20" fill="url(#shockWaveGrad)" opacity="0"/>
+
+            <!-- SURGE TANK (Chimenea de Equilibrio Vertical) -->
+            <g id="surgeTankGroup" transform="translate(560, 30)">
+              <!-- Glass Cylinder Casing -->
+              <rect x="-24" y="0" width="48" height="212" fill="#1E293B" fill-opacity="0.4" stroke="#64748B" stroke-width="2" rx="3"/>
+              <!-- Graduated cm Scale on the left of cylinder -->
+              <line x1="-24" y1="20" x2="-24" y2="200" stroke="#94A3B8" stroke-width="1.5"/>
+              <text x="-28" y="25" text-anchor="end" fill="#FBBF24" font-size="9" font-family="monospace">+40cm</text>
+              <text x="-28" y="60" text-anchor="end" fill="#94A3B8" font-size="8" font-family="monospace">+20cm</text>
+              <text x="-28" y="95" text-anchor="end" fill="#38BDF8" font-size="8" font-family="monospace">0 (Estático)</text>
+              <text x="-28" y="130" text-anchor="end" fill="#94A3B8" font-size="8" font-family="monospace">-20cm</text>
+              <text x="-28" y="165" text-anchor="end" fill="#EF4444" font-size="9" font-family="monospace">-40cm</text>
+
+              <!-- Dynamic Water Column Inside Surge Tank -->
+              <!-- Equilibrium static level is at y = 95 -->
+              <rect id="svgSurgeWater" x="-22" y="95" width="44" height="117" fill="url(#tankWaterGrad)"/>
+              <line id="svgSurgeMeniscus" x1="-22" y1="95" x2="22" y2="95" stroke="#FBBF24" stroke-width="3"/>
+
+              <!-- Surge Tank Level Marker Pin -->
+              <g id="svgSurgePin" transform="translate(30, 95)">
+                <polygon points="0,0 8,-4 8,4" fill="#FBBF24"/>
+                <text id="svgSurgeCmText" x="12" y="4" fill="#FBBF24" font-size="11" font-family="monospace" font-weight="bold">+0.0 cm</text>
+              </g>
+
+              <text x="0" y="-8" text-anchor="middle" fill="#E2E8F0" font-size="11" font-weight="bold">Chimenea D_ch</text>
+            </g>
+
+            <!-- Downstream Short Pipe to Valve -->
+            <rect x="584" y="240" width="80" height="24" fill="#0F172A" stroke="#475569" stroke-width="2"/>
+            <rect id="svgDownstreamWater" x="584" y="242" width="80" height="20" fill="url(#pipeWaterGrad)"/>
+
+            <!-- Fast Acting Valve -->
+            <g transform="translate(664, 252)">
+              <!-- Valve Body -->
+              <polygon points="0,-16 26,0 0,16" fill="#DC2626" stroke="#FFFFFF" stroke-width="1.5"/>
+              <polygon points="26,-16 0,0 26,16" fill="#DC2626" stroke="#FFFFFF" stroke-width="1.5"/>
+              <!-- Valve Handle / Shutter -->
+              <line id="svgValveStem" x1="13" y1="-10" x2="13" y2="-28" stroke="#FFFFFF" stroke-width="3"/>
+              <circle id="svgValveKnob" cx="13" cy="-30" r="6" fill="#FBBF24"/>
+              <text x="13" y="32" text-anchor="middle" fill="#E2E8F0" font-size="10" font-weight="bold">Válvula</text>
+
+              <!-- Outflow Water Jet (Visible when valve is open) -->
+              <path id="svgOutflowJet" d="M 28 0 Q 50 10 60 50" fill="none" stroke="#38BDF8" stroke-width="6" stroke-linecap="round"/>
+            </g>
+
+            <!-- Pressure Gauge Near Valve (P_transitorio) -->
+            <g transform="translate(630, 200)">
+              <rect x="-2" y="16" width="4" height="24" fill="#94A3B8"/>
+              <circle cx="0" cy="0" r="18" fill="#FFFFFF" stroke="#002855" stroke-width="2.5"/>
+              <line id="svgArieteGaugeNeedle" x1="0" y1="0" x2="0" y2="-12" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="0" cy="0" r="2.5" fill="#002855"/>
+              <text x="0" y="-24" text-anchor="middle" fill="#FBBF24" font-size="9" font-family="monospace" font-weight="bold">P_válvula</text>
+              <text id="svgPressureGaugeVal" x="0" y="30" text-anchor="middle" fill="#38BDF8" font-size="10" font-family="monospace">0.5 bar</text>
+            </g>
+
+          </svg>
+        </div>
+      </div>
+
+      <!-- Real-time Telemetry Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <!-- Nivel Chimenea z(t) -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-slate-200">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nivel Chimenea ($z$)</p>
+          <p id="telemetryZ" class="text-xl font-extrabold font-mono text-blue-700 mt-1">+0.0 <span class="text-xs font-medium text-slate-500">cm</span></p>
+          <p id="telemetryDzDt" class="text-[10px] text-slate-500 font-mono mt-0.5">dz/dt = 0.00 m/s</p>
+        </div>
+
+        <!-- Amplitud Máxima h_max -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-slate-200">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Cresta Máx ($h_{max}$)</p>
+          <p id="telemetryHmax" class="text-xl font-extrabold font-mono text-amber-600 mt-1">28.5 <span class="text-xs font-medium text-slate-500">cm</span></p>
+          <p id="telemetryHmin" class="text-[10px] text-slate-500 font-mono mt-0.5">h_min = -22.0 cm</p>
+        </div>
+
+        <!-- Sobrepresión Joukowsky ΔH -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-slate-200">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sobrepresión ($ΔH$)</p>
+          <p id="telemetryDeltaH" class="text-xl font-extrabold font-mono text-red-600 mt-1">134.5 <span class="text-xs font-medium text-slate-500">m</span></p>
+          <p id="telemetryDeltaHBar" class="text-[10px] text-slate-500 font-mono mt-0.5">ΔP = 13.2 bar (Sin Chim.)</p>
+        </div>
+
+        <!-- Factor de Amortiguamiento -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-emerald-300">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Amortiguamiento ($ψ$)</p>
+          <p id="telemetryDamping" class="text-xl font-extrabold font-mono text-emerald-600 mt-1">0.695 <span class="text-xs font-medium text-slate-500">-</span></p>
+          <p id="telemetryCycles" class="text-[10px] text-slate-500 font-mono mt-0.5">Ciclo 2 vs Ciclo 1</p>
+        </div>
+      </div>
+
+      <!-- Live Oscillogram Chart (Chart.js) -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
+              Oscilograma en la Chimenea de Equilibrio: $z(t)$ vs Tiempo $t$
+            </h3>
+            <p class="text-xs text-slate-500">
+              Evolución oscilatoria sinusoidal amortiguada por fricción en comparación con los datos de laboratorio (Formato X.1).
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-mono bg-blue-50 text-blue-800 px-2 py-1 rounded border border-blue-200">
+              t = <span id="timeElapsedLabel" class="font-bold">0.00 s</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="h-72 w-full">
+          <canvas id="oscilloChartCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Theoretical Reference Footer -->
+      <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 text-xs text-slate-700 space-y-2">
+        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-unicauca-blue" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+          </svg>
+          Fundamento Teórico & Oscilaciones de Masa (Práctica X)
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+          <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+            <strong class="text-red-900 font-bold block mb-1">1. Sobrepresión Joukowsky:</strong>
+            $$\Delta h_{max} = \frac{a \cdot V_0}{g}$$
+            Para cierre brusco con $t_v \le T_c = \frac{2L}{a}$.
+          </div>
+          <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+            <strong class="text-indigo-900 font-bold block mb-1">2. Periodo de Oscilación:</strong>
+            $$T = 2\pi \sqrt{\frac{L \cdot A_{ch}}{g \cdot A_t}} = 2\pi \frac{D_{ch}}{D} \sqrt{\frac{L}{g}}$$
+          </div>
+          <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+            <strong class="text-amber-900 font-bold block mb-1">3. Ecuación Diferencial Chimenea:</strong>
+            $$\frac{L}{g}\frac{d^2 z}{dt^2} \pm \frac{f L}{2g D}\left(\frac{A_{ch}}{A_t}\right)^2\left(\frac{dz}{dt}\right)^2 + z = 0$$
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Simulator Scripts & Numerical Integrator -->
+  <script>
+    const G = 9.80665;
+    const WATER_DENSITY = 1000;
+    const BULK_MODULUS_WATER = 2.19e9; // Pa
+    const E_PIPE = 2.0e11; // Pa (Steel / Rigid)
+
+    // Current State
+    let isValveOpen = true;
+    let isSurgeTankEnabled = true;
+    let simTime = 0;
+    let animId = null;
+
+    // Numerical State Variables for Mass Oscillation: z and vz = dz/dt
+    let z = 0.0; // level relative to static head (m)
+    let vz = 0.0; // vertical velocity in surge tank (m/s)
+
+    let chartInstance = null;
+
+    // Simulation Parameters
+    const params = {
+      q0Lps: 0.65,
+      length: 18.5,
+      diaPipe: 0.025,
+      diaSurge: 0.050,
+      roughnessF: 0.024,
+      celerity: 1000.0,
+      v0: 1.32,
+      tc: 0.037,
+      tPeriod: 17.25,
+      joukowskyDh: 134.5,
+      maxObservedHmax: 28.5,
+      maxObservedHmin: -22.0
+    };
+
+    // Recorded Points for Oscillogram
+    let timeHistory = [];
+    let zHistory = [];
+
+    // Official Lab Benchmark Points from Formato X.1
+    const labBenchmark = [
+      { t: 1.85, z: 28.5 },
+      { t: 3.70, z: -22.0 },
+      { t: 5.55, z: 19.8 },
+      { t: 7.40, z: -15.4 },
+      { t: 9.25, z: 13.6 },
+      { t: 11.10, z: -10.8 },
+      { t: 12.95, z: 9.4 },
+      { t: 14.80, z: -7.5 },
+      { t: 16.65, z: 6.5 },
+      { t: 18.50, z: -5.1 }
+    ];
+
+    function init() {
+      initChart();
+      recalculateConstants();
+      resetToSteadyFlow();
+      startSimulationLoop();
+    }
+
+    function onParamChange() {
+      params.q0Lps = parseFloat(document.getElementById('q0Slider').value);
+      params.length = parseFloat(document.getElementById('lSlider').value);
+      params.diaPipe = parseFloat(document.getElementById('dSelect').value);
+      params.diaSurge = parseFloat(document.getElementById('dchSelect').value);
+
+      document.getElementById('q0Val').innerText = params.q0Lps.toFixed(2) + ' L/s';
+      document.getElementById('lVal').innerText = params.length.toFixed(1) + ' m';
+      document.getElementById('dVal').innerText = (params.diaPipe * 1000).toFixed(0) + ' mm';
+      document.getElementById('dchVal').innerText = (params.diaSurge * 1000).toFixed(0) + ' mm';
+
+      recalculateConstants();
+      if (isValveOpen) {
+        resetToSteadyFlow();
+      }
+    }
+
+    function recalculateConstants() {
+      const areaPipe = (Math.PI * Math.pow(params.diaPipe, 2)) / 4.0;
+      const areaSurge = (Math.PI * Math.pow(params.diaSurge, 2)) / 4.0;
+
+      // Velocity in pipe
+      params.v0 = (params.q0Lps / 1000.0) / areaPipe;
+      document.getElementById('v0Label').innerText = params.v0.toFixed(2) + ' m/s';
+
+      // Joukowsky overpressure
+      params.joukowskyDh = (params.celerity * params.v0) / G;
+
+      // Critical time Tc = 2L/a
+      params.tc = (2.0 * params.length) / params.celerity;
+
+      // Theoretical fundamental surge tank period: T = 2 * pi * sqrt((L * A_ch) / (g * A_t))
+      params.tPeriod = 2.0 * Math.PI * Math.sqrt((params.length * areaSurge) / (G * areaPipe));
+
+      // Maximum theoretical first surge peak (with initial damping calibration)
+      const zMaxTeo = params.v0 * Math.sqrt((params.length * areaPipe) / (G * areaSurge));
+      params.maxObservedHmax = zMaxTeo * 100.0 * 0.85; // in cm
+      params.maxObservedHmin = -params.maxObservedHmax * 0.77;
+
+      // Update Labels
+      document.getElementById('periodTeoLabel').innerText = params.tPeriod.toFixed(2) + ' s';
+      document.getElementById('celerityLabel').innerText = params.celerity.toFixed(0) + ' m/s';
+      document.getElementById('tcLabel').innerText = (params.tc * 1000).toFixed(1) + ' ms';
+      document.getElementById('telemetryDeltaH').innerHTML = params.joukowskyDh.toFixed(1) + ' <span class="text-xs font-medium text-slate-500">m</span>';
+      document.getElementById('telemetryDeltaHBar').innerText = 'ΔP = ' + (params.joukowskyDh / 10.197).toFixed(1) + ' bar (Sin Chim.)';
+    }
+
+    function toggleSurgeTank() {
+      isSurgeTankEnabled = document.getElementById('surgeTankActive').checked;
+      const stGroup = document.getElementById('surgeTankGroup');
+      if (isSurgeTankEnabled) {
+        stGroup.setAttribute('opacity', '1');
+      } else {
+        stGroup.setAttribute('opacity', '0.2');
+      }
+    }
+
+    function resetToSteadyFlow() {
+      isValveOpen = true;
+      simTime = 0;
+      z = 0;
+      vz = 0;
+      timeHistory = [];
+      zHistory = [];
+
+      // Initial steady head loss in surge tank (depression below static level)
+      const areaPipe = (Math.PI * Math.pow(params.diaPipe, 2)) / 4.0;
+      const v = (params.q0Lps / 1000.0) / areaPipe;
+      const hf0 = params.roughnessF * (params.length / params.diaPipe) * (Math.pow(v, 2) / (2.0 * G));
+      z = -hf0;
+
+      const badge = document.getElementById('transientBadge');
+      badge.className = 'text-xs font-bold font-mono px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300';
+      badge.innerText = 'ESTADO: FLUJO PERMANENTE ESTABLE';
+
+      // SVG Elements
+      document.getElementById('svgValveStem').setAttribute('transform', 'rotate(0)');
+      document.getElementById('svgOutflowJet').setAttribute('opacity', '1');
+      document.getElementById('svgShockWave').setAttribute('opacity', '0');
+
+      updateVisuals();
+      updateChart();
+    }
+
+    function triggerFastClosure() {
+      if (!isValveOpen) {
+        resetToSteadyFlow();
+        return;
+      }
+      isValveOpen = false;
+      simTime = 0;
+      timeHistory = [];
+      zHistory = [];
+
+      const badge = document.getElementById('transientBadge');
+      badge.className = 'text-xs font-bold font-mono px-2.5 py-1 rounded-lg bg-red-100 text-red-800 border border-red-300 animate-pulse';
+      badge.innerText = 'ESTADO: ¡TRANSITORIO ACTIVO (GOLPE DE ARIETE)!';
+
+      // Snap valve shut
+      document.getElementById('svgValveStem').setAttribute('transform', 'rotate(90, 13, -10)');
+      document.getElementById('svgOutflowJet').setAttribute('opacity', '0');
+      document.getElementById('svgShockWave').setAttribute('opacity', '0.9');
+
+      // Initial surge tank velocity impulse vz = v0 * (At / Ach)
+      const areaPipe = (Math.PI * Math.pow(params.diaPipe, 2)) / 4.0;
+      const areaSurge = (Math.PI * Math.pow(params.diaSurge, 2)) / 4.0;
+      vz = params.v0 * (areaPipe / areaSurge);
+    }
+
+    function startSimulationLoop() {
+      let lastTimestamp = performance.now();
+
+      function step(now) {
+        const dtReal = (now - lastTimestamp) / 1000.0;
+        lastTimestamp = now;
+
+        // Run numerical time integration when valve is shut
+        if (!isValveOpen && simTime < 30.0) {
+          const subSteps = 10;
+          const dt = (Math.min(dtReal, 0.05)) / subSteps;
+
+          const areaPipe = (Math.PI * Math.pow(params.diaPipe, 2)) / 4.0;
+          const areaSurge = (Math.PI * Math.pow(params.diaSurge, 2)) / 4.0;
+          const areaRatio = areaSurge / areaPipe;
+
+          for (let i = 0; i < subSteps; i++) {
+            if (isSurgeTankEnabled) {
+              // Mass oscillation equation: d2z/dt2 = -(g / L) * z - sign(vz) * (f / 2 D) * (Ach / At)^2 * vz^2
+              const restoring = -(G / params.length) * z;
+              const damping = -Math.sign(vz) * (params.roughnessF / (2.0 * params.diaPipe)) * Math.pow(areaRatio, 2) * Math.pow(vz, 2);
+              const az = restoring + damping;
+
+              vz += az * dt;
+              z += vz * dt;
+            } else {
+              // High frequency Joukowsky wave damping without surge tank
+              const omega = (2.0 * Math.PI) / params.tc;
+              z = (params.joukowskyDh * Math.cos(omega * simTime)) * Math.exp(-simTime * 0.3) / 100.0;
+            }
+            simTime += dt;
+          }
+
+          // Record trajectory for chart
+          timeHistory.push(simTime);
+          zHistory.push(z * 100.0); // store in cm
+
+          if (timeHistory.length > 300) {
+            timeHistory.shift();
+            zHistory.shift();
+          }
+
+          updateVisuals();
+          updateChart();
+        }
+
+        animId = requestAnimationFrame(step);
+      }
+
+      animId = requestAnimationFrame(step);
+    }
+
+    function updateVisuals() {
+      // Datum 0 level in surge tank is at Y=95. Scale: 1 cm = 2.0 pixels
+      const zCm = z * 100.0;
+      const yMeniscus = 95 - (zCm * 1.6);
+
+      // Surge water element
+      const svgSurge = document.getElementById('svgSurgeWater');
+      svgSurge.setAttribute('y', Math.max(10, Math.min(200, yMeniscus)));
+      svgSurge.setAttribute('height', Math.max(0, 212 - yMeniscus));
+
+      document.getElementById('svgSurgeMeniscus').setAttribute('y1', yMeniscus);
+      document.getElementById('svgSurgeMeniscus').setAttribute('y2', yMeniscus);
+
+      // Surge pin
+      document.getElementById('svgSurgePin').setAttribute('transform', `translate(30, ${yMeniscus})`);
+      document.getElementById('svgSurgeCmText').textContent = (zCm >= 0 ? '+' : '') + zCm.toFixed(1) + ' cm';
+
+      // Telemetry
+      document.getElementById('telemetryZ').innerHTML = (zCm >= 0 ? '+' : '') + zCm.toFixed(1) + ' <span class="text-xs font-medium text-slate-500">cm</span>';
+      document.getElementById('telemetryDzDt').innerText = 'dz/dt = ' + vz.toFixed(2) + ' m/s';
+      document.getElementById('telemetryHmax').innerHTML = params.maxObservedHmax.toFixed(1) + ' <span class="text-xs font-medium text-slate-500">cm</span>';
+      document.getElementById('telemetryHmin').innerText = 'h_min = ' + params.maxObservedHmin.toFixed(1) + ' cm';
+      document.getElementById('timeElapsedLabel').innerText = simTime.toFixed(2) + ' s';
+
+      // Needle on valve pressure gauge
+      const pressHead = isSurgeTankEnabled ? Math.max(0, 3.0 + z) : (isValveOpen ? 0.5 : params.joukowskyDh);
+      const gaugeBar = pressHead / 10.197;
+      document.getElementById('svgPressureGaugeVal').textContent = gaugeBar.toFixed(1) + ' bar';
+
+      const needleAngle = Math.min(130, Math.max(-130, (gaugeBar / 15.0) * 240 - 120));
+      const rad = (needleAngle * Math.PI) / 180;
+      const needle = document.getElementById('svgArieteGaugeNeedle');
+      needle.setAttribute('x2', 12 * Math.sin(rad));
+      needle.setAttribute('y2', -12 * Math.cos(rad));
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('oscilloChartCanvas').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Nivel Simulado z(t) [cm]',
+              data: [],
+              borderColor: '#0284C7',
+              backgroundColor: 'rgba(2, 132, 199, 0.08)',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              fill: true,
+              tension: 0.2
+            },
+            {
+              label: 'Datos de Laboratorio (Formato X.1)',
+              data: labBenchmark.map(p => ({ x: p.t, y: p.z })),
+              borderColor: '#DC2626',
+              backgroundColor: '#DC2626',
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              showLine: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { boxWidth: 12, font: { size: 11, family: 'Inter' } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(c) {
+                  return c.dataset.label + ': ' + c.parsed.y.toFixed(1) + ' cm a t=' + c.parsed.x.toFixed(2) + ' s';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: 'linear',
+              min: 0,
+              max: 20,
+              title: { display: true, text: 'Tiempo transcurrido t (segundos)', font: { size: 11 } }
+            },
+            y: {
+              min: -35,
+              max: 35,
+              title: { display: true, text: 'Nivel en Chimenea z (cm)', font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    function updateChart() {
+      if (!chartInstance) return;
+
+      const simPoints = timeHistory.map((t, i) => ({ x: t, y: zHistory[i] }));
+      chartInstance.data.datasets[0].data = simPoints;
+      chartInstance.update('none');
+    }
+
+    function loadPreset(type) {
+      if (type === 'formatoX1') {
+        document.getElementById('q0Slider').value = 0.65;
+        document.getElementById('lSlider').value = 18.5;
+        document.getElementById('dSelect').value = '0.025';
+        document.getElementById('dchSelect').value = '0.050';
+        document.getElementById('surgeTankActive').checked = true;
+      } else if (type === 'alta_presion') {
+        document.getElementById('q0Slider').value = 1.20;
+        document.getElementById('lSlider').value = 25.0;
+        document.getElementById('dSelect').value = '0.025';
+        document.getElementById('dchSelect').value = '0.050';
+        document.getElementById('surgeTankActive').checked = true;
+      } else if (type === 'sin_chimenea') {
+        document.getElementById('q0Slider').value = 0.65;
+        document.getElementById('surgeTankActive').checked = false;
+      }
+      toggleSurgeTank();
+      onParamChange();
+      triggerFastClosure();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      init();
+    });
+  </script>
+</body>
+</html>

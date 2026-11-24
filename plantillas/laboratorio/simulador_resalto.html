@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Resalto Hidráulico | Laboratorio Virtual Unicauca</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            unicauca: {
+              blue: '#002855',
+              dark: '#001938',
+              light: '#0A4A8F',
+              accent: '#0284C7',
+              gold: '#D97706',
+              goldLight: '#FBBF24',
+              red: '#C8102E',
+              surface: '#F8FAFC',
+              border: '#E2E8F0'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css"/>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+
+  <style>
+    @keyframes bubbleRise {
+      0% { transform: translateY(0px) scale(0.8); opacity: 0.4; }
+      50% { transform: translateY(-8px) scale(1.1); opacity: 0.9; }
+      100% { transform: translateY(-16px) scale(1.3); opacity: 0; }
+    }
+    .jump-foam {
+      animation: bubbleRise 0.9s ease-in-out infinite;
+    }
+    @keyframes foamShimmer {
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 0.65; }
+    }
+    .foam-shimmer {
+      animation: foamShimmer 1.5s ease-in-out infinite;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+  <div id="resaltoApp" class="flex-1 flex flex-col">
+
+    <!-- TOP UNIVERSITY HEADER -->
+    <header class="bg-unicauca-blue text-white shadow-md border-b-2 border-unicauca-gold shrink-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shadow-inner">
+            <span class="text-xl">⚡</span>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-[10px] uppercase tracking-wider font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                Práctica VI • Laboratorio Virtual
+              </span>
+              <span class="text-xs text-blue-200 hidden md:inline">Universidad del Cauca</span>
+            </div>
+            <h1 class="text-base sm:text-lg font-bold leading-tight tracking-tight text-white">
+              Simulador de Flujo Rápidamente Variado: Resalto Hidráulico
+            </h1>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <!-- Preset Canal Laboratorio Unicauca -->
+          <button 
+            @click="loadLabPreset"
+            class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold transition flex items-center space-x-1.5 border border-amber-400/30 shadow-sm"
+          >
+            <span>🔬 Preset Canal Laboratorio (Tabla VI.1)</span>
+          </button>
+          <a 
+            href="index.html" 
+            class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex items-center space-x-1 border border-white/15"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <span class="hidden sm:inline">Guía Principal</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- STATUS BANNER & RESALTO CLASSIFICATION -->
+    <div class="bg-slate-900 text-white text-xs border-b border-slate-800 shrink-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 space-y-2">
+        <!-- Row 1: Jump type and key values -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center space-x-3">
+            <span class="text-slate-400 font-medium">Tipo de Resalto:</span>
+            <span 
+              :class="jumpTypeBadgeClass"
+              class="px-3 py-1 rounded-full font-bold border flex items-center space-x-2 text-xs sm:text-sm"
+            >
+              <span>{{ jumpTypeInfo.icon }}</span>
+              <span>{{ jumpTypeInfo.name }} (Fr₁ = {{ Fr1.toFixed(2) }})</span>
+            </span>
+          </div>
+          <div class="flex flex-wrap items-center gap-4 text-[11px] text-slate-300 font-mono">
+            <div><span>Tirante Inicial y₁:</span> <strong class="text-amber-400">{{ (y1 * 100).toFixed(2) }} cm</strong></div>
+            <div><span>Secuente Teórico y₂t:</span> <strong class="text-emerald-400">{{ (y2Teo * 100).toFixed(2) }} cm</strong></div>
+            <div><span>Pérdida ΔE:</span> <strong class="text-red-400">{{ (deltaE * 100).toFixed(2) }} cm</strong></div>
+            <div><span>Longitud Lj:</span> <strong class="text-cyan-400">{{ (Lj * 100).toFixed(1) }} cm</strong></div>
+            <div><span>Eficiencia E₂/E₁:</span> <strong class="text-white">{{ (efficiency * 100).toFixed(1) }}%</strong></div>
+          </div>
+        </div>
+        <!-- Row 2: Jump stability indicator -->
+        <div class="flex items-center space-x-3">
+          <span class="text-slate-400 font-medium">Estado del Resalto:</span>
+          <span 
+            :class="jumpStability.cssClass"
+            class="px-3 py-1 rounded-full font-bold border flex items-center space-x-2 text-xs"
+          >
+            <span>{{ jumpStability.icon }}</span>
+            <span>{{ jumpStability.status }}</span>
+          </span>
+          <span class="text-slate-500 text-[11px] font-mono">
+            y₂/y₂_teo = {{ y2Teo > 0 ? (y2 / y2Teo).toFixed(3) : '—' }}
+          </span>
+          <span class="text-slate-500 text-[10px]">{{ jumpStability.detail }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 shadow-sm shrink-0">
+      <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
+        <button 
+          @click="activeTab = 'simulador'"
+          :class="activeTab === 'simulador' ? 'bg-unicauca-blue text-white shadow-sm font-bold' : 'text-slate-600 hover:bg-slate-100 font-medium'"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm transition flex items-center space-x-2 whitespace-nowrap"
+        >
+          <span>🌊 Perfil Longitudinal del Resalto</span>
+        </button>
+        <button 
+          @click="activeTab = 'momentum'"
+          :class="activeTab === 'momentum' ? 'bg-unicauca-blue text-white shadow-sm font-bold' : 'text-slate-600 hover:bg-slate-100 font-medium'"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm transition flex items-center space-x-2 whitespace-nowrap"
+        >
+          <span>⚖️ Curva de Fuerza Específica (Momentum)</span>
+        </button>
+        <button 
+          @click="activeTab = 'theory'"
+          :class="activeTab === 'theory' ? 'bg-unicauca-blue text-white shadow-sm font-bold' : 'text-slate-600 hover:bg-slate-100 font-medium'"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm transition flex items-center space-x-2 whitespace-nowrap"
+        >
+          <span>📚 Fundamento Teórico & Bélanger</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 w-full">
+
+      <!-- ========================================== -->
+      <!-- TAB 1: SIMULADOR DE RESALTO                 -->
+      <!-- ========================================== -->
+      <section v-show="activeTab === 'simulador'" class="space-y-5">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+          
+          <!-- LEFT CONTROLS: Parámetros del Canal y Compuertas -->
+          <div class="space-y-4">
+            
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue pb-2 border-b border-slate-100">
+                ⚙️ Controles del Chorro y Compuertas
+              </h3>
+
+              <div class="space-y-3 text-xs">
+                <div>
+                  <div class="flex justify-between font-bold text-slate-700 mb-1">
+                    <span>Caudal Q:</span>
+                    <strong class="font-mono text-unicauca-blue">{{ (Q * 1000).toFixed(1) }} L/s ({{ Q.toFixed(4) }} m³/s)</strong>
+                  </div>
+                  <input type="range" v-model.number="Q" min="0.005" max="0.060" step="0.001" class="w-full accent-unicauca-blue"/>
+                </div>
+
+                <!-- COMPUERTA AGUAS ARRIBA → fija y₁ -->
+                <div>
+                  <div class="flex justify-between font-bold text-slate-700 mb-1">
+                    <span>① Compuerta Aguas Arriba (a₁):</span>
+                    <strong class="font-mono text-red-600">{{ (gateA1 * 100).toFixed(2) }} cm</strong>
+                  </div>
+                  <input type="range" v-model.number="gateA1" min="0.01" max="0.08" step="0.002" class="w-full accent-red-600"/>
+                  <span class="text-[10px] text-slate-400">Fija el tirante supercrítico y₁ ≈ 0.61 · a₁ → y₁ = {{ (y1 * 100).toFixed(2) }} cm</span>
+                </div>
+
+                <!-- COMPUERTA DE COLA AGUAS ABAJO → impone y₂ -->
+                <div>
+                  <div class="flex justify-between font-bold text-slate-700 mb-1">
+                    <span>③ Compuerta de Cola Aguas Abajo (a₂):</span>
+                    <strong class="font-mono text-purple-600">{{ (gateA2 * 100).toFixed(1) }} cm</strong>
+                  </div>
+                  <input type="range" v-model.number="gateA2" min="0.02" max="0.25" step="0.005" class="w-full accent-purple-600"/>
+                  <div class="text-[10px] text-slate-500">Impone el nivel subcrítico y₂ aguas abajo → y₂ = {{ (y2 * 100).toFixed(2) }} cm</div>
+                  <div class="text-[10px] mt-0.5 font-bold" :class="jumpStability.textClass">
+                    {{ jumpStability.icon }} {{ jumpStability.status }}
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                  <div>
+                    <label class="font-bold text-slate-700 block mb-1">Ancho Canal b (m):</label>
+                    <input type="number" v-model.number="b" step="0.05" min="0.1" class="w-full font-mono p-1.5 border rounded"/>
+                  </div>
+                  <div>
+                    <label class="font-bold text-slate-700 block mb-1">Tirante Crítico yc:</label>
+                    <div class="p-1.5 bg-slate-100 font-mono text-slate-700 rounded font-bold">{{ (yc * 100).toFixed(2) }} cm</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Jump Physical Properties Card -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-2 text-xs">
+              <h3 class="font-bold uppercase tracking-wider text-unicauca-blue pb-2 border-b border-slate-100 text-xs">
+                📊 Parámetros Hidrodinámicos
+              </h3>
+              <div class="space-y-1.5">
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Número de Froude Inicial (Fr₁):</span>
+                  <strong class="font-mono text-red-600 font-bold">{{ Fr1.toFixed(3) }}</strong>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Número de Froude Secuente (Fr₂):</span>
+                  <strong class="font-mono text-emerald-700 font-bold">{{ Fr2.toFixed(3) }}</strong>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Tirante y₂ Teórico (Bélanger):</span>
+                  <strong class="font-mono text-blue-600">{{ (y2Teo * 100).toFixed(2) }} cm</strong>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Tirante y₂ Real (Compuerta Cola):</span>
+                  <strong class="font-mono text-purple-600">{{ (y2 * 100).toFixed(2) }} cm</strong>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Profundidad Pool Aguas Arriba (y₀):</span>
+                  <strong class="font-mono text-cyan-600">{{ (y0Pool * 100).toFixed(2) }} cm</strong>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Disipación de Carga (ΔE):</span>
+                  <strong class="font-mono text-red-600">{{ (deltaE * 100).toFixed(2) }} cm</strong>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Longitud Teórica (Silvester):</span>
+                  <strong class="font-mono">{{ (Lj * 100).toFixed(1) }} cm</strong>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Potencia Disipada:</span>
+                  <strong class="font-mono text-amber-600">{{ (9810 * Q * deltaE).toFixed(2) }} Watts</strong>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT CANVAS: VISTA LONGITUDINAL INTERACTIVA -->
+          <div class="lg:col-span-2 space-y-4">
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+              <div class="flex justify-between items-center pb-2 border-b border-slate-100 text-xs">
+                <span class="font-bold text-slate-800">
+                  Perfil Longitudinal del Resalto Hidráulico
+                </span>
+                <span class="text-[11px] font-mono font-bold text-unicauca-blue">
+                  Q = {{ (Q * 1000).toFixed(2) }} L/s | b = {{ b }} m
+                </span>
+              </div>
+
+              <!-- SVG Canvas of Hydraulic Jump -->
+              <div class="relative w-full bg-slate-50 rounded-xl border border-slate-200 p-2 flex items-center justify-center overflow-hidden">
+                <svg viewBox="0 0 780 370" class="w-full h-auto max-h-[400px]">
+                  <defs>
+                    <!-- Water gradient -->
+                    <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(2, 132, 199, 0.55)"/>
+                      <stop offset="100%" stop-color="rgba(2, 132, 199, 0.25)"/>
+                    </linearGradient>
+                    <linearGradient id="poolGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(2, 132, 199, 0.50)"/>
+                      <stop offset="100%" stop-color="rgba(2, 132, 199, 0.30)"/>
+                    </linearGradient>
+                  </defs>
+
+                  <!-- ===== CANAL BED ===== -->
+                  <rect x="30" y="280" width="710" height="40" fill="#cbd5e1" stroke="#475569" stroke-width="2"/>
+                  <line x1="30" y1="280" x2="740" y2="280" stroke="#334155" stroke-width="2"/>
+
+                  <!-- ===== UPSTREAM POOL (behind upstream gate) ===== -->
+                  <rect 
+                    x="30" 
+                    :y="280 - y0Pool * svgScale" 
+                    width="105" 
+                    :height="y0Pool * svgScale" 
+                    fill="url(#poolGrad)"
+                  />
+                  <!-- Pool surface line -->
+                  <line x1="30" :y1="280 - y0Pool * svgScale" x2="133" :y2="280 - y0Pool * svgScale" stroke="#0284C7" stroke-width="1.5"/>
+                  <!-- Pool label -->
+                  <text x="55" :y="280 - y0Pool * svgScale - 6" fill="#0e7490" font-size="9" font-family="JetBrains Mono" font-weight="bold" text-anchor="middle">
+                    y₀={{ (y0Pool*100).toFixed(1) }}cm
+                  </text>
+
+                  <!-- ===== WATER BODY (gate to gate) ===== -->
+                  <!-- Case WITH hydraulic jump (y2 > y1) -->
+                  <path 
+                    v-if="hasJump"
+                    :d="waterPathJump"
+                    fill="url(#waterGrad)" 
+                    stroke="#0284C7" 
+                    stroke-width="2"
+                  />
+                  <!-- Case WITHOUT jump (y2 <= y1, supercritical throughout) -->
+                  <path 
+                    v-else
+                    :d="waterPathNoJump"
+                    fill="url(#waterGrad)" 
+                    stroke="#0284C7" 
+                    stroke-width="2"
+                  />
+
+                  <!-- ===== JUMP ROLLER TURBULENCE (only when jump exists) ===== -->
+                  <g v-if="hasJump" :transform="'translate(' + (jumpStartPos + jumpLengthPx * 0.15) + ',' + (280 - y2 * svgScale + 5) + ')'">
+                    <circle cx="10" cy="8" r="4" fill="#ffffff" opacity="0.7" class="jump-foam"/>
+                    <circle cx="35" cy="3" r="6" fill="#ffffff" opacity="0.6" class="jump-foam" style="animation-delay: 0.2s"/>
+                    <circle cx="60" cy="10" r="5" fill="#ffffff" opacity="0.7" class="jump-foam" style="animation-delay: 0.4s"/>
+                    <circle cx="90" cy="5" r="7" fill="#ffffff" opacity="0.5" class="jump-foam" style="animation-delay: 0.3s"/>
+                    <circle cx="120" cy="8" r="4" fill="#ffffff" opacity="0.6" class="jump-foam" style="animation-delay: 0.5s"/>
+                    <!-- Foam Roller Ellipse -->
+                    <ellipse 
+                      :cx="jumpLengthPx * 0.35" 
+                      cy="12" 
+                      :rx="Math.min(jumpLengthPx * 0.4, 80)" 
+                      ry="10" 
+                      fill="rgba(255, 255, 255, 0.4)" 
+                      class="foam-shimmer"
+                    />
+                  </g>
+
+                  <!-- ===== CRITICAL DEPTH LINE yc ===== -->
+                  <line x1="140" :y1="280 - yc * svgScale" x2="690" :y2="280 - yc * svgScale" stroke="#dc2626" stroke-dasharray="6,4" stroke-width="1.5"/>
+                  <text x="695" :y="280 - yc * svgScale + 4" fill="#dc2626" font-size="9" font-family="JetBrains Mono" font-weight="bold">
+                    yc={{ (yc*100).toFixed(1) }}cm
+                  </text>
+
+                  <!-- ===== ENERGY LINE TEL ===== -->
+                  <path 
+                    v-if="hasJump"
+                    :d="'M 140,' + (280 - E1 * svgScale) + 
+                        ' L ' + (jumpStartPos + 20) + ',' + (280 - E1 * svgScale) + 
+                        ' L ' + (jumpStartPos + jumpLengthPx) + ',' + (280 - E2 * svgScale) + 
+                        ' L 690,' + (280 - E2 * svgScale)"
+                    fill="none" 
+                    stroke="#D97706" 
+                    stroke-dasharray="4,3" 
+                    stroke-width="2"
+                  />
+                  <text v-if="hasJump" x="695" :y="280 - E2 * svgScale + 4" fill="#D97706" font-size="9" font-family="JetBrains Mono" font-weight="bold">TEL</text>
+
+                  <!-- ===== UPSTREAM SLUICE GATE ===== -->
+                  <rect 
+                    x="125" 
+                    :y="280 - y0Pool * svgScale - 25" 
+                    width="12" 
+                    :height="y0Pool * svgScale + 25 - gateA1 * svgScale" 
+                    fill="#334155" 
+                    stroke="#1e293b" 
+                    stroke-width="1.5"
+                    rx="1"
+                  />
+                  <!-- Gate opening indicator -->
+                  <line x1="137" :y1="280 - gateA1 * svgScale" x2="155" :y2="280 - gateA1 * svgScale" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+                  <text x="157" :y="280 - gateA1 * svgScale + 3" fill="#ef4444" font-size="8" font-family="JetBrains Mono">a₁</text>
+
+                  <!-- ===== TAILGATE (COMPUERTA DE COLA) ===== -->
+                  <!-- The top of the tailgate aligns with y2 water level -->
+                  <rect 
+                    x="690" 
+                    :y="280 - gateA2 * svgScale" 
+                    width="12" 
+                    :height="gateA2 * svgScale" 
+                    fill="#334155" 
+                    stroke="#1e293b" 
+                    stroke-width="1.5"
+                    rx="1"
+                  />
+                  <!-- Tailgate top marker showing it controls y2 -->
+                  <line 
+                    :x1="680" 
+                    :y1="280 - gateA2 * svgScale" 
+                    :x2="710" 
+                    :y2="280 - gateA2 * svgScale" 
+                    stroke="#7c3aed" 
+                    stroke-width="1.5" 
+                    stroke-dasharray="3,2"
+                  />
+
+                  <!-- ===== ANNOTATIONS ===== -->
+                  <!-- y1 label -->
+                  <text 
+                    :x="jumpStartPos - 40" 
+                    :y="280 - y1 * svgScale - 8" 
+                    fill="#dc2626" font-size="10" font-family="JetBrains Mono" font-weight="bold"
+                  >
+                    y₁={{ (y1*100).toFixed(1) }}cm
+                  </text>
+                  <!-- y2 label -->
+                  <text 
+                    :x="jumpStartPos + jumpLengthPx + 10" 
+                    :y="280 - y2 * svgScale - 8" 
+                    fill="#7c3aed" font-size="10" font-family="JetBrains Mono" font-weight="bold"
+                  >
+                    y₂={{ (y2*100).toFixed(1) }}cm
+                  </text>
+
+                  <!-- Vertical dimension arrows for y1 -->
+                  <line :x1="jumpStartPos - 55" y1="280" :x2="jumpStartPos - 55" :y2="280 - y1 * svgScale" stroke="#dc2626" stroke-width="1" marker-start="url(#arrowDown)" marker-end="url(#arrowUp)"/>
+
+                  <!-- y2 Teo reference (when y2 != y2Teo) -->
+                  <line 
+                    v-if="hasJump && Math.abs(y2 - y2Teo) > 0.002"
+                    :x1="jumpStartPos + jumpLengthPx + 5" 
+                    :y1="280 - y2Teo * svgScale" 
+                    :x2="690" 
+                    :y2="280 - y2Teo * svgScale" 
+                    stroke="#059669" 
+                    stroke-dasharray="2,3" 
+                    stroke-width="1"
+                  />
+                  <text 
+                    v-if="hasJump && Math.abs(y2 - y2Teo) > 0.002"
+                    :x="695" 
+                    :y="280 - y2Teo * svgScale + 4" 
+                    fill="#059669" font-size="8" font-family="JetBrains Mono" font-style="italic"
+                  >
+                    y₂t={{ (y2Teo*100).toFixed(1) }}
+                  </text>
+
+                  <!-- ===== Lj DIMENSION BAR ===== -->
+                  <g v-if="hasJump && Lj > 0">
+                    <line :x1="jumpStartPos" y1="305" :x2="jumpStartPos + jumpLengthPx" y2="305" stroke="#0284C7" stroke-width="1.5"/>
+                    <line :x1="jumpStartPos" y1="300" :x2="jumpStartPos" y2="310" stroke="#0284C7" stroke-width="1.5"/>
+                    <line :x1="jumpStartPos + jumpLengthPx" y1="300" :x2="jumpStartPos + jumpLengthPx" y2="310" stroke="#0284C7" stroke-width="1.5"/>
+                    <text :x="jumpStartPos + jumpLengthPx/2" y="320" text-anchor="middle" font-size="9" font-family="JetBrains Mono" fill="#0284C7">
+                      Lj ≈ {{ (Lj*100).toFixed(1) }} cm
+                    </text>
+                  </g>
+
+                  <!-- ===== SECTION LABELS ===== -->
+                  <text x="70" y="345" text-anchor="middle" fill="#475569" font-size="8" font-family="Inter" font-weight="bold">POOL</text>
+                  <text :x="(140 + jumpStartPos) / 2" y="345" text-anchor="middle" fill="#dc2626" font-size="8" font-family="Inter" font-weight="bold">① SUPERCRÍTICO</text>
+                  <text v-if="hasJump" :x="jumpStartPos + jumpLengthPx/2" y="355" text-anchor="middle" fill="#0284C7" font-size="8" font-family="Inter" font-weight="bold">② RESALTO</text>
+                  <text v-if="hasJump" :x="(jumpStartPos + jumpLengthPx + 690)/2" y="345" text-anchor="middle" fill="#7c3aed" font-size="8" font-family="Inter" font-weight="bold">③ SUBCRÍTICO</text>
+
+                  <!-- Flow direction arrow -->
+                  <text x="420" y="15" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="Inter">Dirección del Flujo →</text>
+
+                  <!-- Stability status on SVG -->
+                  <text x="630" y="30" text-anchor="middle" font-size="10" font-family="JetBrains Mono" font-weight="bold"
+                    :fill="jumpStability.svgColor">
+                    {{ jumpStability.icon }} {{ jumpStability.status }}
+                  </text>
+                </svg>
+              </div>
+
+              <!-- Data Table matching Tabla VI.1 -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-center border-collapse">
+                  <thead>
+                    <tr class="bg-unicauca-blue text-amber-300 font-bold">
+                      <th class="p-2 border border-blue-900">Ensayo</th>
+                      <th class="p-2 border border-blue-900">Caudal Q (L/s)</th>
+                      <th class="p-2 border border-blue-900">Tirante y₁ (cm)</th>
+                      <th class="p-2 border border-blue-900">Froude Fr₁</th>
+                      <th class="p-2 border border-blue-900">y₂ Teórico (cm)</th>
+                      <th class="p-2 border border-blue-900">y₂ Real (cm)</th>
+                      <th class="p-2 border border-blue-900">Pérdida ΔE (cm)</th>
+                      <th class="p-2 border border-blue-900">Longitud Lj (cm)</th>
+                      <th class="p-2 border border-blue-900">Clasificación</th>
+                      <th class="p-2 border border-blue-900">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="bg-amber-50 font-bold border-b border-slate-200">
+                      <td class="p-1.5 text-slate-700">Actual (Simulado)</td>
+                      <td class="p-1.5 font-mono text-unicauca-blue">{{ (Q * 1000).toFixed(2) }}</td>
+                      <td class="p-1.5 font-mono text-red-600">{{ (y1 * 100).toFixed(2) }}</td>
+                      <td class="p-1.5 font-mono">{{ Fr1.toFixed(3) }}</td>
+                      <td class="p-1.5 font-mono text-emerald-700 font-bold">{{ (y2Teo * 100).toFixed(2) }}</td>
+                      <td class="p-1.5 font-mono text-purple-700">{{ (y2 * 100).toFixed(2) }}</td>
+                      <td class="p-1.5 font-mono text-red-600">{{ (deltaE * 100).toFixed(2) }}</td>
+                      <td class="p-1.5 font-mono">{{ (Lj * 100).toFixed(1) }}</td>
+                      <td class="p-1.5 text-[11px]" :class="jumpTypeBadgeClass">{{ jumpTypeInfo.name }}</td>
+                      <td class="p-1.5 text-[11px] font-bold" :class="jumpStability.textClass">{{ jumpStability.icon }} {{ jumpStability.status }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: CURVA DE MOMENTUM (FUERZA ESPECÍFICA)-->
+      <!-- ========================================== -->
+      <section v-show="activeTab === 'momentum'" class="space-y-5">
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+          <div class="pb-2 border-b border-slate-100 flex justify-between items-center">
+            <div>
+              <h2 class="text-sm font-bold text-unicauca-blue">
+                Función de Fuerza Específica (Función Momentum M)
+              </h2>
+              <p class="text-xs text-slate-500">
+                Demostración del principio de conservación de momentum a través del resalto hidráulico: \( M(y_1) = M(y_2) \).
+              </p>
+            </div>
+          </div>
+
+          <div class="p-3 bg-blue-50 text-unicauca-blue rounded-xl text-xs font-mono text-center font-bold">
+            \[ M = \frac{Q^2}{g \cdot A} + A \cdot \bar{y} = \frac{Q^2}{g \cdot b \cdot y} + \frac{b \cdot y^2}{2} \]
+          </div>
+
+          <div class="relative w-full h-[380px] bg-slate-50 rounded-xl p-2 border border-slate-100 flex items-center justify-center">
+            <canvas id="momentumCanvas" class="w-full h-full"></canvas>
+          </div>
+
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1 text-slate-700">
+            <strong>Explicación Hidráulica:</strong>
+            <p>
+              Para un mismo caudal \( Q \), la curva de fuerza específica \( M(y) \) presenta un mínimo en el tirante crítico \( y_c \). Cualquier recta vertical \( M = M_0 \) corta la curva en exactamente dos puntos: el tirante supercrítico inicial \( y_1 \) (rama inferior) y el tirante subcrítico secuente \( y_2 \) (rama superior). Como la fuerza de fricción en la corta longitud del resalto es insignificante, la cantidad de movimiento se conserva intacta: \( M_1 = M_2 \).
+            </p>
+            <p v-if="hasJump && Math.abs(y2 - y2Teo) > 0.003" class="text-amber-700 font-bold mt-1">
+              ⚠️ Nota: El punto y₂ real (púrpura) difiere del conjugado teórico y₂_teo (verde), lo que indica que el resalto no está en la condición ideal de Bélanger. La diferencia se debe a la posición de la compuerta de cola.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: FUNDAMENTO TEÓRICO                   -->
+      <!-- ========================================== -->
+      <section v-show="activeTab === 'theory'" class="space-y-5">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-5">
+          <h2 class="text-base font-bold text-unicauca-blue pb-2 border-b border-slate-100">
+            Fundamento Teórico: Flujo Rápidamente Variado y Resalto Hidráulico
+          </h2>
+
+          <div class="space-y-4 text-xs leading-relaxed text-slate-700">
+            <div>
+              <h3 class="font-bold text-slate-900 mb-1">1. Ecuación de Bélanger para Tirantes Secuentes</h3>
+              <p>
+                Aplicando el teorema de la cantidad de movimiento entre la sección supercrítica (1) y la subcrítica (2), despreciando el rozamiento de fondo:
+              </p>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center my-2 text-unicauca-blue font-bold">
+                \[ \frac{y_2}{y_1} = \frac{1}{2}\left(\sqrt{1 + 8 \cdot Fr_1^2} - 1\right) \]
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100">
+              <h3 class="font-bold text-slate-900 mb-1">2. Disipación de Energía Específica</h3>
+              <p>
+                Debido a la violenta turbulencia y los rodillos superficiales que atrapan aire, el resalto disipa una gran cantidad de energía mecánica en calor:
+              </p>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center my-2 text-red-700 font-bold">
+                \[ \Delta E = E_1 - E_2 = \frac{(y_2 - y_1)^3}{4 \cdot y_1 \cdot y_2} \]
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100">
+              <h3 class="font-bold text-slate-900 mb-1">3. Clasificación según el USBR (United States Bureau of Reclamation)</h3>
+              <ul class="list-disc list-inside space-y-1">
+                <li><strong>\( 1.0 < Fr_1 \le 1.7 \): Resalto Ondular.</strong> Ondulaciones superficiales, pérdida de energía insignificante.</li>
+                <li><strong>\( 1.7 < Fr_1 \le 2.5 \): Resalto Débil.</strong> Pequeños rodillos, disipación de energía entre 5% y 18%.</li>
+                <li><strong>\( 2.5 < Fr_1 \le 4.5 \): Resalto Oscilante.</strong> Chorro pulsante que genera olas de gran amplitud aguas abajo.</li>
+                <li><strong>\( 4.5 < Fr_1 \le 9.0 \): Resalto Estable y Equilibrado.</strong> Excelente disipador de energía (45% a 70%), altamente insensible a variaciones de nivel de aguas abajo.</li>
+                <li><strong>\( Fr_1 > 9.0 \): Resalto Fuerte.</strong> Chorro violento y rugoso, disipación superior al 70%.</li>
+              </ul>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100">
+              <h3 class="font-bold text-slate-900 mb-1">4. Secuencia Física del Canal</h3>
+              <p>
+                En un canal de laboratorio con resalto hidráulico, la secuencia de elementos es:
+              </p>
+              <ol class="list-decimal list-inside space-y-1 mt-2">
+                <li><strong>Compuerta aguas arriba (a₁):</strong> Controla la apertura por donde sale el chorro. El tirante supercrítico es \( y_1 \approx C_c \cdot a_1 \) donde \( C_c \approx 0.61 \).</li>
+                <li><strong>Resalto Hidráulico:</strong> El agua pasa abruptamente del tirante supercrítico \( y_1 \) al tirante subcrítico \( y_2 \). La magnitud del salto depende de la diferencia \( y_2 - y_1 \).</li>
+                <li><strong>Compuerta de cola aguas abajo (a₂):</strong> Actúa como barrera que represa el agua e impone el nivel subcrítico \( y_2 \). Al subir la compuerta de cola, \( y_2 \) aumenta y el resalto se hace más grande.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 text-center py-3 text-xs border-t border-slate-800 shrink-0">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <span>Laboratorio Virtual de Hidráulica • Universidad del Cauca • 2026</span>
+        <span class="text-slate-500">Práctica VI: Flujo Rápidamente Variado: Resalto Hidráulico</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
+    const G = 9.81;
+
+    createApp({
+      setup() {
+        const activeTab = ref('simulador');
+
+        // =============================================
+        // INPUT PARAMETERS
+        // =============================================
+        const Q = ref(0.018);     // 18 L/s
+        const b = ref(0.30);      // 30 cm channel width
+        const gateA1 = ref(0.035); // 3.5 cm upstream gate opening
+        const gateA2 = ref(0.12);  // 12 cm tail gate height (controls y2)
+
+        // =============================================
+        // HYDRAULIC COMPUTATIONS
+        // =============================================
+
+        // ① y0Pool: Upstream pool depth — calculated from orifice/energy equation
+        // Q = Cd × b × a1 × √(2g × y0)  →  y0 = Q² / (2g × (Cd × b × a1)²)
+        const y0Pool = computed(() => {
+          const Cd = 0.61;
+          const gateArea = Cd * b.value * gateA1.value;
+          if (gateArea <= 0) return 0.30;
+          let y0 = (Q.value * Q.value) / (2 * G * gateArea * gateArea);
+          // Cap for lab canal (max ~55 cm) and ensure pool > gate opening
+          y0 = Math.min(y0, 0.55);
+          y0 = Math.max(y0, gateA1.value + 0.02);
+          return y0;
+        });
+
+        // ① y1: Supercritical depth after upstream gate (Cc ≈ 0.61)
+        const y1 = computed(() => {
+          return Math.max(0.005, gateA1.value * 0.61);
+        });
+
+        // Unit discharge and critical depth
+        const qFlow = computed(() => Q.value / b.value);
+        const yc = computed(() => Math.pow((qFlow.value * qFlow.value) / G, 1/3));
+
+        // Upstream supercritical flow properties
+        const V1 = computed(() => Q.value / (b.value * y1.value));
+        const Fr1 = computed(() => V1.value / Math.sqrt(G * y1.value));
+        const E1 = computed(() => y1.value + (V1.value * V1.value) / (2 * G));
+
+        // Bélanger Conjugate Depth y2 (theoretical reference)
+        const y2Teo = computed(() => {
+          return (y1.value / 2) * (Math.sqrt(1 + 8 * Fr1.value * Fr1.value) - 1);
+        });
+
+        // ③ y2: Subcritical depth controlled by TAIL GATE
+        // The tail gate imposes the downstream water level
+        const y2 = computed(() => {
+          return gateA2.value;
+        });
+
+        // Downstream subcritical flow properties
+        const V2 = computed(() => Q.value / (b.value * y2.value));
+        const Fr2 = computed(() => V2.value / Math.sqrt(G * y2.value));
+        const E2 = computed(() => y2.value + (V2.value * V2.value) / (2 * G));
+
+        // Energy dissipation
+        const deltaE = computed(() => Math.max(0, E1.value - E2.value));
+        const efficiency = computed(() => E1.value > 0 ? (E2.value / E1.value) : 1);
+
+        // Does a hydraulic jump exist?
+        const hasJump = computed(() => y2.value > y1.value && y2.value > yc.value);
+
+        // Jump length — Silvester formula: Lj ≈ 6.0 × (y2 - y1)
+        const Lj = computed(() => {
+          if (!hasJump.value) return 0;
+          return 6.0 * (y2.value - y1.value);
+        });
+
+        // =============================================
+        // SVG RENDERING COMPUTATIONS
+        // =============================================
+        const svgBed = 280; // y-coordinate of canal bed in SVG
+
+        // Dynamic scale: ensure the tallest element (pool or energy line) fits
+        const svgScale = computed(() => {
+          const maxH = Math.max(y0Pool.value, y2.value, E1.value, yc.value, 0.08);
+          return Math.min(800, 210 / maxH);
+        });
+
+        // Dynamic jump position — moves upstream when submerged, downstream when swept
+        const jumpStartPos = computed(() => {
+          if (!hasJump.value) return 300;
+          const ratio = y2.value / y2Teo.value;
+          const base = 300;
+          if (ratio >= 1.0) {
+            // Submerged: jump moves upstream toward the gate
+            return Math.max(170, base - (ratio - 1) * 180);
+          } else {
+            // Swept: jump moves downstream away from gate
+            return Math.min(500, base + (1 - ratio) * 250);
+          }
+        });
+
+        // Jump length in pixels (horizontal scale ~220 px/m)
+        const horizScale = 220;
+        const jumpLengthPx = computed(() => {
+          if (Lj.value <= 0) return 0;
+          return Math.min(300, Math.max(50, Lj.value * horizScale));
+        });
+
+        // SVG water path WITH hydraulic jump
+        const waterPathJump = computed(() => {
+          const s = svgScale.value;
+          const y1Lvl = svgBed - y1.value * s;
+          const y2Lvl = svgBed - y2.value * s;
+          const js = jumpStartPos.value;
+          const jl = jumpLengthPx.value;
+          // Intermediate level for the S-curve (65% up from y1 to y2)
+          const midLvl = svgBed - (y1.value + (y2.value - y1.value) * 0.65) * s;
+
+          return `M 140,${y1Lvl}` +
+                 ` L ${js},${y1Lvl}` +
+                 ` Q ${js + jl * 0.15},${y1Lvl} ${js + jl * 0.4},${midLvl}` +
+                 ` T ${js + jl},${y2Lvl}` +
+                 ` L 690,${y2Lvl}` +
+                 ` L 690,${svgBed}` +
+                 ` L 140,${svgBed} Z`;
+        });
+
+        // SVG water path WITHOUT jump (supercritical throughout)
+        const waterPathNoJump = computed(() => {
+          const s = svgScale.value;
+          const y1Lvl = svgBed - y1.value * s;
+          return `M 140,${y1Lvl}` +
+                 ` L 690,${y1Lvl}` +
+                 ` L 690,${svgBed}` +
+                 ` L 140,${svgBed} Z`;
+        });
+
+        // =============================================
+        // JUMP CLASSIFICATION & STABILITY
+        // =============================================
+        const jumpTypeInfo = computed(() => {
+          const fr = Fr1.value;
+          if (fr <= 1.05) return { name: 'Sin Resalto (Fr₁ ≈ 1)', icon: '⚖️', color: 'bg-slate-700' };
+          if (fr <= 1.7) return { name: 'Resalto Ondular', icon: '〰️', color: 'bg-blue-600' };
+          if (fr <= 2.5) return { name: 'Resalto Débil', icon: '💧', color: 'bg-cyan-600' };
+          if (fr <= 4.5) return { name: 'Resalto Oscilante', icon: '⚡', color: 'bg-amber-600' };
+          if (fr <= 9.0) return { name: 'Resalto Estable y Equilibrado', icon: '🟢', color: 'bg-emerald-600' };
+          return { name: 'Resalto Fuerte y Rugoso', icon: '🔥', color: 'bg-red-600' };
+        });
+
+        const jumpTypeBadgeClass = computed(() => {
+          const fr = Fr1.value;
+          if (fr <= 1.7) return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+          if (fr <= 2.5) return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
+          if (fr <= 4.5) return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+          if (fr <= 9.0) return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+          return 'bg-red-500/20 text-red-300 border-red-500/40';
+        });
+
+        // Jump stability — compares actual y2 (gate) vs theoretical y2Teo (Bélanger)
+        const jumpStability = computed(() => {
+          if (!hasJump.value) {
+            return {
+              status: 'Sin Resalto',
+              detail: 'y₂ ≤ y₁ o y₂ < yc — flujo supercrítico en todo el canal',
+              icon: '🚫',
+              cssClass: 'bg-slate-500/20 text-slate-300 border-slate-500/40',
+              textClass: 'text-slate-500',
+              svgColor: '#94a3b8'
+            };
+          }
+          const ratio = y2.value / y2Teo.value;
+          if (ratio > 1.15) {
+            return {
+              status: 'Resalto Sumergido',
+              detail: `y₂ > y₂_teo — la compuerta de cola empuja el resalto aguas arriba`,
+              icon: '⚠️',
+              cssClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+              textClass: 'text-amber-600',
+              svgColor: '#d97706'
+            };
+          }
+          if (ratio < 0.85) {
+            return {
+              status: 'Resalto Barrido',
+              detail: 'y₂ < y₂_teo — el resalto se desplaza aguas abajo o sale del canal',
+              icon: '❌',
+              cssClass: 'bg-red-500/20 text-red-300 border-red-500/40',
+              textClass: 'text-red-600',
+              svgColor: '#dc2626'
+            };
+          }
+          return {
+            status: 'Resalto Libre y Estable',
+            detail: 'y₂ ≈ y₂_teo — resalto bien formado en posición óptima',
+            icon: '✅',
+            cssClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+            textClass: 'text-emerald-600',
+            svgColor: '#059669'
+          };
+        });
+
+        // =============================================
+        // PRESET
+        // =============================================
+        const loadLabPreset = () => {
+          Q.value = 0.016;
+          b.value = 0.30;
+          gateA1.value = 0.032;
+          gateA2.value = 0.12;
+        };
+
+        // =============================================
+        // MOMENTUM CHART
+        // =============================================
+        let momentumChart = null;
+        const renderMomentumChart = () => {
+          const canvas = document.getElementById('momentumCanvas');
+          if (!canvas) return;
+
+          const ys = [];
+          const Ms = [];
+          const yMax = Math.max(0.35, y2.value * 1.8, y2Teo.value * 1.5);
+          const steps = 80;
+          const dy = yMax / steps;
+
+          for (let i = 1; i <= steps; i++) {
+            const y = i * dy;
+            const M = (Q.value * Q.value) / (G * b.value * y) + (b.value * y * y) / 2;
+            ys.push(y);
+            Ms.push(M);
+          }
+
+          const M1 = (Q.value * Q.value) / (G * b.value * y1.value) + (b.value * y1.value * y1.value) / 2;
+          const M2 = (Q.value * Q.value) / (G * b.value * y2.value) + (b.value * y2.value * y2.value) / 2;
+          const M2t = (Q.value * Q.value) / (G * b.value * y2Teo.value) + (b.value * y2Teo.value * y2Teo.value) / 2;
+
+          if (momentumChart) momentumChart.destroy();
+
+          const datasets = [
+            {
+              label: 'Curva de Fuerza Específica M(y)',
+              data: Ms.map((m, i) => ({ x: m, y: ys[i] })),
+              borderColor: '#002855',
+              backgroundColor: 'rgba(0, 40, 85, 0.08)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.3,
+              pointRadius: 0
+            },
+            {
+              label: 'Tirante y₁ (Supercrítico)',
+              data: [{ x: M1, y: y1.value }],
+              borderColor: '#dc2626',
+              backgroundColor: '#dc2626',
+              pointRadius: 8,
+              pointStyle: 'circle'
+            },
+            {
+              label: 'Tirante y₂ Real (Compuerta Cola)',
+              data: [{ x: M2, y: y2.value }],
+              borderColor: '#7c3aed',
+              backgroundColor: '#7c3aed',
+              pointRadius: 8,
+              pointStyle: 'rectRot'
+            }
+          ];
+
+          // Add theoretical conjugate point if it differs from actual y2
+          if (Math.abs(y2.value - y2Teo.value) > 0.002) {
+            datasets.push({
+              label: 'Tirante y₂ Teórico (Bélanger)',
+              data: [{ x: M2t, y: y2Teo.value }],
+              borderColor: '#059669',
+              backgroundColor: '#059669',
+              pointRadius: 7,
+              pointStyle: 'triangle'
+            });
+          }
+
+          // Add vertical line at M1 to show conjugate relationship
+          datasets.push({
+            label: 'Línea M₁ = M₂ (Conservación de Momentum)',
+            data: [{ x: M1, y: 0 }, { x: M1, y: yMax }],
+            borderColor: 'rgba(220, 38, 38, 0.3)',
+            borderWidth: 1.5,
+            borderDash: [5, 5],
+            pointRadius: 0,
+            fill: false
+          });
+
+          momentumChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels: Ms.map(m => m.toFixed(4)),
+              datasets: datasets
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  type: 'linear',
+                  title: { display: true, text: 'Función Momentum M (m³)', font: { family: 'Inter', weight: 'bold' } }
+                },
+                y: {
+                  title: { display: true, text: 'Tirante y (m)', font: { family: 'Inter', weight: 'bold' } }
+                }
+              },
+              plugins: {
+                legend: {
+                  labels: { usePointStyle: true, font: { size: 11 } }
+                }
+              }
+            }
+          });
+        };
+
+        // =============================================
+        // KATEX RE-RENDER
+        // =============================================
+        const reRenderKaTeX = () => {
+          if (window.renderMathInElement) {
+            renderMathInElement(document.body, {
+              delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '\\[', right: '\\]', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false }
+              ],
+              throwOnError: false
+            });
+          }
+        };
+
+        // =============================================
+        // WATCHERS
+        // =============================================
+        watch(activeTab, (newTab) => {
+          if (newTab === 'momentum') {
+            nextTick(() => renderMomentumChart());
+          } else if (newTab === 'theory') {
+            nextTick(() => reRenderKaTeX());
+          }
+        });
+
+        // Re-render momentum chart when parameters change (if tab is active)
+        watch([Q, b, gateA1, gateA2], () => {
+          if (activeTab.value === 'momentum') {
+            nextTick(() => renderMomentumChart());
+          }
+        });
+
+        onMounted(() => {
+          setTimeout(reRenderKaTeX, 300);
+        });
+
+        // =============================================
+        // RETURN
+        // =============================================
+        return {
+          activeTab,
+          Q,
+          b,
+          gateA1,
+          gateA2,
+          y0Pool,
+          y1,
+          y2Teo,
+          y2,
+          yc,
+          V1,
+          V2,
+          Fr1,
+          Fr2,
+          E1,
+          E2,
+          deltaE,
+          efficiency,
+          Lj,
+          hasJump,
+          svgScale,
+          jumpStartPos,
+          jumpLengthPx,
+          waterPathJump,
+          waterPathNoJump,
+          jumpTypeInfo,
+          jumpTypeBadgeClass,
+          jumpStability,
+          loadLabPreset,
+          reRenderKaTeX
+        };
+      }
+    }).mount('#resaltoApp');
+  </script>
+</body>
+</html>

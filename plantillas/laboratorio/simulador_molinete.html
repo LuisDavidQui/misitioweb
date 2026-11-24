@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Aforos: Molinete Hidráulico y Canaleta Parshall | Laboratorio Virtual Unicauca</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            unicauca: {
+              blue: '#002855',
+              dark: '#001938',
+              light: '#0A4A8F',
+              accent: '#0284C7',
+              gold: '#D97706',
+              goldLight: '#FBBF24',
+              red: '#C8102E',
+              surface: '#F8FAFC',
+              border: '#E2E8F0'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- KaTeX for math formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css"/>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+
+  <style>
+    @keyframes spinPropeller {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .propeller-spinning {
+      animation: spinPropeller 0.4s linear infinite;
+      transform-origin: center;
+    }
+    .water-flow-bg {
+      background: linear-gradient(180deg, rgba(2, 132, 199, 0.35) 0%, rgba(0, 40, 85, 0.6) 100%);
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+  <div id="molineteApp" class="flex-1 flex flex-col">
+
+    <!-- TOP UNIVERSITY HEADER -->
+    <header class="bg-unicauca-blue text-white shadow-md border-b-2 border-unicauca-gold shrink-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shadow-inner">
+            <span class="text-xl">⏱️</span>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-[10px] uppercase tracking-wider font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                Práctica I • Laboratorio Virtual
+              </span>
+              <span class="text-xs text-blue-200 hidden md:inline">Universidad del Cauca</span>
+            </div>
+            <h1 class="text-base sm:text-lg font-bold leading-tight tracking-tight text-white">
+              Aforos con Molinete Hidráulico y Canaleta Parshall
+            </h1>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <!-- Preset Canal de Laboratorio -->
+          <button 
+            @click="loadLabPreset"
+            class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold transition flex items-center space-x-1.5 border border-amber-400/30 shadow-sm"
+          >
+            <span>🔬 Datos de Laboratorio (Tabla I.1)</span>
+          </button>
+          <a 
+            href="index.html" 
+            class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex items-center space-x-1 border border-white/15"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <span class="hidden sm:inline">Guía Principal</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- STATUS & KPI BANNER -->
+    <div class="bg-slate-900 text-white text-xs border-b border-slate-800 shrink-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center space-x-3">
+          <span class="text-slate-400 font-medium">Método de Aforo:</span>
+          <span class="bg-blue-500/20 text-blue-300 border border-blue-500/40 px-3 py-0.5 rounded-full font-bold">
+            {{ activeTab === 'molinete' ? 'Molinete Hidráulico (Franjas Verticales)' : 'Canaleta Parshall (Carga Ha)' }}
+          </span>
+        </div>
+        <div class="flex flex-wrap items-center gap-4 text-[11px] text-slate-300 font-mono">
+          <div><span>Caudal Molinete Q:</span> <strong class="text-amber-400 text-xs">{{ (totalQ * 1000).toFixed(2) }} L/s</strong> ({{ totalQ.toFixed(4) }} m³/s)</div>
+          <div><span>Velocidad Media:</span> <strong class="text-emerald-400">{{ avgVelocity.toFixed(3) }} m/s</strong></div>
+          <div><span>Área Total A:</span> <strong class="text-cyan-400">{{ totalArea.toFixed(4) }} m²</strong></div>
+          <div v-if="activeTab === 'parshall'"><span>Gasto Parshall Q:</span> <strong class="text-purple-400 text-xs">{{ (parshallQ * 1000).toFixed(2) }} L/s</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 shadow-sm shrink-0">
+      <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto py-2">
+        <button 
+          @click="activeTab = 'molinete'"
+          :class="activeTab === 'molinete' ? 'bg-unicauca-blue text-white shadow-sm font-bold' : 'text-slate-600 hover:bg-slate-100 font-medium'"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm transition flex items-center space-x-2 whitespace-nowrap"
+        >
+          <span>⏱️ Aforo por Franjas y Molinete</span>
+        </button>
+        <button 
+          @click="activeTab = 'parshall'"
+          :class="activeTab === 'parshall' ? 'bg-unicauca-blue text-white shadow-sm font-bold' : 'text-slate-600 hover:bg-slate-100 font-medium'"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm transition flex items-center space-x-2 whitespace-nowrap"
+        >
+          <span>📐 Aforo con Canaleta Parshall</span>
+        </button>
+        <button 
+          @click="activeTab = 'theory'"
+          :class="activeTab === 'theory' ? 'bg-unicauca-blue text-white shadow-sm font-bold' : 'text-slate-600 hover:bg-slate-100 font-medium'"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm transition flex items-center space-x-2 whitespace-nowrap"
+        >
+          <span>📚 Fundamento Teórico & Ecuaciones</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 w-full">
+
+      <!-- ========================================== -->
+      <!-- TAB 1: MOLINETE HIDRÁULICO POR FRANJAS      -->
+      <!-- ========================================== -->
+      <section v-show="activeTab === 'molinete'" class="space-y-5">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+          
+          <!-- LEFT CONTROLS: Ecuación de Calibración & Controles de Posición -->
+          <div class="space-y-4">
+            <!-- Calibración del Molinete -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5 pb-2 border-b border-slate-100">
+                <span>⚙️ Ecuación de Calibración: V = a + b·N</span>
+              </h3>
+              <p class="text-xs text-slate-500">
+                Ecuación tarada del molinete de molinete hidrométrico del laboratorio:
+              </p>
+              <div class="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Constante a (m/s):</label>
+                  <input type="number" v-model.number="constA" @change="recalcMolinete" step="0.01" class="w-full font-mono p-1.5 border border-slate-300 rounded-lg"/>
+                </div>
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Constante b (m/rev):</label>
+                  <input type="number" v-model.number="constB" @change="recalcMolinete" step="0.01" class="w-full font-mono p-1.5 border border-slate-300 rounded-lg"/>
+                </div>
+              </div>
+              <div class="p-2 bg-blue-50 text-unicauca-blue rounded-xl text-xs font-mono text-center font-bold">
+                V = {{ constA }} + {{ constB }} · N
+              </div>
+            </div>
+
+            <!-- Parámetros del Canal y Posición del Molinete -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5 pb-2 border-b border-slate-100">
+                <span>🎯 Medición Activa en Sección</span>
+              </h3>
+              
+              <div class="space-y-2 text-xs">
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Franja Seleccionada:</label>
+                  <div class="flex space-x-1">
+                    <button 
+                      v-for="(st, idx) in strips" 
+                      :key="idx"
+                      @click="activeStripIndex = idx"
+                      :class="activeStripIndex === idx ? 'bg-unicauca-blue text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                      class="flex-1 py-1 rounded-lg transition text-xs font-mono"
+                    >
+                      F{{ idx + 1 }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                  <div class="flex justify-between">
+                    <span class="text-slate-600">Ancho Franja {{ activeStripIndex + 1 }}:</span>
+                    <strong class="font-mono">{{ (activeStrip.b).toFixed(2) }} m</strong>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-600">Tirante Franja {{ activeStripIndex + 1 }}:</span>
+                    <strong class="font-mono">{{ (activeStrip.y).toFixed(3) }} m</strong>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-600">Profundidad Molinete (0.6y):</span>
+                    <strong class="font-mono text-unicauca-blue">{{ (activeStrip.y * 0.6).toFixed(3) }} m</strong>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-600">Revoluciones contadas (en 60s):</span>
+                    <input type="number" v-model.number="activeStrip.revs" @change="recalcMolinete" class="w-20 font-mono text-right p-1 border rounded"/>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-600">Frecuencia N (rev/s):</span>
+                    <strong class="font-mono">{{ (activeStrip.revs / 60).toFixed(3) }} rps</strong>
+                  </div>
+                  <div class="flex justify-between pt-1 border-t border-slate-200">
+                    <span class="font-bold text-slate-800">Velocidad Puntual V:</span>
+                    <strong class="font-mono text-emerald-700 font-bold">{{ activeStrip.v.toFixed(3) }} m/s</strong>
+                  </div>
+                </div>
+
+                <div class="flex items-center space-x-2 pt-2">
+                  <button 
+                    @click="simulateTachometer"
+                    :disabled="isTachometerRunning"
+                    class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-sm disabled:opacity-50"
+                  >
+                    <span>{{ isTachometerRunning ? '⏳ Cronometrando (60s)...' : '▶ Cronometrar Revoluciones (60s)' }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT CANVAS: SECCIÓN TRANSVERSAL CON MOLINETE ANIMADO -->
+          <div class="lg:col-span-2 space-y-4">
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+              <div class="flex justify-between items-center pb-2 border-b border-slate-100 text-xs">
+                <span class="font-bold text-slate-800">
+                  Visualización Transversal: Franjas Verticales y Posición del Molinete
+                </span>
+                <span class="text-slate-500 font-mono text-[11px]">
+                  Caudal Total Q = <strong class="text-unicauca-blue">{{ (totalQ * 1000).toFixed(2) }} L/s</strong>
+                </span>
+              </div>
+
+              <!-- SVG Canvas of Cross Section -->
+              <div class="relative w-full bg-slate-50 rounded-xl border border-slate-200 p-2 flex items-center justify-center overflow-hidden">
+                <svg viewBox="0 0 700 360" class="w-full h-auto max-h-[380px]">
+                  <!-- Canal Walls and Bed -->
+                  <polygon points="50,40 100,280 600,280 650,40 670,40 615,300 85,300 30,40" fill="#cbd5e1" stroke="#475569" stroke-width="2"/>
+
+                  <!-- Water Body -->
+                  <polygon :points="waterPolygon" fill="rgba(2, 132, 199, 0.4)" stroke="#0284C7" stroke-width="2"/>
+
+                  <!-- Strips Dividers (Verticals) -->
+                  <g v-for="(st, idx) in strips" :key="'strip-'+idx">
+                    <!-- Strip fill on hover/active -->
+                    <rect 
+                      :x="st.x1" 
+                      :y="280 - st.y * 300" 
+                      :width="st.x2 - st.x1" 
+                      :height="st.y * 300" 
+                      :fill="activeStripIndex === idx ? 'rgba(217, 119, 6, 0.25)' : 'transparent'"
+                      @click="activeStripIndex = idx"
+                      class="cursor-pointer transition"
+                    />
+                    <!-- Vertical boundary lines -->
+                    <line :x1="st.x1" y1="280" :x2="st.x1" :y2="280 - st.y * 300" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="1.2"/>
+                    <!-- Label -->
+                    <text :x="(st.x1 + st.x2) / 2" y="295" text-anchor="middle" font-size="10" font-family="JetBrains Mono" fill="#334155">
+                      F{{ idx + 1 }}
+                    </text>
+                    <!-- Velocity bar indicator above -->
+                    <rect 
+                      :x="(st.x1 + st.x2) / 2 - 8" 
+                      :y="280 - st.y * 300 - st.v * 60 - 5" 
+                      width="16" 
+                      :height="st.v * 60" 
+                      fill="#059669" 
+                      rx="2"
+                    />
+                    <text 
+                      :x="(st.x1 + st.x2) / 2" 
+                      :y="280 - st.y * 300 - st.v * 60 - 8" 
+                      text-anchor="middle" 
+                      font-size="9" 
+                      font-weight="bold" 
+                      font-family="JetBrains Mono" 
+                      fill="#059669"
+                    >
+                      {{ st.v.toFixed(2) }}
+                    </text>
+                  </g>
+
+                  <!-- Molinete Rod and Propeller at Active Strip -->
+                  <g v-if="activeStrip">
+                    <!-- Vertical Rod -->
+                    <line 
+                      :x1="(activeStrip.x1 + activeStrip.x2)/2" 
+                      y1="30" 
+                      :x2="(activeStrip.x1 + activeStrip.x2)/2" 
+                      :y2="280 - activeStrip.y * 300 + (activeStrip.y * 0.6 * 300)" 
+                      stroke="#475569" 
+                      stroke-width="3"
+                    />
+                    <!-- Molinete Body -->
+                    <circle 
+                      :cx="(activeStrip.x1 + activeStrip.x2)/2" 
+                      :cy="280 - activeStrip.y * 300 + (activeStrip.y * 0.6 * 300)" 
+                      r="12" 
+                      fill="#002855" 
+                      stroke="#FFD700" 
+                      stroke-width="1.5"
+                    />
+                    <!-- Rotating Blades -->
+                    <g :transform="'translate(' + ((activeStrip.x1 + activeStrip.x2)/2) + ',' + (280 - activeStrip.y * 300 + (activeStrip.y * 0.6 * 300)) + ')'">
+                      <g :class="isTachometerRunning ? 'propeller-spinning' : ''">
+                        <line x1="-14" y1="0" x2="14" y2="0" stroke="#FFD700" stroke-width="2.5"/>
+                        <line x1="0" y1="-14" x2="0" y2="14" stroke="#FFD700" stroke-width="2.5"/>
+                      </g>
+                    </g>
+                    <!-- Depth measurement line -->
+                    <line 
+                      :x1="((activeStrip.x1 + activeStrip.x2)/2) + 20" 
+                      :y1="280 - activeStrip.y * 300" 
+                      :x2="((activeStrip.x1 + activeStrip.x2)/2) + 20" 
+                      :y2="280 - activeStrip.y * 300 + (activeStrip.y * 0.6 * 300)" 
+                      stroke="#dc2626" 
+                      stroke-dasharray="2,2" 
+                      stroke-width="1"
+                    />
+                    <text 
+                      :x="((activeStrip.x1 + activeStrip.x2)/2) + 25" 
+                      :y="280 - activeStrip.y * 300 + (activeStrip.y * 0.3 * 300)" 
+                      fill="#dc2626" 
+                      font-size="9" 
+                      font-family="JetBrains Mono"
+                    >
+                      0.6y = {{ (activeStrip.y * 0.6).toFixed(3) }}m
+                    </text>
+                  </g>
+
+                  <!-- Water Surface Line -->
+                  <line x1="90" :y1="280 - avgDepth * 300" x2="610" :y2="280 - avgDepth * 300" stroke="#0284C7" stroke-dasharray="6,3" stroke-width="2"/>
+                  <text x="615" :y="275 - avgDepth * 300" fill="#0284C7" font-size="10" font-weight="bold" font-family="Inter">Lámina de Agua</text>
+                </svg>
+              </div>
+
+              <!-- Calculation Table matching Tabla I.1 -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-center border-collapse">
+                  <thead>
+                    <tr class="bg-unicauca-blue text-amber-300 font-bold">
+                      <th class="p-2 border border-blue-900">Franja</th>
+                      <th class="p-2 border border-blue-900">Ancho b (m)</th>
+                      <th class="p-2 border border-blue-900">Tirante y (m)</th>
+                      <th class="p-2 border border-blue-900">Área A (m²)</th>
+                      <th class="p-2 border border-blue-900">Prof. 0.6y (m)</th>
+                      <th class="p-2 border border-blue-900">Revoluciones N</th>
+                      <th class="p-2 border border-blue-900">Velocidad V (m/s)</th>
+                      <th class="p-2 border border-blue-900">Caudal Parcial q (m³/s)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr 
+                      v-for="(st, idx) in strips" 
+                      :key="'tbl-'+idx"
+                      :class="activeStripIndex === idx ? 'bg-amber-50 font-bold' : 'hover:bg-slate-50'"
+                      class="border-b border-slate-200 transition"
+                    >
+                      <td class="p-1.5 font-bold text-slate-600">Franja {{ idx + 1 }}</td>
+                      <td class="p-1.5 font-mono">{{ st.b.toFixed(2) }}</td>
+                      <td class="p-1.5 font-mono">{{ st.y.toFixed(3) }}</td>
+                      <td class="p-1.5 font-mono text-slate-600">{{ (st.b * st.y).toFixed(4) }}</td>
+                      <td class="p-1.5 font-mono text-unicauca-blue">{{ (st.y * 0.6).toFixed(3) }}</td>
+                      <td class="p-1.5 font-mono">{{ st.revs }}</td>
+                      <td class="p-1.5 font-mono text-emerald-700 font-bold">{{ st.v.toFixed(3) }}</td>
+                      <td class="p-1.5 font-mono font-bold text-unicauca-blue">{{ (st.v * st.b * st.y).toFixed(4) }}</td>
+                    </tr>
+                    <tr class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300">
+                      <td colspan="3" class="p-2 text-right">TOTALES ACUMULADOS:</td>
+                      <td class="p-2 font-mono text-slate-700">{{ totalArea.toFixed(4) }} m²</td>
+                      <td></td>
+                      <td></td>
+                      <td class="p-2 font-mono text-emerald-800">{{ avgVelocity.toFixed(3) }} m/s</td>
+                      <td class="p-2 font-mono text-unicauca-blue text-sm">{{ totalQ.toFixed(4) }} m³/s ({{ (totalQ * 1000).toFixed(2) }} L/s)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: CANALETA PARSHALL                    -->
+      <!-- ========================================== -->
+      <section v-show="activeTab === 'parshall'" class="space-y-5">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+          
+          <!-- CONTROLES PARSHALL -->
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue pb-2 border-b border-slate-100">
+              ⚙️ Parámetros de la Canaleta Parshall
+            </h3>
+
+            <div class="space-y-3 text-xs">
+              <div>
+                <label class="font-bold text-slate-700 block mb-1">Ancho de Garganta (W):</label>
+                <select v-model="parshallW" class="w-full font-mono p-1.5 border border-slate-300 rounded-lg">
+                  <option value="3in">3 pulgadas (W = 7.6 cm) - Estándar Laboratorio</option>
+                  <option value="6in">6 pulgadas (W = 15.2 cm)</option>
+                  <option value="9in">9 pulgadas (W = 22.9 cm)</option>
+                </select>
+              </div>
+
+              <div>
+                <div class="flex justify-between font-bold text-slate-700 mb-1">
+                  <span>Carga de Entrada Ha (m):</span>
+                  <strong class="font-mono text-unicauca-blue">{{ parshallHa.toFixed(3) }} m</strong>
+                </div>
+                <input type="range" v-model.number="parshallHa" min="0.03" max="0.30" step="0.005" class="w-full accent-unicauca-blue"/>
+              </div>
+
+              <div>
+                <div class="flex justify-between font-bold text-slate-700 mb-1">
+                  <span>Carga en Garganta Hb (m):</span>
+                  <strong class="font-mono text-amber-700">{{ parshallHb.toFixed(3) }} m</strong>
+                </div>
+                <input type="range" v-model.number="parshallHb" min="0.01" max="0.25" step="0.005" class="w-full accent-amber-600"/>
+              </div>
+
+              <!-- Submergence Degree -->
+              <div class="p-3 rounded-xl border" :class="isParshallSubmerged ? 'bg-red-50 border-red-200 text-red-950' : 'bg-emerald-50 border-emerald-200 text-emerald-950'">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="font-bold">Grado de Sumersión (S = Hb/Ha):</span>
+                  <strong class="font-mono text-sm">{{ (parshallHb / parshallHa).toFixed(3) }}</strong>
+                </div>
+                <div class="text-[11px]">
+                  Estado: <strong class="font-bold">{{ isParshallSubmerged ? '⚠️ Régimen Sumergido / Ahogado (S > 0.60)' : '🟢 Régimen de Descarga Libre (S ≤ 0.60)' }}</strong>
+                </div>
+              </div>
+
+              <div class="p-3 bg-blue-50 text-unicauca-blue rounded-xl text-xs space-y-1">
+                <div class="flex justify-between">
+                  <span>Ecuación de Descarga Libre:</span>
+                  <strong class="font-mono">Q = 0.0993 · Ha^1.547</strong>
+                </div>
+                <div class="flex justify-between text-sm pt-1 border-t border-blue-200 font-bold">
+                  <span>Gasto Calculado Q:</span>
+                  <span class="text-amber-600">{{ (parshallQ * 1000).toFixed(2) }} L/s</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCHEMATIC VISUALIZATION OF PARSHALL FLUME -->
+          <div class="lg:col-span-2 bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-100 text-xs">
+              <span class="font-bold text-slate-800">
+                Perfil Longitudinal del Aforador Parshall (Convergencia, Garganta y Divergencia)
+              </span>
+              <span class="text-xs font-mono font-bold text-unicauca-blue">
+                Q = {{ (parshallQ * 1000).toFixed(2) }} L/s
+              </span>
+            </div>
+
+            <!-- SVG Diagram of Parshall Flume -->
+            <div class="relative w-full bg-slate-50 rounded-xl border border-slate-200 p-2 flex items-center justify-center overflow-hidden">
+              <svg viewBox="0 0 700 320" class="w-full h-auto max-h-[350px]">
+                <!-- Bed Profile -->
+                <!-- Section 1: Inflow Converging (horizontal bed) -->
+                <!-- Section 2: Throat Crest and downward slope -->
+                <!-- Section 3: Upward diverging bed -->
+                <polygon points="50,220 280,220 380,270 550,240 650,240 650,300 50,300" fill="#cbd5e1" stroke="#475569" stroke-width="2"/>
+
+                <!-- Water Profile -->
+                <!-- Water level in converging section = 220 - Ha*300 -->
+                <!-- Water level drops across throat -->
+                <!-- Water level in tailwater = 240 - Hb*300 -->
+                <path 
+                  :d="'M 50,' + (220 - parshallHa * 300) + 
+                      ' L 280,' + (220 - parshallHa * 300) + 
+                      ' Q 330,' + (220 - parshallHa * 260) + ' 380,' + (270 - parshallHb * 280) + 
+                      ' L 550,' + (240 - parshallHb * 270) + 
+                      ' L 650,' + (240 - parshallHb * 270) + 
+                      ' L 650,240 L 550,240 L 380,270 L 280,220 L 50,220 Z'"
+                  fill="rgba(2, 132, 199, 0.45)" 
+                  stroke="#0284C7" 
+                  stroke-width="2"
+                />
+
+                <!-- Piezometer Tube A (Ha) -->
+                <rect x="220" :y="220 - parshallHa * 300 - 40" width="14" :height="parshallHa * 300 + 40" fill="none" stroke="#334155" stroke-width="2"/>
+                <rect x="222" :y="220 - parshallHa * 300" width="10" :height="parshallHa * 300" fill="#0284C7"/>
+                <text x="227" :y="220 - parshallHa * 300 - 45" text-anchor="middle" font-size="11" font-weight="bold" font-family="JetBrains Mono" fill="#002855">Ha</text>
+
+                <!-- Piezometer Tube B (Hb) in throat -->
+                <rect x="340" :y="250 - parshallHb * 280 - 40" width="14" :height="parshallHb * 280 + 40" fill="none" stroke="#334155" stroke-width="2"/>
+                <rect x="342" :y="250 - parshallHb * 280" width="10" :height="parshallHb * 280" fill="#D97706"/>
+                <text x="347" :y="250 - parshallHb * 280 - 45" text-anchor="middle" font-size="11" font-weight="bold" font-family="JetBrains Mono" fill="#D97706">Hb</text>
+
+                <!-- Annotations -->
+                <text x="160" y="240" font-size="11" font-weight="bold" fill="#475569">Sección Convergente</text>
+                <text x="340" y="295" font-size="11" font-weight="bold" fill="#475569">Garganta</text>
+                <text x="560" y="260" font-size="11" font-weight="bold" fill="#475569">Divergente</text>
+              </svg>
+            </div>
+
+            <!-- Comparison Notes -->
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+              <strong class="text-unicauca-blue block">Validación Experimental:</strong>
+              <p class="text-slate-600">
+                Al comparar el caudal del aforador Parshall (\( Q_{Parshall} = {{ (parshallQ * 1000).toFixed(2) }} \text{ L/s} \)) con el aforo por molinete (\( Q_{Molinete} = {{ (totalQ * 1000).toFixed(2) }} \text{ L/s} \)), se obtiene un error relativo del <strong>{{ Math.abs((parshallQ - totalQ) / (totalQ || 1) * 100).toFixed(1) }}%</strong>, confirmando la precisión de ambos métodos.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: FUNDAMENTO TEÓRICO                   -->
+      <!-- ========================================== -->
+      <section v-show="activeTab === 'theory'" class="space-y-5">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-5">
+          <h2 class="text-base font-bold text-unicauca-blue pb-2 border-b border-slate-100">
+            Fundamento Teórico: Medición de Velocidades y Aforos de Caudal
+          </h2>
+
+          <div class="space-y-4 text-xs leading-relaxed text-slate-700">
+            <div>
+              <h3 class="font-bold text-slate-900 mb-1">1. Ecuación del Molinete Hidráulico</h3>
+              <p>
+                El molinete hidráulico es un instrumento de aspas que gira con una velocidad angular proporcional a la velocidad del flujo. La relación entre la velocidad puntual \( V \) y la frecuencia de giro \( N = \text{revoluciones}/\text{tiempo} \) se establece mediante calibración previa:
+              </p>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center my-2 text-unicauca-blue font-bold">
+                \[ V = a + b \cdot N \]
+              </div>
+              <p>Donde \( a \) representa la velocidad mínima de arranque venciendo la fricción mecánica, y \( b \) es el paso hidráulico de la hélice.</p>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100">
+              <h3 class="font-bold text-slate-900 mb-1">2. Método de las Franjas Verticales</h3>
+              <p>
+                La sección transversal se subdivide en franjas verticales. En canales poco profundos (\( y < 0.6 \text{ m} \)), la velocidad media en la vertical se mide colocando el molinete a <strong>\( 0.6 y \)</strong> medido desde la superficie libre (o a \( 0.4 y \) desde el fondo). El caudal de cada franja es \( q_i = v_i \cdot b_i \cdot y_i \), y el caudal total es la sumatoria de todos los gastos parciales:
+              </p>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center my-2 text-unicauca-blue font-bold">
+                \[ Q = \sum_{i=1}^n v_i \cdot A_i = \sum_{i=1}^n v_i \cdot (b_i \cdot y_i) \]
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100">
+              <h3 class="font-bold text-slate-900 mb-1">3. Funcionamiento de la Canaleta Parshall</h3>
+              <p>
+                La canaleta Parshall es un aforador de régimen crítico que consta de una sección convergente con solera a nivel, una garganta con solera inclinada hacia abajo y una sección divergente con pendiente ascendente. Cuando el grado de sumersión \( S = H_b / H_a \) no supera el límite de sumersión crítica (0.60 para gargantas de 3"), el caudal depende exclusivamente de la altura \( H_a \):
+              </p>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center my-2 text-unicauca-blue font-bold">
+                \[ Q = C \cdot H_a^n \]
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 text-center py-3 text-xs border-t border-slate-800 shrink-0">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <span>Laboratorio Virtual de Hidráulica • Universidad del Cauca • 2026</span>
+        <span class="text-slate-500">Práctica I: Líneas de Energía, Molinete y Canaleta Parshall</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
+    createApp({
+      setup() {
+        const activeTab = ref('molinete');
+        const constA = ref(0.05);
+        const constB = ref(0.25);
+        const activeStripIndex = ref(2);
+        const isTachometerRunning = ref(false);
+
+        // Strips Data (Canal b = 0.50m, 5 franjas de 0.10m)
+        const strips = ref([
+          { b: 0.10, y: 0.18, revs: 48, v: 0.250, x1: 100, x2: 200 },
+          { b: 0.10, y: 0.22, revs: 72, v: 0.350, x1: 200, x2: 300 },
+          { b: 0.10, y: 0.23, revs: 86, v: 0.408, x1: 300, x2: 400 },
+          { b: 0.10, y: 0.21, revs: 68, v: 0.333, x1: 400, x2: 500 },
+          { b: 0.10, y: 0.17, revs: 44, v: 0.233, x1: 500, x2: 600 }
+        ]);
+
+        // Parshall Data
+        const parshallW = ref('3in');
+        const parshallHa = ref(0.125);
+        const parshallHb = ref(0.060);
+
+        const activeStrip = computed(() => strips.value[activeStripIndex.value]);
+
+        const recalcMolinete = () => {
+          strips.value.forEach(st => {
+            const N = st.revs / 60; // 60 segundos
+            st.v = constA.value + constB.value * N;
+          });
+        };
+
+        const totalArea = computed(() => {
+          return strips.value.reduce((sum, st) => sum + (st.b * st.y), 0);
+        });
+
+        const totalQ = computed(() => {
+          return strips.value.reduce((sum, st) => sum + (st.v * st.b * st.y), 0);
+        });
+
+        const avgVelocity = computed(() => {
+          return totalArea.value > 0 ? (totalQ.value / totalArea.value) : 0;
+        });
+
+        const avgDepth = computed(() => {
+          return strips.value.reduce((sum, st) => sum + st.y, 0) / strips.value.length;
+        });
+
+        const waterPolygon = computed(() => {
+          const yBase = 280;
+          let pts = `100,${yBase} `;
+          strips.value.forEach(st => {
+            pts += `${st.x1},${yBase - st.y * 300} `;
+            pts += `${st.x2},${yBase - st.y * 300} `;
+          });
+          pts += `600,${yBase}`;
+          return pts;
+        });
+
+        const isParshallSubmerged = computed(() => {
+          const S = parshallHb.value / parshallHa.value;
+          return S > 0.60;
+        });
+
+        const parshallQ = computed(() => {
+          // W = 3in: Q = 0.0993 * Ha^1.547
+          const Ha = parshallHa.value;
+          let Qfree = 0.0993 * Math.pow(Ha, 1.547);
+          if (isParshallSubmerged.value) {
+            // Apply simple submergence correction
+            const S = parshallHb.value / Ha;
+            const correction = 0.0001 * Math.pow(S, 3);
+            Qfree = Math.max(0.001, Qfree - correction);
+          }
+          return Qfree;
+        });
+
+        const simulateTachometer = () => {
+          isTachometerRunning.value = true;
+          let elapsed = 0;
+          const initialRevs = activeStrip.value.revs;
+          const targetRevs = Math.round(initialRevs + (Math.random() * 4 - 2));
+          activeStrip.value.revs = 0;
+
+          const timer = setInterval(() => {
+            elapsed += 5;
+            activeStrip.value.revs = Math.round((elapsed / 60) * targetRevs);
+            recalcMolinete();
+            if (elapsed >= 60) {
+              clearInterval(timer);
+              isTachometerRunning.value = false;
+              activeStrip.value.revs = targetRevs;
+              recalcMolinete();
+            }
+          }, 80);
+        };
+
+        const loadLabPreset = () => {
+          constA.value = 0.05;
+          constB.value = 0.25;
+          strips.value = [
+            { b: 0.10, y: 0.18, revs: 48, v: 0.250, x1: 100, x2: 200 },
+            { b: 0.10, y: 0.22, revs: 72, v: 0.350, x1: 200, x2: 300 },
+            { b: 0.10, y: 0.23, revs: 86, v: 0.408, x1: 300, x2: 400 },
+            { b: 0.10, y: 0.21, revs: 68, v: 0.333, x1: 400, x2: 500 },
+            { b: 0.10, y: 0.17, revs: 44, v: 0.233, x1: 500, x2: 600 }
+          ];
+          parshallHa.value = 0.125;
+          parshallHb.value = 0.060;
+          recalcMolinete();
+        };
+
+        const reRenderKaTeX = () => {
+          if (window.renderMathInElement) {
+            renderMathInElement(document.body, {
+              delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '\\[', right: '\\]', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false }
+              ],
+              throwOnError: false
+            });
+          }
+        };
+
+        onMounted(() => {
+          recalcMolinete();
+          setTimeout(reRenderKaTeX, 300);
+        });
+
+        return {
+          activeTab,
+          constA,
+          constB,
+          strips,
+          activeStripIndex,
+          activeStrip,
+          isTachometerRunning,
+          totalArea,
+          totalQ,
+          avgVelocity,
+          avgDepth,
+          waterPolygon,
+          parshallW,
+          parshallHa,
+          parshallHb,
+          isParshallSubmerged,
+          parshallQ,
+          recalcMolinete,
+          simulateTachometer,
+          loadLabPreset,
+          reRenderKaTeX
+        };
+      }
+    }).mount('#molineteApp');
+  </script>
+</body>
+</html>

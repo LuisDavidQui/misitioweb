@@ -1,0 +1,2052 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Flujo Gradualmente Variado (FGV) | Laboratorio Virtual Unicauca</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            unicauca: {
+              blue: '#002855',
+              dark: '#001938',
+              light: '#0A4A8F',
+              accent: '#0284C7',
+              gold: '#D97706',
+              goldLight: '#FBBF24',
+              red: '#C8102E',
+              crimson: '#9E0B20',
+              surface: '#F8FAFC',
+              card: '#FFFFFF',
+              border: '#E2E8F0'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Courier New', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- KaTeX for math formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css"/>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+
+  <style>
+    @keyframes waveMotion {
+      0% { stroke-dashoffset: 24; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .water-line {
+      stroke-dasharray: 6, 3;
+      animation: waveMotion 1.5s linear infinite;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+  <div id="fgvApp" class="flex-1 flex flex-col">
+
+    <!-- TOP UNIVERSITY HEADER -->
+    <header class="bg-unicauca-blue text-white shadow-md border-b-2 border-unicauca-gold shrink-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        
+        <!-- Brand & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shadow-inner">
+            <span class="text-xl">🌊</span>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-[10px] uppercase tracking-wider font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                Práctica V • Laboratorio Virtual
+              </span>
+              <span class="text-xs text-blue-200 hidden md:inline">Universidad del Cauca</span>
+            </div>
+            <h1 class="text-base sm:text-lg font-bold leading-tight tracking-tight text-white">
+              Simulador de Flujo Gradualmente Variado (FGV) & Eje Hidráulico
+            </h1>
+          </div>
+        </div>
+
+        <!-- Quick Actions & Presets -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <!-- Laboratory Preset Button -->
+          <button 
+            @click="loadLabPreset"
+            class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold transition flex items-center space-x-1.5 border border-amber-400/30 shadow-sm"
+            title="Cargar parámetros de canal rectangular de la Tabla V.1 (b=0.30m, Q=16 L/s)"
+          >
+            <span>🔬 Canal Laboratorio (Tabla V.1)</span>
+          </button>
+
+          <!-- Unit Selector -->
+          <div class="inline-flex rounded-xl bg-blue-950/80 p-0.5 border border-blue-800 text-[11px]">
+            <button 
+              @click="setQUnit('m3/s')"
+              :class="qUnit === 'm3/s' ? 'bg-amber-400 text-blue-950 font-bold' : 'text-slate-300 hover:text-white'"
+              class="px-2 py-1 rounded-lg transition"
+            >
+              m³/s
+            </button>
+            <button 
+              @click="setQUnit('L/s')"
+              :class="qUnit === 'L/s' ? 'bg-amber-400 text-blue-950 font-bold' : 'text-slate-300 hover:text-white'"
+              class="px-2 py-1 rounded-lg transition"
+            >
+              L/s
+            </button>
+          </div>
+
+          <!-- Return to main app -->
+          <a 
+            href="index.html" 
+            class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex items-center space-x-1 border border-white/15"
+            title="Regresar a la guía de prácticas principal"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <span class="hidden sm:inline">Guía Principal</span>
+          </a>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- STATUS & PROFILE DIAGNOSTIC BANNER -->
+    <div class="bg-slate-900 text-white text-xs border-b border-slate-800 shrink-0">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        
+        <!-- Active Profile & Type -->
+        <div class="flex items-center space-x-3">
+          <span class="text-slate-400 font-medium">Perfil Activo:</span>
+          <span 
+            :style="{ borderColor: activeSlopeObj.color, backgroundColor: activeSlopeObj.color + '22', color: '#fff' }"
+            class="px-3 py-1 rounded-full font-bold border flex items-center space-x-2 shadow-sm text-xs sm:text-sm"
+          >
+            <span class="w-2 h-2 rounded-full animate-pulse" :style="{ backgroundColor: activeSlopeObj.color }"></span>
+            <span>Perfil {{ activeProfile.code }} ({{ activeSlopeObj.name }})</span>
+          </span>
+
+          <!-- Flow Behavior Badge (Retardado / Remanso vs Acelerado / Colapso) -->
+          <span 
+            :class="behaviorBadgeClass"
+            class="px-2.5 py-0.5 rounded-lg text-[11px] font-bold border flex items-center space-x-1"
+          >
+            <span>{{ behaviorBadgeIcon }}</span>
+            <span>{{ behaviorBadgeText }}</span>
+          </span>
+        </div>
+
+        <!-- Key Hydraulic Metrics -->
+        <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-300 font-mono">
+          <div><span>LPN (yₙ):</span> <strong class="text-emerald-400">{{ ynDisplay }}</strong></div>
+          <div><span>LPC (yc):</span> <strong class="text-red-400">{{ (yc).toFixed(3) }} m</strong></div>
+          <div><span>Pendiente S₀:</span> <strong class="text-cyan-400">{{ S0.toFixed(5) }}</strong></div>
+          <div><span>Pend. Crítica Sc:</span> <strong class="text-amber-400">{{ Sc.toFixed(5) }}</strong></div>
+          <div><span>Longitud L:</span> <strong class="text-white">{{ totalLength.toFixed(2) }} m</strong></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MAIN APP NAVIGATION BAR -->
+    <nav class="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 shadow-sm shrink-0">
+      <div class="max-w-7xl mx-auto flex space-x-2 overflow-x-auto no-scrollbar py-2">
+        <button 
+          @click="activeTab = 'direct_step'"
+          :class="activeTab === 'direct_step' ? 'bg-unicauca-blue text-white shadow-sm font-bold' : 'text-slate-600 hover:bg-slate-100 font-medium'"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm transition flex items-center space-x-2 whitespace-nowrap"
+        >
+          <span>🔬 Simulador de Perfiles (Paso Directo)</span>
+        </button>
+        <button 
+          @click="activeTab = 'graphical_int'"
+          :class="activeTab === 'graphical_int' ? 'bg-unicauca-blue text-white shadow-sm font-bold' : 'text-slate-600 hover:bg-slate-100 font-medium'"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm transition flex items-center space-x-2 whitespace-nowrap"
+        >
+          <span>📈 Integración Gráfica F(y)</span>
+        </button>
+        <button 
+          @click="activeTab = 'theory'"
+          :class="activeTab === 'theory' ? 'bg-unicauca-blue text-white shadow-sm font-bold' : 'text-slate-600 hover:bg-slate-100 font-medium'"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm transition flex items-center space-x-2 whitespace-nowrap"
+        >
+          <span>📚 Fundamento Teórico & Derivación Matemática</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 w-full">
+
+      <!-- ============================================================ -->
+      <!-- TAB 1: SIMULADOR TRAMO A TRAMO (PASO DIRECTO)                -->
+      <!-- ============================================================ -->
+      <section v-show="activeTab === 'direct_step'" class="space-y-5">
+        
+        <div class="flex flex-col lg:flex-row gap-5 items-start">
+          
+          <!-- LEFT SIDEBAR: 15-PROFILE SELECTOR MATRIX & DIAGNOSTIC CARD -->
+          <aside class="w-full lg:w-80 shrink-0 space-y-4">
+            
+            <!-- 15 Profile Quick Matrix -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-1.5">
+                  <span>🎚️ Matriz de los 15 Perfiles</span>
+                </h2>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-unicauca-blue font-mono">
+                  5x3
+                </span>
+              </div>
+
+              <!-- Matrix Table -->
+              <table class="w-full border-collapse text-xs text-center">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 text-[11px]">
+                    <th class="p-1 border border-slate-200">Tipo</th>
+                    <th class="p-1 border border-slate-200">Zona 1</th>
+                    <th class="p-1 border border-slate-200">Zona 2</th>
+                    <th class="p-1 border border-slate-200">Zona 3</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="slope in ['M', 'C', 'S', 'H', 'A']" :key="slope">
+                    <td class="p-1 border border-slate-200 font-bold" :style="{ color: profilesDB[slope].color }">
+                      {{ slope }}
+                    </td>
+                    <td v-for="z in [1, 2, 3]" :key="z" class="p-0.5 border border-slate-200">
+                      <button 
+                        @click="selectQuickProfile(slope, z)"
+                        :class="[
+                          selectedSlope === slope && selectedZone === z 
+                            ? 'bg-unicauca-blue text-amber-300 font-bold ring-2 ring-unicauca-blue shadow-sm' 
+                            : 'bg-slate-50 hover:bg-slate-200 text-slate-700',
+                          profilesDB[slope].zones[z].isSpecial ? 'border-dashed border-amber-400' : ''
+                        ]"
+                        class="w-full py-1 rounded text-xs transition font-mono"
+                      >
+                        {{ slope }}{{ z }}{{ profilesDB[slope].zones[z].isSpecial ? '*' : '' }}
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Step 1: Slope Selection Buttons -->
+              <div class="pt-2 border-t border-slate-100 space-y-1.5">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">1. Seleccionar Pendiente:</span>
+                <div class="grid grid-cols-1 gap-1">
+                  <button 
+                    v-for="(sData, sKey) in profilesDB" 
+                    :key="sKey"
+                    @click="setSlope(sKey)"
+                    :class="selectedSlope === sKey ? 'bg-blue-50 border-unicauca-blue' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'"
+                    class="p-1.5 rounded-xl border flex items-center space-x-2 text-left transition"
+                  >
+                    <span 
+                      class="w-6 h-6 rounded-lg text-white font-bold text-xs flex items-center justify-center shrink-0"
+                      :style="{ backgroundColor: sData.color }"
+                    >
+                      {{ sKey }}
+                    </span>
+                    <div class="leading-tight flex-1">
+                      <strong class="text-xs text-slate-800 block">{{ sData.name }}</strong>
+                      <span class="text-[10px] text-slate-500">{{ sData.summary.split('.')[0] }}</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Step 2: Zone Selection Buttons -->
+              <div class="pt-2 border-t border-slate-100 space-y-1.5">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">2. Seleccionar Zona:</span>
+                <div class="grid grid-cols-3 gap-1">
+                  <button 
+                    v-for="z in [1, 2, 3]" 
+                    :key="z"
+                    @click="setZone(z)"
+                    :class="selectedZone === z ? 'bg-unicauca-blue text-white font-bold' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'"
+                    class="p-2 rounded-xl text-center transition"
+                  >
+                    <span class="text-xs block">Zona {{ z }}</span>
+                    <span class="text-[9px] opacity-80 block">{{ z === 1 ? 'y > max' : (z === 2 ? 'entre líneas' : 'y < min') }}</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Profile Info & Diagnostic Card -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+              <div class="pb-2 border-b border-slate-100">
+                <div class="text-xs text-slate-400 font-medium">Diagnóstico Hidráulico:</div>
+                <h3 class="text-sm font-bold text-slate-900" :style="{ color: activeSlopeObj.color }">
+                  Perfil {{ activeProfile.code }} — {{ activeSlopeObj.name }}
+                </h3>
+              </div>
+
+              <!-- Condition & Behavior -->
+              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-1.5">
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-500 font-medium">Condición:</span>
+                  <strong class="font-mono text-unicauca-blue bg-white px-2 py-0.5 rounded border border-slate-200">{{ activeProfile.cond }}</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-500 font-medium">Régimen:</span>
+                  <strong :class="activeProfile.regime.includes('Sub') ? 'text-emerald-700' : (activeProfile.regime.includes('Super') ? 'text-red-700' : 'text-amber-700')">
+                    {{ activeProfile.regime }}
+                  </strong>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-500 font-medium">Comportamiento:</span>
+                  <strong :class="activeProfile.dsign.includes('>') ? 'text-emerald-700' : 'text-blue-700'">
+                    {{ activeProfile.dsign }}
+                  </strong>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-500 font-medium">Control Hidráulico:</span>
+                  <strong class="text-slate-800">
+                    {{ activeProfile.regime.includes('Sub') ? 'Aguas Abajo (Sección de Control)' : 'Aguas Arriba (Compuerta / Salida)' }}
+                  </strong>
+                </div>
+              </div>
+
+              <!-- Mini Zone Layer Diagram -->
+              <div class="border border-slate-200 rounded-xl overflow-hidden text-[11px] font-sans">
+                <div 
+                  :class="selectedZone === 1 ? 'bg-emerald-100 text-emerald-900 font-bold border-l-4 border-emerald-600' : 'bg-slate-50 text-slate-500'"
+                  class="px-2.5 py-1 transition"
+                >
+                  Zona 1 (y &gt; max) • {{ activeSlopeObj.code === 'H' || activeSlopeObj.code === 'A' ? 'Inexistente en canal finito' : 'Remanso' }}
+                </div>
+                <div class="bg-white px-2.5 py-0.5 text-[10px] font-mono border-t border-dashed border-slate-300 font-bold text-slate-700 flex justify-between">
+                  <span>{{ topRefLineLabel }}</span>
+                  <span class="text-slate-500">{{ topRefLineVal }}</span>
+                </div>
+                <div 
+                  :class="selectedZone === 2 ? 'bg-amber-100 text-amber-900 font-bold border-l-4 border-amber-600' : 'bg-slate-50 text-slate-500'"
+                  class="px-2.5 py-1 transition"
+                >
+                  Zona 2 (Entre LPN y LPC) • {{ activeSlopeObj.code === 'C' ? 'C2* Crítico Uniforme' : 'Desagüe / Caída' }}
+                </div>
+                <div class="bg-white px-2.5 py-0.5 text-[10px] font-mono border-t border-dashed border-slate-300 font-bold text-slate-700 flex justify-between">
+                  <span>{{ botRefLineLabel }}</span>
+                  <span class="text-slate-500">{{ botRefLineVal }}</span>
+                </div>
+                <div 
+                  :class="selectedZone === 3 ? 'bg-red-100 text-red-900 font-bold border-l-4 border-red-600' : 'bg-slate-50 text-slate-500'"
+                  class="px-2.5 py-1 transition"
+                >
+                  Zona 3 (y &lt; min) • Supercrítico acelerado hacia resalto
+                </div>
+              </div>
+
+              <!-- Description Paragraph -->
+              <p class="text-xs text-slate-600 leading-relaxed text-justify">
+                {{ activeProfile.desc }}
+              </p>
+
+              <!-- Apply Button -->
+              <button 
+                @click="applyPresetAndCalculate"
+                class="w-full py-2.5 px-3 bg-unicauca-blue hover:bg-unicauca-light text-amber-300 font-bold rounded-xl text-xs transition active:scale-95 shadow-sm flex items-center justify-center space-x-1.5"
+              >
+                <span>▶ Cargar y Calcular Perfil {{ activeProfile.code }}</span>
+              </button>
+            </div>
+
+          </aside>
+
+          <!-- RIGHT MAIN AREA: PARAMETERS, VIEW TOGGLE, CANVAS & DATA TABLE -->
+          <div class="flex-1 space-y-4 w-full">
+            
+            <!-- Parameter Control Panel -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-slate-100 gap-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-2">
+                  <span>⚙️ Parámetros Hidráulicos del Canal Rectangular</span>
+                </h3>
+                <div class="flex items-center space-x-2 text-xs">
+                  <span class="text-slate-500">Caudal unitario q:</span>
+                  <strong class="font-mono text-unicauca-blue bg-slate-100 px-2 py-0.5 rounded">{{ (Q / b).toFixed(4) }} m²/s</strong>
+                </div>
+              </div>
+
+              <!-- Inputs Grid -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 text-xs">
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Caudal Q ({{ qUnit }}):</label>
+                  <input 
+                    type="number" 
+                    v-model.number="inputQ" 
+                    @input="onQInputChange" 
+                    step="0.1" 
+                    min="0.001" 
+                    class="w-full font-mono p-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-unicauca-blue"
+                  />
+                </div>
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Ancho b (m):</label>
+                  <input 
+                    type="number" 
+                    v-model.number="b" 
+                    @change="calculateProfile" 
+                    step="0.05" 
+                    min="0.05" 
+                    class="w-full font-mono p-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-unicauca-blue"
+                  />
+                </div>
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Manning n:</label>
+                  <input 
+                    type="number" 
+                    v-model.number="n" 
+                    @change="calculateProfile" 
+                    step="0.001" 
+                    min="0.005" 
+                    class="w-full font-mono p-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-unicauca-blue"
+                  />
+                </div>
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Pendiente S₀:</label>
+                  <input 
+                    type="number" 
+                    v-model.number="S0" 
+                    @change="calculateProfile" 
+                    step="0.0001" 
+                    class="w-full font-mono p-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-unicauca-blue"
+                  />
+                </div>
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Tirante y₀ (m):</label>
+                  <input 
+                    type="number" 
+                    v-model.number="y0" 
+                    @change="calculateProfile" 
+                    step="0.01" 
+                    min="0.005" 
+                    class="w-full font-mono p-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-unicauca-blue"
+                  />
+                </div>
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Tirante yf (m):</label>
+                  <input 
+                    type="number" 
+                    v-model.number="yf" 
+                    @change="calculateProfile" 
+                    step="0.01" 
+                    min="0.005" 
+                    class="w-full font-mono p-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-unicauca-blue"
+                  />
+                </div>
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Tramos N:</label>
+                  <input 
+                    type="number" 
+                    v-model.number="N" 
+                    @change="calculateProfile" 
+                    step="1" 
+                    min="2" 
+                    max="100" 
+                    class="w-full font-mono p-1.5 border border-slate-300 rounded-lg focus:ring-1 focus:ring-unicauca-blue"
+                  />
+                </div>
+              </div>
+
+              <!-- Action Toolbar & View Mode Switcher -->
+              <div class="flex flex-wrap items-center justify-between pt-2 border-t border-slate-100 gap-2">
+                <div class="flex items-center space-x-2">
+                  <button 
+                    @click="calculateProfile"
+                    class="px-3.5 py-1.5 bg-unicauca-blue hover:bg-unicauca-light text-amber-300 font-bold rounded-xl text-xs transition active:scale-95 shadow-sm"
+                  >
+                    ▶ Recalcular Perfil
+                  </button>
+                  <button 
+                    @click="clearCanvas"
+                    class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition border border-slate-200"
+                  >
+                    ✕ Limpiar
+                  </button>
+                </div>
+
+                <!-- View Mode: Depth y(x) vs Real Elevation z(x)+y(x) -->
+                <div class="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
+                  <button 
+                    @click="viewMode = 'depth'; drawTramoCanvas()"
+                    :class="viewMode === 'depth' ? 'bg-white text-unicauca-blue font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="px-3 py-1 rounded-lg transition flex items-center space-x-1"
+                  >
+                    <span>📊 Vista Tirante y(x)</span>
+                  </button>
+                  <button 
+                    @click="viewMode = 'elev'; drawTramoCanvas()"
+                    :class="viewMode === 'elev' ? 'bg-white text-unicauca-blue font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="px-3 py-1 rounded-lg transition flex items-center space-x-1"
+                  >
+                    <span>📐 Vista Cota Real z(x) + y(x)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-2">
+              <div class="flex justify-between items-center text-xs pb-2 border-b border-slate-100">
+                <span class="font-bold text-slate-800">
+                  {{ viewMode === 'depth' ? 'Superficie Libre del Agua y(x) con Líneas de Referencia' : 'Perfil Longitudinal del Canal con Pendiente Real S₀' }}
+                </span>
+                <span class="text-slate-500 font-mono text-[11px]">
+                  Δx acumulado = {{ totalLength.toFixed(2) }} m
+                </span>
+              </div>
+
+              <!-- High-DPI Canvas -->
+              <div class="relative w-full bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center overflow-hidden">
+                <canvas id="canvas-tramo" class="w-full block" style="height: 380px;"></canvas>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-1">
+                <div class="flex items-center space-x-3">
+                  <span class="inline-flex items-center space-x-1"><span class="w-3 h-1 bg-emerald-600 rounded"></span><span>LPN (yₙ) Normal</span></span>
+                  <span class="inline-flex items-center space-x-1"><span class="w-3 h-1 bg-red-600 rounded"></span><span>LPC (yc) Crítico</span></span>
+                  <span class="inline-flex items-center space-x-1"><span class="w-3 h-1 bg-unicauca-blue rounded"></span><span>Lámina de Agua y(x)</span></span>
+                </div>
+                <div>
+                  <span class="italic text-slate-400">Dirección de cálculo: {{ activeProfile.regime.includes('Sub') ? '← De Aguas Abajo hacia Aguas Arriba' : '→ De Aguas Arriba hacia Aguas Abajo' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Numerical Results Table -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-unicauca-blue flex items-center space-x-2">
+                  <span>📋 Tabla de Cálculo por Paso Directo (Marcha Directa)</span>
+                </h4>
+                <span class="text-[11px] text-slate-500 font-mono">{{ profileRows.length }} secciones calculadas</span>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-center border-collapse">
+                  <thead>
+                    <tr class="bg-unicauca-blue text-amber-300 font-bold">
+                      <th class="p-2 border border-blue-900">Sec.</th>
+                      <th class="p-2 border border-blue-900">x (m)</th>
+                      <th class="p-2 border border-blue-900">Tirante y (m)</th>
+                      <th class="p-2 border border-blue-900">Área A (m²)</th>
+                      <th class="p-2 border border-blue-900">Velocidad V (m/s)</th>
+                      <th class="p-2 border border-blue-900">Energía E (m)</th>
+                      <th class="p-2 border border-blue-900">Froude Fr</th>
+                      <th class="p-2 border border-blue-900">Sf prom.</th>
+                      <th class="p-2 border border-blue-900">Δx (m)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr 
+                      v-for="r in profileRows" 
+                      :key="r.sec"
+                      class="hover:bg-blue-50/50 transition border-b border-slate-200"
+                    >
+                      <td class="p-1.5 font-bold text-slate-600">{{ r.sec }}</td>
+                      <td class="p-1.5 font-mono font-bold text-unicauca-blue">{{ r.x.toFixed(2) }}</td>
+                      <td class="p-1.5 font-mono font-bold">{{ r.y.toFixed(4) }}</td>
+                      <td class="p-1.5 font-mono text-slate-600">{{ r.A.toFixed(4) }}</td>
+                      <td class="p-1.5 font-mono text-slate-600">{{ r.V.toFixed(3) }}</td>
+                      <td class="p-1.5 font-mono text-slate-700">{{ r.E.toFixed(4) }}</td>
+                      <td 
+                        class="p-1.5 font-mono font-bold"
+                        :class="r.Fr > 1.05 ? 'text-red-600' : (r.Fr < 0.95 ? 'text-emerald-700' : 'text-amber-600')"
+                      >
+                        {{ r.Fr.toFixed(3) }}
+                      </td>
+                      <td class="p-1.5 font-mono text-slate-500 text-[11px]">{{ r.Sfavg.toExponential(3) }}</td>
+                      <td class="p-1.5 font-mono text-slate-700">{{ r.dx.toFixed(2) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- TAB 2: MÉTODO DE INTEGRACIÓN GRÁFICA F(y)                    -->
+      <!-- ============================================================ -->
+      <section v-show="activeTab === 'graphical_int'" class="space-y-5">
+        
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+          <div class="pb-3 border-b border-slate-100">
+            <h2 class="text-base font-bold text-unicauca-blue">
+              Integración Numérica y Gráfica de la Ecuación del FGV
+            </h2>
+            <p class="text-xs text-slate-500">
+              Cálculo de la longitud del remanso integrando la función diferencial inversa \( F(y) = \frac{dx}{dy} = \frac{1 - Fr^2}{S_0 - S_f} \).
+            </p>
+          </div>
+
+          <!-- Formulation Callout -->
+          <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-xs text-amber-950 flex items-start space-x-3">
+            <span class="text-xl">📐</span>
+            <div>
+              <strong class="block font-bold">Fundamento del Método de Integración Gráfica:</strong>
+              <span>
+                La distancia horizontal \( \Delta x \) requerida para que el tirante varíe desde \( y_1 \) hasta \( y_2 \) es exactamente el área bajo la curva de la función \( F(y) \):
+                \( \Delta x = \int_{y_1}^{y_2} F(y) \, dy \approx \sum \frac{F(y_i) + F(y_{i+1})}{2} \Delta y \).
+              </span>
+            </div>
+          </div>
+
+          <!-- Parameters & Action -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-xs">
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Caudal Q ({{ qUnit }}):</label>
+              <input type="number" v-model.number="inputQ" @input="onQInputChange" step="0.1" class="w-full font-mono p-1.5 border border-slate-300 rounded-lg"/>
+            </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Ancho b (m):</label>
+              <input type="number" v-model.number="b" @change="calcGrafica" step="0.05" class="w-full font-mono p-1.5 border border-slate-300 rounded-lg"/>
+            </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Manning n:</label>
+              <input type="number" v-model.number="n" @change="calcGrafica" step="0.001" class="w-full font-mono p-1.5 border border-slate-300 rounded-lg"/>
+            </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Pendiente S₀:</label>
+              <input type="number" v-model.number="S0" @change="calcGrafica" step="0.0001" class="w-full font-mono p-1.5 border border-slate-300 rounded-lg"/>
+            </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Tirante y₁ (m):</label>
+              <input type="number" v-model.number="y0" @change="calcGrafica" step="0.01" class="w-full font-mono p-1.5 border border-slate-300 rounded-lg"/>
+            </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Tirante y₂ (m):</label>
+              <input type="number" v-model.number="yf" @change="calcGrafica" step="0.01" class="w-full font-mono p-1.5 border border-slate-300 rounded-lg"/>
+            </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Puntos N:</label>
+              <input type="number" v-model.number="graficaN" @change="calcGrafica" step="1" min="5" max="100" class="w-full font-mono p-1.5 border border-slate-300 rounded-lg"/>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2 pt-2">
+            <button 
+              @click="calcGrafica"
+              class="px-4 py-2 bg-unicauca-blue hover:bg-unicauca-light text-amber-300 font-bold rounded-xl text-xs transition active:scale-95 shadow-sm"
+            >
+              ▶ Integrar y Graficar Curva F(y)
+            </button>
+            <span class="text-xs text-slate-600 font-mono">
+              Longitud Integrada Δx = <strong class="text-unicauca-blue text-sm">{{ graficaDeltaX.toFixed(2) }} m</strong>
+            </span>
+          </div>
+
+          <!-- Canvas Container -->
+          <div class="relative w-full bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center overflow-hidden">
+            <canvas id="canvas-grafica" class="w-full block" style="height: 380px;"></canvas>
+          </div>
+
+          <!-- Table of Graphical Integration -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-center border-collapse">
+              <thead>
+                <tr class="bg-unicauca-blue text-amber-300 font-bold">
+                  <th class="p-2 border border-blue-900">#</th>
+                  <th class="p-2 border border-blue-900">Tirante y (m)</th>
+                  <th class="p-2 border border-blue-900">Velocidad V (m/s)</th>
+                  <th class="p-2 border border-blue-900">Froude Fr</th>
+                  <th class="p-2 border border-blue-900">Pend. Fricción Sf</th>
+                  <th class="p-2 border border-blue-900">F(y) = dx/dy</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr 
+                  v-for="(row, idx) in graficaRows" 
+                  :key="idx"
+                  class="hover:bg-blue-50/50 transition border-b border-slate-200"
+                >
+                  <td class="p-1.5 font-bold text-slate-600">{{ idx + 1 }}</td>
+                  <td class="p-1.5 font-mono font-bold">{{ row.y.toFixed(4) }}</td>
+                  <td class="p-1.5 font-mono text-slate-600">{{ row.V.toFixed(3) }}</td>
+                  <td 
+                    class="p-1.5 font-mono font-bold"
+                    :class="row.Fr > 1.05 ? 'text-red-600' : (row.Fr < 0.95 ? 'text-emerald-700' : 'text-amber-600')"
+                  >
+                    {{ row.Fr.toFixed(3) }}
+                  </td>
+                  <td class="p-1.5 font-mono text-slate-500 text-[11px]">{{ row.Sf.toExponential(3) }}</td>
+                  <td class="p-1.5 font-mono font-bold text-unicauca-blue">{{ isFinite(row.Fy) ? row.Fy.toFixed(2) : '±∞' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- TAB 3: FUNDAMENTO TEÓRICO & DERIVACIÓN MATEMÁTICA            -->
+      <!-- ============================================================ -->
+      <section v-show="activeTab === 'theory'" class="space-y-5">
+        
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-6">
+          
+          <div class="pb-3 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-unicauca-blue">
+                Fundamentos Teóricos del Flujo Gradualmente Variado (FGV)
+              </h2>
+              <p class="text-xs text-slate-500">
+                Derivación físico-matemática, comportamiento del Número de Froude y clasificación integral de los 15 perfiles hidráulicos.
+              </p>
+            </div>
+            <button 
+              @click="reRenderKaTeX"
+              class="px-3 py-1 bg-blue-50 text-unicauca-blue hover:bg-blue-100 font-semibold rounded-lg text-xs border border-blue-200"
+            >
+              🔄 Renderizar Fórmulas
+            </button>
+          </div>
+
+          <!-- Section 1: Conceptos Previos -->
+          <div class="space-y-3">
+            <h3 class="text-sm font-bold text-unicauca-blue border-l-4 border-amber-500 pl-2">
+              1. Conceptos Previos y Variables Fundamentales
+            </h3>
+            <p class="text-xs text-slate-700 leading-relaxed text-justify">
+              Un canal abierto es una conducción donde el fluido posee una <strong>superficie libre</strong> en contacto directo con la atmósfera. El tirante hidráulico \( y \) es la profundidad del agua medida perpendicularmente a la solera del fondo. En flujo permanente uniforme, la fuerza de gravedad se equilibra exactamente con la resistencia por fricción en el perímetro mojado, estableciéndose el <strong>tirante normal \( y_n \)</strong>.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                <strong class="text-unicauca-blue block mb-1">Tirante Normal (\(y_n\)):</strong>
+                <span>Profundidad de equilibrio uniforme según la fórmula de Manning donde \( S_f = S_0 \). Delimita la Línea de Profundidad Normal (LPN).</span>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                <strong class="text-unicauca-blue block mb-1">Tirante Crítico (\(y_c\)):</strong>
+                <span>Profundidad con energía específica mínima donde \( Fr = 1 \). Delimita la Línea de Profundidad Crítica (LPC). En rectangular: \( y_c = \sqrt[3]{q^2/g} \).</span>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                <strong class="text-unicauca-blue block mb-1">Pendiente Crítica (\(S_c\)):</strong>
+                <span>Pendiente del fondo que produce un flujo uniforme exactamente en estado crítico (\( y_n = y_c \)).</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Deducción de la Ecuación General -->
+          <div class="space-y-3 pt-4 border-t border-slate-100">
+            <h3 class="text-sm font-bold text-unicauca-blue border-l-4 border-amber-500 pl-2">
+              2. Derivación Paso a Paso de la Ecuación Canónica de Bresse-Bakhmeteff
+            </h3>
+            <p class="text-xs text-slate-700 leading-relaxed text-justify">
+              Considerando la carga de energía total \( H \) referida a un plano de referencia horizontal:
+            </p>
+
+            <div class="p-3 bg-blue-50/50 rounded-xl border border-blue-100 text-center font-mono text-xs text-unicauca-blue">
+              \[ H = z + y + \frac{V^2}{2g} = z + y + \frac{Q^2}{2gA^2} \]
+            </div>
+
+            <p class="text-xs text-slate-700 leading-relaxed text-justify">
+              Derivando con respecto a la distancia longitudinal \( x \), y teniendo presente que la pérdida de carga por fricción es \( \frac{dH}{dx} = -S_f \) y la pendiente del fondo es \( \frac{dz}{dx} = -S_0 \):
+            </p>
+
+            <div class="p-3 bg-amber-50/60 rounded-xl border border-amber-200 text-center font-mono text-xs text-amber-900">
+              \[ -S_f = -S_0 + \frac{dy}{dx} + \frac{d}{dx}\left(\frac{Q^2}{2gA^2}\right) \implies \frac{dy}{dx} + \frac{d}{dx}\left(\frac{Q^2}{2gA^2}\right) = S_0 - S_f \]
+            </div>
+
+            <p class="text-xs text-slate-700 leading-relaxed text-justify">
+              Aplicando la regla de la cadena con el incremento elemental de área mojada \( dA = T \, dy \):
+            </p>
+
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center font-mono text-xs text-slate-800">
+              \[ \frac{d}{dx}\left(\frac{Q^2}{2gA^2}\right) = -\frac{Q^2}{gA^3}\frac{dA}{dx} = -\frac{Q^2 T}{gA^3}\frac{dy}{dx} = -Fr^2 \frac{dy}{dx} \]
+            </div>
+
+            <p class="text-xs text-slate-700 leading-relaxed text-justify">
+              Factorizando el gradiente superficial \( \frac{dy}{dx} \), se obtiene la <strong>Ecuación Canónica del FGV</strong>:
+            </p>
+
+            <div class="p-4 bg-gradient-to-r from-blue-900 to-unicauca-blue text-amber-300 rounded-2xl shadow text-center font-mono text-sm sm:text-base font-bold">
+              \[ \frac{dy}{dx} = \frac{S_0 - S_f}{1 - Fr^2} = \frac{S_0 - \frac{n^2 Q^2}{A^2 R_h^{4/3}}}{1 - \frac{Q^2 T}{g A^3}} \]
+            </div>
+          </div>
+
+          <!-- Section 3: Classification of the 15 Profiles -->
+          <div class="space-y-3 pt-4 border-t border-slate-100">
+            <h3 class="text-sm font-bold text-unicauca-blue border-l-4 border-amber-500 pl-2">
+              3. Clasificación Integral de los 15 Perfiles Hidráulicos
+            </h3>
+            <p class="text-xs text-slate-700 leading-relaxed text-justify">
+              La combinación de las <strong>5 pendientes de fondo</strong> (\(M, C, S, H, A\)) con las <strong>3 zonas hidráulicas</strong> delimitadas por la Línea de Profundidad Normal (LPN, \(y_n\)) y la Línea de Profundidad Crítica (LPC, \(y_c\)) genera el espacio teórico de 15 perfiles:
+            </p>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-center border-collapse">
+                <thead>
+                  <tr class="bg-unicauca-blue text-white font-bold">
+                    <th class="p-2 border border-blue-900">Pendiente</th>
+                    <th class="p-2 border border-blue-900">Zona 1 (\(y > \max\))</th>
+                    <th class="p-2 border border-blue-900">Zona 2 (Entre \(y_n\) e \(y_c\))</th>
+                    <th class="p-2 border border-blue-900">Zona 3 (\(y < \min\))</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="p-2 border border-slate-200 font-bold text-emerald-800 bg-emerald-50">
+                      Moderada / Suave (M)<br><span class="text-[10px] text-slate-500 font-normal">\(S_0 < S_c \implies y_n > y_c\)</span>
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-emerald-700">M1</strong> (\(dy/dx > 0\))<br>
+                      <span class="text-[10px] text-slate-600">Curva de remanso subcrítico hacia presas</span>
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-blue-700">M2</strong> (\(dy/dx < 0\))<br>
+                      <span class="text-[10px] text-slate-600">Desagüe / caída hacia caída libre</span>
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-red-700">M3</strong> (\(dy/dx > 0\))<br>
+                      <span class="text-[10px] text-slate-600">Supercrítico creciente hacia resalto</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="p-2 border border-slate-200 font-bold text-amber-800 bg-amber-50">
+                      Crítica (C)<br><span class="text-[10px] text-slate-500 font-normal">\(S_0 = S_c \implies y_n = y_c\)</span>
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-emerald-700">C1</strong> (\(dy/dx > 0\))<br>
+                      <span class="text-[10px] text-slate-600">Remanso subcrítico sobre pendiente crítica</span>
+                    </td>
+                    <td class="p-2 border border-slate-200 bg-amber-50/50">
+                      <strong class="text-amber-800">C2*</strong> (\(dy/dx = 0/0\))<br>
+                      <span class="text-[10px] text-slate-600">Flujo uniforme crítico (recta inestable)</span>
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-red-700">C3</strong> (\(dy/dx > 0\))<br>
+                      <span class="text-[10px] text-slate-600">Supercrítico hacia tirante crítico</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="p-2 border border-slate-200 font-bold text-red-800 bg-red-50">
+                      Fuerte / Pronunciada (S)<br><span class="text-[10px] text-slate-500 font-normal">\(S_0 > S_c \implies y_n < y_c\)</span>
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-emerald-700">S1</strong> (\(dy/dx > 0\))<br>
+                      <span class="text-[10px] text-slate-600">Remanso subcrítico sobre pendiente fuerte</span>
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-red-700">S2</strong> (\(dy/dx < 0\))<br>
+                      <span class="text-[10px] text-slate-600">Caída supercrítica acelerada hacia \(y_n\)</span>
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-red-700">S3</strong> (\(dy/dx > 0\))<br>
+                      <span class="text-[10px] text-slate-600">Supercrítico rápido retardado hacia \(y_n\)</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="p-2 border border-slate-200 font-bold text-blue-900 bg-blue-50">
+                      Horizontal (H)<br><span class="text-[10px] text-slate-500 font-normal">\(S_0 = 0 \implies y_n \to \infty\)</span>
+                    </td>
+                    <td class="p-2 border border-slate-200 bg-slate-100 text-slate-400 italic">
+                      H1* Inexistente (\(y > \infty\))
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-blue-700">H2</strong> (\(dy/dx < 0\))<br>
+                      <span class="text-[10px] text-slate-600">Desagüe subcrítico en fondo plano</span>
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-red-700">H3</strong> (\(dy/dx > 0\))<br>
+                      <span class="text-[10px] text-slate-600">Supercrítico tras compuerta horizontal</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="p-2 border border-slate-200 font-bold text-slate-800 bg-slate-100">
+                      Adversa (A)<br><span class="text-[10px] text-slate-500 font-normal">\(S_0 < 0 \implies \nexists y_n \in \mathbb{R}^+\)</span>
+                    </td>
+                    <td class="p-2 border border-slate-200 bg-slate-100 text-slate-400 italic">
+                      A1* Inexistente (\(\nexists y_n\))
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-blue-700">A2</strong> (\(dy/dx < 0\))<br>
+                      <span class="text-[10px] text-slate-600">Caída retardada por contrapendiente</span>
+                    </td>
+                    <td class="p-2 border border-slate-200">
+                      <strong class="text-red-700">A3</strong> (\(dy/dx > 0\))<br>
+                      <span class="text-[10px] text-slate-600">Supercrítico forzado por contrapendiente</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Notes on Flow Behavior -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+              <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950">
+                <strong class="block font-bold text-emerald-900 mb-1">🌊 Perfiles de Flujo Retardado / Curvas de Remanso (\(dy/dx > 0\)):</strong>
+                <p>
+                  El tirante aumenta en la dirección del flujo (\(M1, S1, C1, M3, S3, C3, H3, A3\)). El agua desacelera y acumula energía potencial, típicamente al aproximarse a un obstáculo (vertedero, compuerta o embalse).
+                </p>
+              </div>
+              <div class="p-3 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-950">
+                <strong class="block font-bold text-unicauca-blue mb-1">⚡ Perfiles de Flujo Acelerado / Desagüe / Colapso gravitacional (\(dy/dx < 0\)):</strong>
+                <p>
+                  El tirante disminuye en la dirección del flujo (\(M2, S2, H2, A2\)). El agua acelera y gana energía cinética, como ocurre al aproximarse a una caída libre (brink) o a un cambio hacia una pendiente más empinada.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Regla de Oro de los Controles -->
+          <div class="space-y-3 pt-4 border-t border-slate-100">
+            <h3 class="text-sm font-bold text-unicauca-blue border-l-4 border-amber-500 pl-2">
+              4. Regla de Oro de la Dirección de Cálculo y Controles Hidráulicos
+            </h3>
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2 text-slate-800">
+              <ul class="list-disc list-inside space-y-1">
+                <li><strong>En Régimen Subcrítico (\(Fr < 1\)):</strong> La celeridad de onda \( c = \sqrt{gD} \) es mayor que la velocidad del flujo \( V \). Las perturbaciones viajan aguas arriba, por lo que la sección de control se ubica <strong>aguas abajo</strong>. El cálculo numérico debe avanzar <strong>de aguas abajo hacia aguas arriba</strong>.</li>
+                <li><strong>En Régimen Supercrítico (\(Fr > 1\)):</strong> La velocidad de flujo supera la celeridad de onda (\( V > c \)). Las ondas no pueden remontar la corriente, por lo que el control hidráulico se ubica <strong>aguas arriba</strong> (vertedero, orificio o compuerta). El cálculo numérico debe avanzar <strong>de aguas arriba hacia aguas abajo</strong>.</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 text-center py-3 text-xs border-t border-slate-800 shrink-0">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <span>Laboratorio Virtual de Hidráulica • Universidad del Cauca • 2026</span>
+        <span class="text-slate-500">Práctica V: Estudio del Flujo Gradualmente Variado (FGV)</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- APPLICATION SCRIPT -->
+  <script>
+    const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
+    const G_CONST = 9.81;
+
+    // Database of the 15 FGV Profiles
+    const PROFILES_DB = {
+      M: {
+        name: 'Moderada / Suave (Mild)', code: 'M', color: '#006400', S0: 0.001,
+        summary: 'S₀ < Sc. La Línea LPN está por encima de la Línea LPC (yₙ > yc). Flujo uniforme subcrítico.',
+        zones: {
+          1: {
+            code: 'M1', zone: 1, regime: 'Subcrítico (Fr < 1)',
+            cond: 'y > yₙ > yc', dsign: 'dy/dx > 0 (Curva de Remanso Creciente)',
+            y1: 0.90, y2: 2.50, y0: 0.90, yf: 2.50, N: 25,
+            desc: 'Perfil de remanso (backwater): el tirante sube aguas abajo al acercarse a un embalse, presa o estrechamiento. Asintótico a LPN aguas arriba y casi horizontal aguas abajo. Es el perfil más común en ríos e ingeniería civil.',
+            isSpecial: false
+          },
+          2: {
+            code: 'M2', zone: 2, regime: 'Subcrítico (Fr < 1)',
+            cond: 'yₙ > y > yc', dsign: 'dy/dx < 0 (Desagüe / Caída Decreciente)',
+            y1: 0.74, y2: 0.58, y0: 0.74, yf: 0.58, N: 25,
+            desc: 'Perfil de aceleración o desagüe: el tirante cae suavemente desde yₙ hacia el tirante crítico yc. Ocurre aguas arriba de una caída libre (brink), un vertedero o un cambio a pendiente pronunciada.',
+            isSpecial: false
+          },
+          3: {
+            code: 'M3', zone: 3, regime: 'Supercrítico (Fr > 1)',
+            cond: 'yₙ > yc > y', dsign: 'dy/dx > 0 (Creciente hacia yc)',
+            y1: 0.15, y2: 0.48, y0: 0.15, yf: 0.48, N: 25,
+            desc: 'Perfil supercrítico: se forma aguas abajo de una compuerta de fondo o descarga de aliviadero. El tirante crece suavemente hacia yc, donde culmina violentamente en un resalto hidráulico.',
+            isSpecial: false
+          }
+        }
+      },
+      C: {
+        name: 'Crítica (Critical)', code: 'C', color: '#B8860B', S0: 0.00276,
+        summary: 'S₀ = Sc. La Línea LPN y la Línea LPC son coincidentes (yₙ = yc). El flujo uniforme es crítico.',
+        zones: {
+          1: {
+            code: 'C1', zone: 1, regime: 'Subcrítico (Fr < 1)',
+            cond: 'y > yc = yₙ', dsign: 'dy/dx > 0 (Remanso Creciente)',
+            y1: 0.65, y2: 2.20, y0: 0.65, yf: 2.20, N: 25,
+            desc: 'Perfil subcrítico en pendiente crítica: se origina por un remanso (vertedero o presa) sobre un canal en pendiente crítica. El tirante crece aguas abajo y tiende asintóticamente a una recta horizontal.',
+            isSpecial: false
+          },
+          2: {
+            code: 'C2', zone: 2, regime: 'Crítico Uniforme (Fr = 1)',
+            cond: 'y = yc = yₙ', dsign: 'dy/dx = 0/0 (Indeterminado / Recta Uniforme)',
+            y1: 0.542, y2: 0.542, y0: 0.542, yf: 0.542, N: 20,
+            desc: 'Flujo uniforme crítico: Caso singular y límite. Tanto numerador como denominador son cero (dy/dx = 0/0). El agua corre en una recta paralela al fondo en estado crítico permanente. Es inestable ante perturbaciones.',
+            isSpecial: true
+          },
+          3: {
+            code: 'C3', zone: 3, regime: 'Supercrítico (Fr > 1)',
+            cond: 'y < yc = yₙ', dsign: 'dy/dx > 0 (Creciente)',
+            y1: 0.15, y2: 0.48, y0: 0.15, yf: 0.48, N: 25,
+            desc: 'Perfil supercrítico en pendiente crítica: el agua sale a gran velocidad por debajo de compuerta y sube suavemente aproximándose al tirante crítico yc = yₙ.',
+            isSpecial: false
+          }
+        }
+      },
+      S: {
+        name: 'Pronunciada / Fuerte (Steep)', code: 'S', color: '#CC0000', S0: 0.010,
+        summary: 'S₀ > Sc. La Línea LPN está por debajo de la Línea LPC (yₙ < yc). Flujo uniforme supercrítico.',
+        zones: {
+          1: {
+            code: 'S1', zone: 1, regime: 'Subcrítico (Fr < 1)',
+            cond: 'y > yc > yₙ', dsign: 'dy/dx > 0 (Remanso Creciente)',
+            y1: 0.65, y2: 2.20, y0: 0.65, yf: 2.20, N: 25,
+            desc: 'Perfil subcrítico en pendiente fuerte: se produce aguas arriba de una presa o compuerta que frena un canal empinado. El perfil se une con el flujo supercrítico aguas arriba a través de un resalto hidráulico sumergido.',
+            isSpecial: false
+          },
+          2: {
+            code: 'S2', zone: 2, regime: 'Supercrítico (Fr > 1)',
+            cond: 'yc > y > yₙ', dsign: 'dy/dx < 0 (Caída hacia yₙ)',
+            y1: 0.50, y2: 0.38, y0: 0.50, yf: 0.38, N: 25,
+            desc: 'Perfil de aceleración supercrítico: el flujo arranca en la sección de control crítico yc (e.g. cambio de pendiente suave a fuerte) y cae asintóticamente hacia el tirante normal yₙ.',
+            isSpecial: false
+          },
+          3: {
+            code: 'S3', zone: 3, regime: 'Supercrítico Rápido (Fr > 1)',
+            cond: 'yc > yₙ > y', dsign: 'dy/dx > 0 (Creciente hacia yₙ)',
+            y1: 0.10, y2: 0.32, y0: 0.10, yf: 0.32, N: 25,
+            desc: 'Perfil supercrítico sumamente rápido: originado tras una compuerta que descarga con tirante menor a yₙ. El agua se frena por fricción y sube asintóticamente hacia el tirante normal supercrítico yₙ.',
+            isSpecial: false
+          }
+        }
+      },
+      H: {
+        name: 'Horizontal (S₀ = 0)', code: 'H', color: '#003087', S0: 0.000001,
+        summary: 'S₀ = 0. La pendiente del fondo es nula. El tirante normal es infinito (yₙ → ∞). No existe flujo uniforme.',
+        zones: {
+          1: {
+            code: 'H1', zone: 1, regime: 'Teórico / Inexistente',
+            cond: 'y > yₙ → ∞', dsign: 'No existe en canales reales',
+            y1: 5.0, y2: 5.0, y0: 5.0, yf: 5.0, N: 10,
+            desc: 'Caso puramente teórico: Dado que en un canal horizontal S₀ = 0, el tirante normal es infinito (yₙ = ∞). Por lo tanto, la Zona 1 requeriría un tirante superior al infinito, lo cual es físicamente imposible en canales finitos.',
+            isSpecial: true
+          },
+          2: {
+            code: 'H2', zone: 2, regime: 'Subcrítico (Fr < 1)',
+            cond: 'yₙ → ∞ > y > yc', dsign: 'dy/dx < 0 (Caída hacia yc)',
+            y1: 2.20, y2: 0.62, y0: 2.20, yf: 0.62, N: 25,
+            desc: 'Perfil de desagüe horizontal: La fricción disipa energía sin que la gravedad impulse el flujo. El tirante decrece aguas abajo hacia yc, como en la entrada a una caída libre en fondo plano.',
+            isSpecial: false
+          },
+          3: {
+            code: 'H3', zone: 3, regime: 'Supercrítico (Fr > 1)',
+            cond: 'yₙ → ∞ > yc > y', dsign: 'dy/dx > 0 (Creciente hacia yc)',
+            y1: 0.15, y2: 0.48, y0: 0.15, yf: 0.48, N: 25,
+            desc: 'Perfil supercrítico horizontal: Se origina tras una compuerta en canal horizontal. El flujo pierde velocidad rápidamente por fricción y el tirante sube hacia yc, terminando en resalto hidráulico.',
+            isSpecial: false
+          }
+        }
+      },
+      A: {
+        name: 'Adversa (S₀ < 0)', code: 'A', color: '#333333', S0: -0.001,
+        summary: 'S₀ < 0. El fondo asciende en la dirección del flujo. No existe tirante normal real (yₙ ∉ ℝ⁺). Fricción y gravedad frenan el agua.',
+        zones: {
+          1: {
+            code: 'A1', zone: 1, regime: 'Inexistente Físicamente',
+            cond: '∄ yₙ real (S₀ < 0)', dsign: 'No existe zona física',
+            y1: 5.0, y2: 5.0, y0: 5.0, yf: 5.0, N: 10,
+            desc: 'Caso inexistente: En pendientes adversas el fondo sube aguas abajo. No puede existir un tirante normal real positivo donde la gravedad impulse el flujo contra la fricción. Por ende, la Zona 1 no existe en la naturaleza.',
+            isSpecial: true
+          },
+          2: {
+            code: 'A2', zone: 2, regime: 'Subcrítico (Fr < 1)',
+            cond: 'y > yc (S₀ < 0)', dsign: 'dy/dx < 0 (Caída acelerada)',
+            y1: 2.20, y2: 0.62, y0: 2.20, yf: 0.62, N: 25,
+            desc: 'Perfil subcrítico adverso: Doble deceleración energética debido a la fricción de Manning sumada al ascenso geométrico del fondo. El tirante cae rápidamente hacia el estado crítico yc.',
+            isSpecial: false
+          },
+          3: {
+            code: 'A3', zone: 3, regime: 'Supercrítico (Fr > 1)',
+            cond: 'y < yc (S₀ < 0)', dsign: 'dy/dx > 0 (Creciente rápido)',
+            y1: 0.15, y2: 0.48, y0: 0.15, yf: 0.48, N: 25,
+            desc: 'Perfil supercrítico adverso: Aguas abajo de una compuerta en contrapendiente. La lámina de agua sube abruptamente hacia yc para disipar el exceso de energía cinética.',
+            isSpecial: false
+          }
+        }
+      }
+    };
+
+    createApp({
+      setup() {
+        const activeTab = ref('direct_step');
+        const viewMode = ref('depth'); // 'depth' | 'elev'
+        const qUnit = ref('m3/s');
+
+        // Parameters
+        const Q = ref(5.0); // always stored in m3/s internally
+        const inputQ = ref(5.0);
+        const b = ref(4.0);
+        const n = ref(0.013);
+        const S0 = ref(0.001);
+        const y0 = ref(0.90);
+        const yf = ref(2.50);
+        const N = ref(25);
+
+        // Profile selection
+        const selectedSlope = ref('M');
+        const selectedZone = ref(1);
+
+        // Results
+        const profileRows = ref([]);
+        const totalLength = ref(0);
+
+        // Graphical Integration Data
+        const graficaN = ref(25);
+        const graficaDeltaX = ref(0);
+        const graficaRows = ref([]);
+
+        // Hydraulic Functions
+        const calcHydraulics = (qVal, bVal, nVal, s0Val, yVal) => {
+          const ySafe = Math.max(0.001, yVal);
+          const A = bVal * ySafe;
+          const T = bVal;
+          const Pm = bVal + 2 * ySafe;
+          const R = A / Pm;
+          const V = qVal / A;
+          const Fr = V / Math.sqrt(G_CONST * ySafe);
+          const Sf = (nVal * nVal * V * V) / Math.pow(R, 4/3);
+          const E = ySafe + (V * V) / (2 * G_CONST);
+          return { A, T, Pm, R, V, Fr, Sf, E };
+        };
+
+        const calcNormalDepth = (qVal, bVal, nVal, s0Val) => {
+          if (s0Val <= 1e-8) return Infinity; // Horizontal or Adverse
+          const Qfn = y => (1 / nVal) * (bVal * y) * Math.pow((bVal * y) / (bVal + 2 * y), 2/3) * Math.sqrt(s0Val);
+          let ya = 0.001, yb = 60.0;
+          if (Qfn(yb) < qVal) return yb;
+          for (let i = 0; i < 350; i++) {
+            const ym = (ya + yb) / 2;
+            const diff = Qfn(ym) - qVal;
+            if (Math.abs(diff) < 1e-9) return ym;
+            if (diff < 0) ya = ym; else yb = ym;
+          }
+          return (ya + yb) / 2;
+        };
+
+        const calcCriticalDepth = (qVal, bVal) => {
+          const qUnitFlow = qVal / bVal;
+          return Math.pow((qUnitFlow * qUnitFlow) / G_CONST, 1/3);
+        };
+
+        const calcCriticalSlope = (qVal, bVal, nVal, ycVal) => {
+          const Ac = bVal * ycVal;
+          const Pmc = bVal + 2 * ycVal;
+          const Rc = Ac / Pmc;
+          const Vc = qVal / Ac;
+          return (nVal * nVal * Vc * Vc) / Math.pow(Rc, 4/3);
+        };
+
+        // Computed Properties
+        const activeSlopeObj = computed(() => PROFILES_DB[selectedSlope.value]);
+        const activeProfile = computed(() => activeSlopeObj.value.zones[selectedZone.value]);
+
+        const yn = computed(() => calcNormalDepth(Q.value, b.value, n.value, S0.value));
+        const yc = computed(() => calcCriticalDepth(Q.value, b.value));
+        const Sc = computed(() => calcCriticalSlope(Q.value, b.value, n.value, yc.value));
+
+        const ynDisplay = computed(() => {
+          if (!isFinite(yn.value) || yn.value > 50) return '→ ∞ (Horizontal)';
+          if (yn.value <= 0) return 'No existe (Adversa)';
+          return yn.value.toFixed(3) + ' m';
+        });
+
+        const behaviorBadgeText = computed(() => {
+          const prof = activeProfile.value;
+          if (prof.code === 'C2') return 'Flujo Crítico Uniforme (dy/dx = 0/0)';
+          if (prof.isSpecial) return 'Caso Teórico Límite / Singular';
+          if (prof.dsign.includes('>')) return 'Flujo Retardado / Curva de Remanso (dy/dx > 0)';
+          return 'Flujo Acelerado / Desagüe / Abatimiento (dy/dx < 0)';
+        });
+
+        const behaviorBadgeIcon = computed(() => {
+          const prof = activeProfile.value;
+          if (prof.code === 'C2') return '⚖️';
+          if (prof.isSpecial) return '⚠️';
+          if (prof.dsign.includes('>')) return '🌊';
+          return '⚡';
+        });
+
+        const behaviorBadgeClass = computed(() => {
+          const prof = activeProfile.value;
+          if (prof.code === 'C2') return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+          if (prof.isSpecial) return 'bg-slate-700 text-slate-300 border-slate-600';
+          if (prof.dsign.includes('>')) return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+          return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+        });
+
+        const topRefLineLabel = computed(() => {
+          const s = selectedSlope.value;
+          if (s === 'H' || s === 'A') return 'LPN: yₙ → ∞ / No existe';
+          return yn.value >= yc.value ? 'LPN (yₙ) Normal' : 'LPC (yc) Crítico';
+        });
+
+        const topRefLineVal = computed(() => {
+          const s = selectedSlope.value;
+          if (s === 'H' || s === 'A') return '---';
+          return (Math.max(yn.value, yc.value)).toFixed(3) + ' m';
+        });
+
+        const botRefLineLabel = computed(() => {
+          const s = selectedSlope.value;
+          if (s === 'H' || s === 'A') return 'LPC (yc) Crítico';
+          return yn.value < yc.value ? 'LPN (yₙ) Normal' : 'LPC (yc) Crítico';
+        });
+
+        const botRefLineVal = computed(() => {
+          return yc.value.toFixed(3) + ' m';
+        });
+
+        // Methods
+        const setQUnit = (unit) => {
+          qUnit.value = unit;
+          if (unit === 'L/s') {
+            inputQ.value = +(Q.value * 1000).toFixed(2);
+          } else {
+            inputQ.value = +(Q.value).toFixed(4);
+          }
+        };
+
+        const onQInputChange = () => {
+          if (qUnit.value === 'L/s') {
+            Q.value = Math.max(0.0001, inputQ.value / 1000);
+          } else {
+            Q.value = Math.max(0.0001, inputQ.value);
+          }
+          calculateProfile();
+        };
+
+        const setSlope = (sKey) => {
+          selectedSlope.value = sKey;
+          S0.value = PROFILES_DB[sKey].S0;
+          applyPresetAndCalculate();
+        };
+
+        const setZone = (zNum) => {
+          selectedZone.value = zNum;
+          applyPresetAndCalculate();
+        };
+
+        const selectQuickProfile = (slope, z) => {
+          selectedSlope.value = slope;
+          selectedZone.value = z;
+          S0.value = PROFILES_DB[slope].S0;
+          applyPresetAndCalculate();
+        };
+
+        const applyPresetAndCalculate = () => {
+          const prof = activeProfile.value;
+          S0.value = activeSlopeObj.value.S0;
+          y0.value = prof.y0;
+          yf.value = prof.yf;
+          N.value = prof.N;
+          calculateProfile();
+          calcGrafica();
+        };
+
+        const loadLabPreset = () => {
+          // Table V.1 Laboratory Parameters: b = 0.30 m, Q = 16 L/s = 0.016 m3/s, n = 0.012, S0 = 0.001
+          Q.value = 0.016;
+          b.value = 0.30;
+          n.value = 0.012;
+          S0.value = 0.001;
+          selectedSlope.value = 'M';
+          selectedZone.value = 1;
+
+          if (qUnit.value === 'L/s') {
+            inputQ.value = 16.0;
+          } else {
+            inputQ.value = 0.016;
+          }
+
+          // In Lab, dam creates backwater M1 starting from y0 = 0.18 m down to normal depth yn ≈ 0.122 m
+          y0.value = 0.18;
+          yf.value = 0.122;
+          N.value = 20;
+
+          calculateProfile();
+          calcGrafica();
+        };
+
+        // Calculation of Direct Step Profile
+        const calculateProfile = () => {
+          const prof = activeProfile.value;
+          const qVal = Q.value;
+          const bVal = b.value;
+          const nVal = n.value;
+          const s0Val = S0.value;
+          const y0Val = y0.value;
+          const yfVal = yf.value;
+          const nSteps = Math.max(2, N.value);
+
+          // Handle Special Profiles (C2, H1, A1)
+          if (prof.code === 'C2') {
+            handleC2Profile(qVal, bVal, s0Val, nSteps);
+            return;
+          }
+          if (prof.isSpecial) {
+            handleSpecialProfile(prof);
+            return;
+          }
+
+          const rows = [];
+          let cumX = 0;
+          const dy = (yfVal - y0Val) / nSteps;
+
+          for (let i = 0; i <= nSteps; i++) {
+            const y = y0Val + i * dy;
+            const h = calcHydraulics(qVal, bVal, nVal, s0Val, y);
+
+            if (i === 0) {
+              rows.push({
+                sec: 1, x: 0, dx: 0, y, A: h.A, V: h.V, Fr: h.Fr, E: h.E, Sf: h.Sf, Sfavg: 0
+              });
+            } else {
+              const prev = rows[i - 1];
+              const Sfavg = (prev.Sf + h.Sf) / 2;
+              const denom = Sfavg - s0Val;
+              const dx = (Math.abs(denom) < 1e-12) ? 0 : (prev.E - h.E) / denom;
+              cumX += dx;
+              rows.push({
+                sec: i + 1, x: cumX, dx, y, A: h.A, V: h.V, Fr: h.Fr, E: h.E, Sf: h.Sf, Sfavg
+              });
+            }
+          }
+
+          profileRows.value = rows;
+          totalLength.value = Math.abs(rows[rows.length - 1].x - rows[0].x);
+
+          nextTick(() => {
+            drawTramoCanvas();
+          });
+        };
+
+        const handleC2Profile = (qVal, bVal, s0Val, nSteps) => {
+          const ycVal = calcCriticalDepth(qVal, bVal);
+          const rows = [];
+          const L = 100.0;
+          const dx = L / nSteps;
+          for (let i = 0; i <= nSteps; i++) {
+            const h = calcHydraulics(qVal, bVal, n.value, s0Val, ycVal);
+            rows.push({
+              sec: i + 1, x: i * dx, dx: (i === 0 ? 0 : dx), y: ycVal, A: h.A, V: h.V,
+              Fr: 1.0, E: h.E, Sf: s0Val, Sfavg: s0Val
+            });
+          }
+          profileRows.value = rows;
+          totalLength.value = L;
+          nextTick(() => {
+            drawTramoCanvas();
+          });
+        };
+
+        const handleSpecialProfile = (prof) => {
+          profileRows.value = [];
+          totalLength.value = 0;
+          nextTick(() => {
+            renderSpecialNoticeOnCanvas('canvas-tramo', prof);
+          });
+        };
+
+        // Direct Step Canvas Rendering
+        const drawTramoCanvas = () => {
+          const cv = document.getElementById('canvas-tramo');
+          if (!cv) return;
+          const ctx = cv.getContext('2d');
+
+          // High DPI display support
+          const dpr = window.devicePixelRatio || 1;
+          const rect = cv.getBoundingClientRect();
+          const W = rect.width || 800;
+          const H = 380;
+          cv.width = W * dpr;
+          cv.height = H * dpr;
+          ctx.resetTransform ? ctx.resetTransform() : ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.scale(dpr, dpr);
+
+          const prof = activeProfile.value;
+          if (prof.isSpecial && prof.code !== 'C2') {
+            renderSpecialNoticeOnCanvas('canvas-tramo', prof);
+            return;
+          }
+
+          const rows = profileRows.value;
+          if (rows.length < 2) return;
+
+          const padL = 65, padR = 25, padT = 38, padB = 46;
+          ctx.clearRect(0, 0, W, H);
+
+          const xs = rows.map(r => r.x);
+          const xMin = Math.min(...xs), xMax = Math.max(...xs);
+          const rX = (xMax - xMin) || 1;
+          const ynVal = yn.value;
+          const ycVal = yc.value;
+          const s0Val = S0.value;
+
+          if (viewMode.value === 'depth') {
+            // VISTA 1: TIRANTE y(x) CON LPN Y LPC HORIZONTALES
+            const ys = rows.map(r => r.y);
+            const extraLines = [ycVal];
+            if (isFinite(ynVal) && ynVal > 0 && ynVal < 50) extraLines.push(ynVal);
+            const yMin = 0;
+            const yMax = Math.max(...ys, ...extraLines) * 1.18;
+            const rY = (yMax - yMin) || 1;
+
+            const px = x => padL + (x - xMin) / rX * (W - padL - padR);
+            const py = y => padT + (1 - (y - yMin) / rY) * (H - padT - padB);
+
+            // Background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+
+            // Colored Zone Bands
+            const ynSafe = (!isFinite(ynVal) || ynVal > 50 || ynVal <= 0) ? yMax + 999 : ynVal;
+            const topRef = Math.max(ynSafe, ycVal);
+            const botRef = Math.min(ynSafe, ycVal);
+
+            // Zona 1 (Verde tenue)
+            if (topRef < yMax) {
+              ctx.fillStyle = 'rgba(0, 100, 0, 0.05)';
+              ctx.fillRect(padL, py(yMax), W - padL - padR, py(Math.min(topRef, yMax)) - py(yMax));
+              ctx.fillStyle = '#006400'; ctx.font = 'bold 10px Inter, sans-serif'; ctx.textAlign = 'right';
+              ctx.fillText('ZONA 1', W - padR - 8, py(yMax) + 14);
+            }
+            // Zona 2 (Ámbar tenue)
+            if (botRef < topRef) {
+              const yTop = Math.min(topRef, yMax), yBot = Math.max(botRef, yMin);
+              if (yTop > yBot) {
+                ctx.fillStyle = 'rgba(217, 119, 6, 0.06)';
+                ctx.fillRect(padL, py(yTop), W - padL - padR, py(yBot) - py(yTop));
+                ctx.fillStyle = '#D97706'; ctx.font = 'bold 10px Inter, sans-serif'; ctx.textAlign = 'right';
+                ctx.fillText('ZONA 2', W - padR - 8, py(yTop) + 14);
+              }
+            }
+            // Zona 3 (Rojo tenue)
+            if (botRef > yMin) {
+              ctx.fillStyle = 'rgba(200, 16, 46, 0.05)';
+              ctx.fillRect(padL, py(botRef), W - padL - padR, py(yMin) - py(botRef));
+              ctx.fillStyle = '#C8102E'; ctx.font = 'bold 10px Inter, sans-serif'; ctx.textAlign = 'right';
+              ctx.fillText('ZONA 3', W - padR - 8, py(botRef) + 14);
+            }
+
+            // Channel Bed Solera (z = 0)
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(padL, py(0), W - padL - padR, H - padB - py(0) + 2);
+
+            // Grid lines
+            ctx.setLineDash([3, 3]);
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 0.8;
+            for (let i = 0; i <= 5; i++) {
+              const xv = xMin + rX * i / 5;
+              ctx.beginPath(); ctx.moveTo(px(xv), padT); ctx.lineTo(px(xv), H - padB); ctx.stroke();
+              const yv = yMin + rY * i / 5;
+              ctx.beginPath(); ctx.moveTo(padL, py(yv)); ctx.lineTo(W - padR, py(yv)); ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            // Water Body Fill
+            ctx.beginPath();
+            rows.forEach((r, i) => {
+              if (i === 0) ctx.moveTo(px(r.x), py(r.y));
+              else ctx.lineTo(px(r.x), py(r.y));
+            });
+            ctx.lineTo(px(xs[xs.length - 1]), py(0));
+            ctx.lineTo(px(xs[0]), py(0));
+            ctx.closePath();
+            const waterGrad = ctx.createLinearGradient(0, padT, 0, H - padB);
+            waterGrad.addColorStop(0, 'rgba(2, 132, 199, 0.35)');
+            waterGrad.addColorStop(1, 'rgba(0, 40, 85, 0.55)');
+            ctx.fillStyle = waterGrad;
+            ctx.fill();
+
+            // Water Free Surface Line y(x)
+            ctx.beginPath();
+            rows.forEach((r, i) => {
+              if (i === 0) ctx.moveTo(px(r.x), py(r.y));
+              else ctx.lineTo(px(r.x), py(r.y));
+            });
+            ctx.strokeStyle = '#002855';
+            ctx.lineWidth = 3.2;
+            ctx.stroke();
+
+            // LPN Reference Line (yn)
+            if (isFinite(ynVal) && ynVal >= yMin && ynVal <= yMax && ynVal > 0) {
+              ctx.setLineDash([8, 4]);
+              ctx.strokeStyle = '#059669';
+              ctx.lineWidth = 2.0;
+              ctx.beginPath(); ctx.moveTo(padL, py(ynVal)); ctx.lineTo(W - padR, py(ynVal)); ctx.stroke();
+              ctx.setLineDash([]);
+              ctx.fillStyle = '#059669';
+              ctx.font = 'bold 11px Inter, sans-serif';
+              ctx.textAlign = 'left';
+              ctx.fillText(`LPN: yₙ = ${ynVal.toFixed(3)} m`, padL + 8, py(ynVal) - 4);
+            }
+
+            // LPC Reference Line (yc)
+            if (ycVal >= yMin && ycVal <= yMax) {
+              ctx.setLineDash([8, 4]);
+              ctx.strokeStyle = '#dc2626';
+              ctx.lineWidth = 2.0;
+              ctx.beginPath(); ctx.moveTo(padL, py(ycVal)); ctx.lineTo(W - padR, py(ycVal)); ctx.stroke();
+              ctx.setLineDash([]);
+              ctx.fillStyle = '#dc2626';
+              ctx.font = 'bold 11px Inter, sans-serif';
+              ctx.textAlign = 'left';
+              ctx.fillText(`LPC: yc = ${ycVal.toFixed(3)} m`, padL + 8, py(ycVal) + 14);
+            }
+
+            // Station Data Points
+            rows.forEach(r => {
+              ctx.beginPath();
+              ctx.arc(px(r.x), py(r.y), 3.5, 0, 2 * Math.PI);
+              ctx.fillStyle = (r.Fr > 1.02) ? '#dc2626' : '#002855';
+              ctx.fill();
+            });
+
+            // Axes
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(padL, padT); ctx.lineTo(padL, H - padB); ctx.lineTo(W - padR, H - padB);
+            ctx.stroke();
+
+            // Ticks X
+            ctx.fillStyle = '#334155'; ctx.textAlign = 'center'; ctx.font = '10px JetBrains Mono, monospace';
+            for (let i = 0; i <= 5; i++) {
+              const v = xMin + rX * i / 5;
+              ctx.fillText(v.toFixed(1) + 'm', px(v), H - padB + 16);
+              ctx.beginPath(); ctx.moveTo(px(v), H - padB); ctx.lineTo(px(v), H - padB + 5); ctx.stroke();
+            }
+
+            // Ticks Y
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+              const v = yMin + rY * i / 5;
+              ctx.fillText(v.toFixed(2), padL - 6, py(v) + 4);
+              ctx.beginPath(); ctx.moveTo(padL, py(v)); ctx.lineTo(padL - 5, py(v)); ctx.stroke();
+            }
+
+            // Labels
+            ctx.fillStyle = '#002855'; ctx.textAlign = 'center'; ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.fillText('Distancia x a lo largo del canal (m)', padL + (W - padL - padR) / 2, H - 6);
+
+            ctx.save();
+            ctx.translate(16, padT + (H - padT - padB) / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Tirante de agua y (m)', 0, 0);
+            ctx.restore();
+
+            // Title
+            ctx.fillStyle = '#002855'; ctx.font = 'bold 12px Inter, sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(`Perfil Longitudinal ${prof.code}  |  Longitud Total L = ${Math.abs(xMax - xMin).toFixed(2)} m`, W / 2, 18);
+
+          } else {
+            // VISTA 2: COTA REAL z(x) + y(x) CON PENDIENTE DEL FONDO S0
+            const zStart = 2.0; // arbitrary datum
+            const bedZ = rows.map(r => zStart - s0Val * r.x);
+            const waterZ = rows.map((r, i) => bedZ[i] + r.y);
+            const lpnZ = (isFinite(ynVal) && ynVal > 0 && ynVal < 50) ? rows.map((r, i) => bedZ[i] + ynVal) : [];
+            const lpcZ = rows.map((r, i) => bedZ[i] + ycVal);
+
+            const allZ = [...bedZ, ...waterZ, ...lpcZ, ...lpnZ];
+            const zMin = Math.min(...allZ) * 0.96;
+            const zMax = Math.max(...allZ) * 1.04;
+            const rZ = (zMax - zMin) || 1;
+
+            const px = x => padL + (x - xMin) / rX * (W - padL - padR);
+            const pz = z => padT + (1 - (z - zMin) / rZ) * (H - padT - padB);
+
+            // Background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+
+            // Channel Bed Solid Hatch
+            ctx.beginPath();
+            rows.forEach((r, i) => {
+              if (i === 0) ctx.moveTo(px(r.x), pz(bedZ[i]));
+              else ctx.lineTo(px(r.x), pz(bedZ[i]));
+            });
+            ctx.lineTo(px(xs[xs.length - 1]), H - padB);
+            ctx.lineTo(px(xs[0]), H - padB);
+            ctx.closePath();
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fill();
+
+            // Water Body Fill between Bed and Surface
+            ctx.beginPath();
+            rows.forEach((r, i) => {
+              if (i === 0) ctx.moveTo(px(r.x), pz(waterZ[i]));
+              else ctx.lineTo(px(r.x), pz(waterZ[i]));
+            });
+            for (let i = rows.length - 1; i >= 0; i--) {
+              ctx.lineTo(px(rows[i].x), pz(bedZ[i]));
+            }
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(2, 132, 199, 0.35)';
+            ctx.fill();
+
+            // Bed Solera Line
+            ctx.beginPath();
+            rows.forEach((r, i) => {
+              if (i === 0) ctx.moveTo(px(r.x), pz(bedZ[i]));
+              else ctx.lineTo(px(r.x), pz(bedZ[i]));
+            });
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Free Surface Line z(x) + y(x)
+            ctx.beginPath();
+            rows.forEach((r, i) => {
+              if (i === 0) ctx.moveTo(px(r.x), pz(waterZ[i]));
+              else ctx.lineTo(px(r.x), pz(waterZ[i]));
+            });
+            ctx.strokeStyle = '#002855';
+            ctx.lineWidth = 3.0;
+            ctx.stroke();
+
+            // LPN Sloping Line
+            if (lpnZ.length > 0) {
+              ctx.setLineDash([8, 4]);
+              ctx.strokeStyle = '#059669';
+              ctx.lineWidth = 2.0;
+              ctx.beginPath();
+              rows.forEach((r, i) => {
+                if (i === 0) ctx.moveTo(px(r.x), pz(lpnZ[i]));
+                else ctx.lineTo(px(r.x), pz(lpnZ[i]));
+              });
+              ctx.stroke();
+              ctx.setLineDash([]);
+              ctx.fillStyle = '#059669'; ctx.font = 'bold 10px Inter, sans-serif';
+              ctx.fillText(`LPN (yₙ=${ynVal.toFixed(2)}m)`, px(xs[0]) + 5, pz(lpnZ[0]) - 4);
+            }
+
+            // LPC Sloping Line
+            ctx.setLineDash([8, 4]);
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 2.0;
+            ctx.beginPath();
+            rows.forEach((r, i) => {
+              if (i === 0) ctx.moveTo(px(r.x), pz(lpcZ[i]));
+              else ctx.lineTo(px(r.x), pz(lpcZ[i]));
+            });
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#dc2626'; ctx.font = 'bold 10px Inter, sans-serif';
+            ctx.fillText(`LPC (yc=${ycVal.toFixed(2)}m)`, px(xs[0]) + 5, pz(lpcZ[0]) + 12);
+
+            // Axes
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(padL, padT); ctx.lineTo(padL, H - padB); ctx.lineTo(W - padR, H - padB);
+            ctx.stroke();
+
+            // Ticks X
+            ctx.fillStyle = '#334155'; ctx.textAlign = 'center'; ctx.font = '10px JetBrains Mono, monospace';
+            for (let i = 0; i <= 5; i++) {
+              const v = xMin + rX * i / 5;
+              ctx.fillText(v.toFixed(1) + 'm', px(v), H - padB + 16);
+              ctx.beginPath(); ctx.moveTo(px(v), H - padB); ctx.lineTo(px(v), H - padB + 5); ctx.stroke();
+            }
+
+            // Ticks Y
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+              const v = zMin + rZ * i / 5;
+              ctx.fillText(v.toFixed(2), padL - 6, pz(v) + 4);
+              ctx.beginPath(); ctx.moveTo(padL, pz(v)); ctx.lineTo(padL - 5, pz(v)); ctx.stroke();
+            }
+
+            ctx.fillStyle = '#002855'; ctx.textAlign = 'center'; ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.fillText('Distancia x (m)', padL + (W - padL - padR) / 2, H - 6);
+
+            ctx.save();
+            ctx.translate(16, padT + (H - padT - padB) / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Cota de Elevación z + y (m)', 0, 0);
+            ctx.restore();
+
+            ctx.fillStyle = '#002855'; ctx.font = 'bold 12px Inter, sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(`Vista en Elevación Real: Perfil ${prof.code} con Pendiente S₀ = ${s0Val}`, W / 2, 18);
+          }
+        };
+
+        const renderSpecialNoticeOnCanvas = (canvasId, prof) => {
+          const cv = document.getElementById(canvasId);
+          if (!cv) return;
+          const ctx = cv.getContext('2d');
+          const dpr = window.devicePixelRatio || 1;
+          const rect = cv.getBoundingClientRect();
+          const W = rect.width || 800;
+          const H = 380;
+          cv.width = W * dpr;
+          cv.height = H * dpr;
+          ctx.resetTransform ? ctx.resetTransform() : ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.scale(dpr, dpr);
+
+          ctx.clearRect(0, 0, W, H);
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(0, 0, W, H);
+
+          // Card Border
+          ctx.strokeStyle = '#002855';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(20, 20, W - 40, H - 40);
+
+          // Header Bar
+          ctx.fillStyle = '#002855';
+          ctx.fillRect(21, 21, W - 42, 42);
+
+          ctx.fillStyle = '#D97706';
+          ctx.font = 'bold 15px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`Caso Especial: Perfil ${prof.code} (${prof.cond})`, W / 2, 48);
+
+          ctx.fillStyle = '#dc2626';
+          ctx.font = 'bold 11px Inter, sans-serif';
+          ctx.fillText(`[ ${prof.regime.toUpperCase()} ]`, W / 2, 86);
+
+          ctx.fillStyle = '#1e293b';
+          ctx.font = '12px Inter, sans-serif';
+          ctx.textAlign = 'left';
+
+          const textX = 40;
+          let curY = 115;
+          const maxTextW = W - 80;
+
+          const drawText = (txt) => {
+            const words = txt.split(' ');
+            let line = '';
+            for (let n = 0; n < words.length; n++) {
+              const testLine = line + (line ? ' ' : '') + words[n];
+              if (ctx.measureText(testLine).width > maxTextW && n > 0) {
+                ctx.fillText(line, textX, curY);
+                line = words[n];
+                curY += 18;
+              } else {
+                line = testLine;
+              }
+            }
+            if (line) {
+              ctx.fillText(line, textX, curY);
+              curY += 22;
+            }
+          };
+
+          drawText(prof.desc);
+
+          ctx.fillStyle = '#002855';
+          ctx.font = 'bold 12px Inter, sans-serif';
+          ctx.fillText('Fundamento físico e hidráulico:', textX, curY);
+          curY += 20;
+
+          ctx.fillStyle = '#334155';
+          ctx.font = '11px Inter, sans-serif';
+          if (prof.code === 'H1') {
+            drawText('• En un canal horizontal (S₀ = 0), el tirante normal es infinito (yₙ → ∞). La Zona 1 requeriría y > ∞, imposible en un canal de dimensiones finitas.');
+            drawText('• Físicamente representa una masa de agua en reposo total (V = 0, Sf = 0) como un lago.');
+          } else if (prof.code === 'A1') {
+            drawText('• En pendiente adversa (S₀ < 0), el lecho sube en la dirección del flujo. La fuerza de gravedad se opone al movimiento.');
+            drawText('• La fórmula de Manning requeriría √(S₀) imaginaria, por lo que ∄ yₙ real positivo y la Zona 1 no existe en la naturaleza.');
+          } else if (prof.code === 'C2') {
+            drawText('• Flujo uniforme crítico: Sf = S₀ y Fr = 1 simultáneamente, dando dy/dx = (S₀ - Sf)/(1 - Fr²) = 0/0 (indeterminado).');
+            drawText('• La superficie del agua es una recta paralela al fondo en estado crítico permanente (y = yc = yₙ).');
+          }
+        };
+
+        // Graphical Integration Logic
+        const calcGrafica = () => {
+          const qVal = Q.value;
+          const bVal = b.value;
+          const nVal = n.value;
+          const s0Val = S0.value;
+          const y1Val = y0.value;
+          const y2Val = yf.value;
+          const Npts = Math.max(5, graficaN.value);
+
+          const ys = [], Fs = [], rows = [];
+          const dy = (y2Val - y1Val) / (Npts - 1);
+
+          for (let i = 0; i < Npts; i++) {
+            const y = y1Val + i * dy;
+            const h = calcHydraulics(qVal, bVal, nVal, s0Val, y);
+            const num = s0Val - h.Sf;
+            const den = 1 - h.Fr * h.Fr;
+            const Fy = (Math.abs(num) < 1e-12) ? 0 : (den / num);
+            ys.push(y);
+            Fs.push(Fy);
+            rows.push({ y, V: h.V, Fr: h.Fr, Sf: h.Sf, Fy });
+          }
+
+          let deltaX = 0;
+          for (let i = 0; i < Npts - 1; i++) {
+            if (isFinite(Fs[i]) && isFinite(Fs[i+1]) && Math.abs(Fs[i]) < 1e5 && Math.abs(Fs[i+1]) < 1e5) {
+              deltaX += 0.5 * (Fs[i] + Fs[i+1]) * dy;
+            }
+          }
+
+          graficaRows.value = rows;
+          graficaDeltaX.value = deltaX;
+
+          nextTick(() => {
+            drawGraficaCanvas(ys, Fs, deltaX);
+          });
+        };
+
+        const drawGraficaCanvas = (ys, Fs, deltaX) => {
+          const cv = document.getElementById('canvas-grafica');
+          if (!cv) return;
+          const ctx = cv.getContext('2d');
+          const dpr = window.devicePixelRatio || 1;
+          const rect = cv.getBoundingClientRect();
+          const W = rect.width || 800;
+          const H = 380;
+          cv.width = W * dpr;
+          cv.height = H * dpr;
+          ctx.resetTransform ? ctx.resetTransform() : ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.scale(dpr, dpr);
+
+          const padL = 65, padR = 25, padT = 36, padB = 46;
+          ctx.clearRect(0, 0, W, H);
+
+          const validFs = Fs.filter(f => isFinite(f) && !isNaN(f) && Math.abs(f) < 1e5);
+          if (validFs.length < 2) return;
+
+          const yMin = Math.min(...ys), yMax = Math.max(...ys);
+          const fMin = Math.min(...validFs), fMax = Math.max(...validFs);
+          const rY = (yMax - yMin) || 1, rF = (fMax - fMin) || 1;
+
+          const px = y => padL + (y - yMin) / rY * (W - padL - padR);
+          const pf = f => padT + (1 - (f - fMin) / rF) * (H - padT - padB);
+
+          // Background
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, W, H);
+
+          // Grid
+          ctx.setLineDash([3, 3]);
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 0.8;
+          for (let i = 0; i <= 5; i++) {
+            const yv = yMin + rY * i / 5;
+            ctx.beginPath(); ctx.moveTo(px(yv), padT); ctx.lineTo(px(yv), H - padB); ctx.stroke();
+            const fv = fMin + rF * i / 5;
+            ctx.beginPath(); ctx.moveTo(padL, pf(fv)); ctx.lineTo(W - padR, pf(fv)); ctx.stroke();
+          }
+          ctx.setLineDash([]);
+
+          // Zero line
+          if (fMin <= 0 && fMax >= 0) {
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(padL, pf(0)); ctx.lineTo(W - padR, pf(0)); ctx.stroke();
+          }
+
+          // Area Fill under F(y)
+          ctx.beginPath();
+          let started = false;
+          ys.forEach((y, i) => {
+            const f = Fs[i];
+            if (isFinite(f) && Math.abs(f) < 1e5) {
+              if (!started) { ctx.moveTo(px(y), pf(f)); started = true; }
+              else ctx.lineTo(px(y), pf(f));
+            }
+          });
+          const zeroY = pf(Math.max(fMin, Math.min(0, fMax)));
+          ctx.lineTo(px(ys[ys.length - 1]), zeroY);
+          ctx.lineTo(px(ys[0]), zeroY);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(0, 40, 85, 0.12)';
+          ctx.fill();
+
+          // Curve Line F(y)
+          ctx.beginPath();
+          started = false;
+          ys.forEach((y, i) => {
+            const f = Fs[i];
+            if (isFinite(f) && Math.abs(f) < 1e5) {
+              if (!started) { ctx.moveTo(px(y), pf(f)); started = true; }
+              else ctx.lineTo(px(y), pf(f));
+            }
+          });
+          ctx.strokeStyle = '#002855';
+          ctx.lineWidth = 2.8;
+          ctx.stroke();
+
+          // Calculated Dots
+          ys.forEach((y, i) => {
+            const f = Fs[i];
+            if (isFinite(f) && Math.abs(f) < 1e5) {
+              const h = calcHydraulics(Q.value, b.value, n.value, S0.value, y);
+              ctx.beginPath();
+              ctx.arc(px(y), pf(f), 3, 0, 2 * Math.PI);
+              ctx.fillStyle = (h.Fr > 1) ? '#dc2626' : '#002855';
+              ctx.fill();
+            }
+          });
+
+          // Axes
+          ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(padL, padT); ctx.lineTo(padL, H - padB); ctx.lineTo(W - padR, H - padB);
+          ctx.stroke();
+
+          // Ticks X
+          ctx.fillStyle = '#334155'; ctx.textAlign = 'center'; ctx.font = '10px JetBrains Mono, monospace';
+          for (let i = 0; i <= 5; i++) {
+            const v = yMin + rY * i / 5;
+            ctx.fillText(v.toFixed(2), px(v), H - padB + 16);
+            ctx.beginPath(); ctx.moveTo(px(v), H - padB); ctx.lineTo(px(v), H - padB + 5); ctx.stroke();
+          }
+
+          // Ticks Y
+          ctx.textAlign = 'right';
+          for (let i = 0; i <= 5; i++) {
+            const v = fMin + rF * i / 5;
+            ctx.fillText(v.toFixed(0), padL - 6, pf(v) + 4);
+            ctx.beginPath(); ctx.moveTo(padL, pf(v)); ctx.lineTo(padL - 5, pf(v)); ctx.stroke();
+          }
+
+          // Labels
+          ctx.fillStyle = '#002855'; ctx.textAlign = 'center'; ctx.font = 'bold 11px Inter, sans-serif';
+          ctx.fillText('Tirante de agua y (m)', padL + (W - padL - padR) / 2, H - 6);
+
+          ctx.save();
+          ctx.translate(16, padT + (H - padT - padB) / 2);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillText('Función F(y) = dx/dy', 0, 0);
+          ctx.restore();
+
+          ctx.fillStyle = '#002855'; ctx.font = 'bold 12px Inter, sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText(`Curva de Integración F(y)  |  Área Total Integrada Δx ≈ ${deltaX.toFixed(2)} m`, W / 2, 18);
+        };
+
+        const clearCanvas = () => {
+          profileRows.value = [];
+          totalLength.value = 0;
+          const cv = document.getElementById('canvas-tramo');
+          if (cv) {
+            const ctx = cv.getContext('2d');
+            ctx.clearRect(0, 0, cv.width, cv.height);
+          }
+        };
+
+        const reRenderKaTeX = () => {
+          if (window.renderMathInElement) {
+            renderMathInElement(document.body, {
+              delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '\\[', right: '\\]', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false }
+              ],
+              throwOnError: false
+            });
+          }
+        };
+
+        watch(activeTab, (newTab) => {
+          if (newTab === 'direct_step') {
+            nextTick(() => drawTramoCanvas());
+          } else if (newTab === 'graphical_int') {
+            nextTick(() => calcGrafica());
+          } else if (newTab === 'theory') {
+            nextTick(() => reRenderKaTeX());
+          }
+        });
+
+        onMounted(() => {
+          calculateProfile();
+          calcGrafica();
+          window.addEventListener('resize', () => {
+            if (activeTab.value === 'direct_step') drawTramoCanvas();
+            else if (activeTab.value === 'graphical_int') calcGrafica();
+          });
+          setTimeout(reRenderKaTeX, 300);
+        });
+
+        return {
+          activeTab,
+          viewMode,
+          qUnit,
+          Q,
+          inputQ,
+          b,
+          n,
+          S0,
+          y0,
+          yf,
+          N,
+          selectedSlope,
+          selectedZone,
+          profilesDB: PROFILES_DB,
+          activeSlopeObj,
+          activeProfile,
+          yn,
+          yc,
+          Sc,
+          ynDisplay,
+          behaviorBadgeText,
+          behaviorBadgeIcon,
+          behaviorBadgeClass,
+          topRefLineLabel,
+          topRefLineVal,
+          botRefLineLabel,
+          botRefLineVal,
+          profileRows,
+          totalLength,
+          graficaN,
+          graficaDeltaX,
+          graficaRows,
+          setQUnit,
+          onQInputChange,
+          setSlope,
+          setZone,
+          selectQuickProfile,
+          applyPresetAndCalculate,
+          loadLabPreset,
+          calculateProfile,
+          calcGrafica,
+          clearCanvas,
+          drawTramoCanvas,
+          reRenderKaTeX
+        };
+      }
+    }).mount('#fgvApp');
+  </script>
+</body>
+</html>

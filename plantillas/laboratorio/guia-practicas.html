@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía de prácticas | Laboratorio de Hidráulica 040533</title>
+<meta name="description" content="Secuencia de las once prácticas del Laboratorio de Hidráulica (040533), Facultad de Ingeniería Civil, Universidad del Cauca.">
+<link rel="icon" type="image/png" href="Logo_UNICAUCA.png">
+<style>
+  :root{--blue:#002855;--blue2:#0a4a8f;--gold:#d97706;--red:#c8102e;--paper:#f8fafc;--ink:#0f172a;--muted:#475569;--line:#e2e8f0}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.6}
+  a{color:var(--blue2)}
+  header{background:linear-gradient(120deg,var(--blue),#001938);color:#fff;border-bottom:4px solid var(--gold)}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 1.25rem}
+  .bar{display:flex;align-items:center;gap:1rem;padding:1rem 0}
+  .bar img{width:56px;height:56px;background:#fff;border-radius:12px;padding:4px;object-fit:contain;border:1px solid #fbbf24}
+  .bar strong{display:block;font-size:1.05rem}
+  .bar span{display:block;font-size:.78rem;color:#bfdbfe}
+  .hero{padding:2rem 0 2.4rem}
+  .hero h1{font-size:clamp(1.8rem,4vw,2.7rem);margin:.4rem 0 .6rem;letter-spacing:-.02em}
+  .hero p{max-width:760px;color:#dbeafe;margin:0}
+  main{padding:2rem 0 3rem}
+  .figure{margin:0 0 2rem;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.06)}
+  .figure img{display:block;width:100%;height:auto}
+  .figure figcaption{padding:.7rem 1rem;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line)}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+  .block{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1.1rem}
+  .block h2{font-size:1.05rem;margin:0 0 .2rem;color:var(--blue)}
+  .block .tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-bottom:.4rem}
+  .practice{display:flex;gap:.7rem;padding:.55rem 0;border-top:1px solid #f1f5f9;font-size:.92rem}
+  .practice:first-of-type{border-top:0}
+  .num{flex:0 0 2.2rem;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+  .practice a{font-weight:600;text-decoration:none}
+  .practice a:hover{text-decoration:underline}
+  .practice small{display:block;color:var(--muted);font-size:.8rem}
+  .note{margin-top:1.5rem;font-size:.85rem;color:var(--muted)}
+  .back{display:inline-flex;align-items:center;gap:.4rem;margin-top:1.2rem;font-weight:600;text-decoration:none;color:var(--blue)}
+  footer{border-top:1px solid var(--line);background:#fff;padding:1.2rem 0;font-size:.8rem;color:var(--muted)}
+  footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}.bar img{width:46px;height:46px}}
+  @media print{header,.back,footer{display:none}.figure{box-shadow:none}body{background:#fff}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <img src="Logo_UNICAUCA.png" alt="Escudo de la Universidad del Cauca">
+    <div>
+      <strong>Laboratorio de Hidráulica · 040533</strong>
+      <span>Facultad de Ingeniería Civil · Departamento de Hidráulica · Universidad del Cauca</span>
+    </div>
+  </div>
+  <div class="wrap hero">
+    <h1>Guía de prácticas</h1>
+    <p>Secuencia de las once prácticas del laboratorio, organizadas en dos bloques: flujo libre y canales abiertos, y sistemas a presión con síntesis final. Cada práctica se abre en la plataforma de cálculo.</p>
+  </div>
+</header>
+<main class="wrap">
+  <figure class="figure">
+    <img src="assets/guia-practicas.jpg" alt="Infografía con la secuencia de las once prácticas del Laboratorio de Hidráulica." width="1600" height="893" loading="lazy">
+    <figcaption>Esquema de la secuencia de prácticas. La infografía resume los objetivos de cada bloque; el detalle está en cada simulador.</figcaption>
+  </figure>
+
+  <div class="grid">
+    <section class="block">
+      <span class="tag">Prácticas I a VI</span>
+      <h2>Flujo libre y canales abiertos</h2>
+      <div class="practice"><span class="num">I</span><div><a href="simulador_molinete.html">Líneas de energía y aforos</a><small>Molinete, canaleta Parshall y método de franjas.</small></div></div>
+      <div class="practice"><span class="num">II</span><div><a href="simulador.html">Coeficiente de fricción en canales</a><small>Mediciones de campo y cálculo de rugosidad.</small></div></div>
+      <div class="practice"><span class="num">III</span><div><a href="simulador_energia.html">Energía específica</a><small>Tirante crítico y curvas de energía.</small></div></div>
+      <div class="practice"><span class="num">IV</span><div><a href="simulador_control.html">Sección de control y flujo crítico</a><small>Calibración de compuerta plana vertical.</small></div></div>
+      <div class="practice"><span class="num">V</span><div><a href="simulador_fgv.html">Flujo gradualmente variado</a><small>Perfiles de remanso por paso directo.</small></div></div>
+      <div class="practice"><span class="num">VI</span><div><a href="simulador_resalto.html">Resalto hidráulico</a><small>Disipación de energía y parámetros del resalto.</small></div></div>
+    </section>
+
+    <section class="block">
+      <span class="tag">Prácticas VII a XI</span>
+      <h2>Sistemas a presión y síntesis</h2>
+      <div class="practice"><span class="num">VII</span><div><a href="simulador_tuberias.html">Sistemas de tuberías</a><small>Configuraciones simple, en serie y en paralelo.</small></div></div>
+      <div class="practice"><span class="num">VIII</span><div><a href="simulador_sifon.html">Sifones</a><small>Vacío, límite de cavitación y funcionamiento.</small></div></div>
+      <div class="practice"><span class="num">IX</span><div><a href="simulador_bombas.html">Sistemas de bombeo</a><small>Bombas individuales, en serie y en paralelo.</small></div></div>
+      <div class="practice"><span class="num">X</span><div><a href="simulador_ariete.html">Golpe de ariete</a><small>Transitorios y chimenea de equilibrio.</small></div></div>
+      <div class="practice"><span class="num">XI</span><div><a href="index.html">Proyecto integrador</a><small>Calibración de aforadores y aplicación final.</small></div></div>
+      <p class="note">Complemento de la práctica V: <a href="FGV_Ecuacion_General.html">ecuación general del flujo gradualmente variado y simuladores de perfiles</a>.</p>
+    </section>
+  </div>
+
+  <a class="back" href="index.html">← Volver a la plataforma de prácticas</a>
+  <p class="note">Guía de apoyo docente basada en el manual instructivo del Laboratorio de Hidráulica (040533). No sustituye el manual ni las indicaciones del profesor.</p>
+</main>
+<footer>
+  <div class="wrap">
+    <span>Universidad del Cauca · Facultad de Ingeniería Civil · Departamento de Hidráulica</span>
+    <span>Sitio de apoyo docente. No es el sitio oficial de la Universidad.</span>
+  </div>
+</footer>
+</body>
+</html>

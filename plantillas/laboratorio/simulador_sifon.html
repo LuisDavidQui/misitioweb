@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Sifón Hidráulico | Laboratorio Virtual Unicauca</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            unicauca: {
+              blue: '#002855',
+              dark: '#001938',
+              light: '#0A4A8F',
+              accent: '#0284C7',
+              gold: '#D97706',
+              goldLight: '#FBBF24',
+              red: '#C8102E',
+              surface: '#F8FAFC',
+              border: '#E2E8F0'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}]});"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Top Header Navigation -->
+  <header class="bg-unicauca-blue text-white shadow-lg border-b border-unicauca-gold/40 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center shadow-md border border-white/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-unicauca-gold bg-black/20 px-2 py-0.5 rounded border border-unicauca-gold/30">Práctica VIII</span>
+            <span class="text-xs text-blue-200">Laboratorio Virtual de Hidráulica</span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            Simulador de Sifón Hidráulico
+            <span class="text-xs font-normal bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded-full">Vacío & Cavitación</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Live Flow Status Indicator -->
+      <div class="flex items-center gap-2">
+        <div id="statusBadge" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all duration-300 bg-emerald-500/20 text-emerald-200 border border-emerald-400/40">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="statusText">Régimen Permanente Activo</span>
+        </div>
+        <button id="btnPrime" onclick="primeSiphon()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow transition-colors flex items-center gap-1">
+          💧 Cebar Sifón
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Simulator Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Left / Control Sidebar (4 Cols) -->
+    <section class="lg:col-span-4 space-y-5">
+
+      <!-- Experimental Presets Card -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4 text-unicauca-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+          Casos de Laboratorio & Ensayos
+        </h2>
+        <div class="grid grid-cols-1 gap-2">
+          <button onclick="loadPreset('ensayo1')" class="text-left px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 hover:border-blue-400 hover:bg-blue-50/60 transition-all flex items-center justify-between group">
+            <span class="text-slate-700 font-medium">📋 Ensayo 1 (Tabla VIII.2 - Normal)</span>
+            <span class="text-[10px] text-blue-600 bg-blue-100/70 px-2 py-0.5 rounded font-mono">D=1.9cm | Q=0.42 L/s</span>
+          </button>
+          <button onclick="loadPreset('ensayo2')" class="text-left px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 hover:border-blue-400 hover:bg-blue-50/60 transition-all flex items-center justify-between group">
+            <span class="text-slate-700 font-medium">📋 Ensayo 2 (Tabla VIII.2 - Nivel Medio)</span>
+            <span class="text-[10px] text-blue-600 bg-blue-100/70 px-2 py-0.5 rounded font-mono">Zc = 2.4 m</span>
+          </button>
+          <button onclick="loadPreset('cav_limit')" class="text-left px-3 py-2 rounded-xl text-xs font-semibold border border-amber-200 bg-amber-50/50 hover:bg-amber-100/60 transition-all flex items-center justify-between group">
+            <span class="text-amber-800 font-medium">⚠️ Límite de Cavitación (Popayán)</span>
+            <span class="text-[10px] text-amber-700 bg-amber-200/80 px-2 py-0.5 rounded font-mono">Zc = 7.8 m</span>
+          </button>
+          <button onclick="loadPreset('descebe')" class="text-left px-3 py-2 rounded-xl text-xs font-semibold border border-red-200 bg-red-50/50 hover:bg-red-100/60 transition-all flex items-center justify-between group">
+            <span class="text-red-800 font-medium">💥 Descebe por Vacío Crítico</span>
+            <span class="text-[10px] text-red-700 bg-red-200/80 px-2 py-0.5 rounded font-mono">Zc = 9.2 m (H &gt; Hmax)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Siphon Geometric & Hydraulic Parameters -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+          <svg class="w-4 h-4 text-unicauca-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          </svg>
+          Parámetros del Sistema Sifón
+        </h2>
+
+        <!-- Altura de Cresta Zc -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Cota Cresta Sifón ($Z_c$):</span>
+            <span class="font-mono text-blue-700 font-bold" id="zcVal">2.40 m</span>
+          </div>
+          <input type="range" id="zcSlider" min="1.6" max="10.0" step="0.1" value="2.40"
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="updateSimulation()">
+          <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
+            <span>1.6 m (Baja)</span>
+            <span class="text-amber-600 font-semibold">Crítico ~ 7.8 m</span>
+            <span>10.0 m (Descebe)</span>
+          </div>
+        </div>
+
+        <!-- Cota Depósito Superior Z1 -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Nivel Depósito Superior ($Z_1$):</span>
+            <span class="font-mono text-blue-700 font-bold" id="z1Val">1.50 m</span>
+          </div>
+          <input type="range" id="z1Slider" min="0.8" max="2.5" step="0.05" value="1.50"
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="updateSimulation()">
+        </div>
+
+        <!-- Cota Descarga / Depósito Inferior Z2 -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Nivel Descarga ($Z_2$):</span>
+            <span class="font-mono text-blue-700 font-bold" id="z2Val">0.30 m</span>
+          </div>
+          <input type="range" id="z2Slider" min="0.0" max="1.2" step="0.05" value="0.30"
+            class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="updateSimulation()">
+          <p class="text-[10px] text-slate-500 mt-0.5">Desnivel motriz total: $H = Z_1 - Z_2 = $ <span id="hTotLabel" class="font-mono font-bold text-slate-700">1.20 m</span></p>
+        </div>
+
+        <!-- Diámetro Sifón D -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Diámetro Tubería ($D$):</span>
+            <span class="font-mono text-blue-700 font-bold" id="diaVal">19.0 mm (3/4")</span>
+          </div>
+          <select id="diaSelect" onchange="onDiaChange()" class="w-full text-xs font-medium bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="0.0127">1/2" (12.7 mm)</option>
+            <option value="0.0190" selected>3/4" (19.0 mm) - Laboratorio Unicauca</option>
+            <option value="0.0254">1" (25.4 mm)</option>
+            <option value="0.0381">1 1/2" (38.1 mm)</option>
+            <option value="0.0508">2" (50.8 mm)</option>
+          </select>
+        </div>
+
+        <!-- Localidad y Presión Atmosférica -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Condición Barométrica Local:</span>
+            <span class="font-mono text-indigo-700 font-bold" id="patmVal">8.41 m.c.a.</span>
+          </div>
+          <select id="patmSelect" onchange="updateSimulation()" class="w-full text-xs font-medium bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="8.41" selected>Popayán (1,737 msnm - Patm = 8.41 m.c.a. / 82.5 kPa)</option>
+            <option value="10.33">Nivel del Mar (0 msnm - Patm = 10.33 m.c.a. / 101.3 kPa)</option>
+            <option value="7.50">Bogotá D.C. (2,640 msnm - Patm = 7.50 m.c.a. / 73.6 kPa)</option>
+          </select>
+        </div>
+
+        <!-- Material de la tubería -->
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-700 mb-1">
+            <span>Material de Tubería:</span>
+            <span class="font-mono text-slate-600" id="matRough">k = 0.0015 mm</span>
+          </div>
+          <select id="matSelect" onchange="updateSimulation()" class="w-full text-xs font-medium bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="0.0000015" selected>Acrílico / Vidrio transparente (k = 0.0015 mm)</option>
+            <option value="0.000002">PVC Liso (k = 0.002 mm)</option>
+            <option value="0.000045">Acero Comercial (k = 0.045 mm)</option>
+            <option value="0.00025">Hierro Fundido (k = 0.25 mm)</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Quick Action / Force Cavitation -->
+      <div class="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-4 border border-red-200/80 flex items-center justify-between">
+        <div>
+          <h4 class="text-xs font-bold text-red-900">Demostración de Descebe</h4>
+          <p class="text-[11px] text-red-700">Eleva la cresta más allá del límite de cavitación.</p>
+        </div>
+        <button onclick="triggerCavitationTest()" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow transition-all flex items-center gap-1">
+          ⚡ Descebar
+        </button>
+      </div>
+
+    </section>
+
+    <!-- Right / Visual Simulation + Charts + Telemetry (8 Cols) -->
+    <section class="lg:col-span-8 space-y-5">
+
+      <!-- Interactive SVG Siphon Canvas -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
+              Esquema Físico & Líneas de Energía en Tiempo Real
+            </h3>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span class="flex items-center gap-1 text-red-600 font-medium"><span class="w-3 h-0.5 bg-red-500 inline-block"></span> L.E. (Energía)</span>
+            <span class="flex items-center gap-1 text-cyan-600 font-medium"><span class="w-3 h-0.5 bg-cyan-500 inline-block"></span> L.P. (Piezométrica)</span>
+            <span class="flex items-center gap-1 text-indigo-700 font-medium"><span class="w-3 h-0.5 bg-indigo-500 border border-indigo-400 border-dashed inline-block"></span> Zona Vacío</span>
+          </div>
+        </div>
+
+        <!-- SVG Container -->
+        <div class="w-full bg-gradient-to-b from-sky-50/50 via-slate-50 to-blue-50/30 rounded-xl border border-slate-200 overflow-hidden relative shadow-inner">
+          <svg id="siphonSvg" viewBox="0 0 800 420" class="w-full h-auto select-none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Grid Lines -->
+            <defs>
+              <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E2E8F0" stroke-width="0.75" stroke-dasharray="2,2"/>
+              </pattern>
+              <!-- Water Gradient -->
+              <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.85"/>
+                <stop offset="100%" stop-color="#0284C7" stop-opacity="0.95"/>
+              </linearGradient>
+              <!-- Cavitation Vapor Cloud -->
+              <radialGradient id="bubbleGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+                <stop offset="80%" stop-color="#BAE6FD" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#0284C7" stop-opacity="0.0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Background Grid -->
+            <rect width="800" height="420" fill="url(#gridPattern)" />
+
+            <!-- Datum Axis Z = 0 -->
+            <line x1="40" y1="380" x2="760" y2="380" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6,4"/>
+            <text x="50" y="398" fill="#64748B" font-size="11" font-family="monospace" font-weight="bold">Plano de Comparación (Datum Z = 0.0 m)</text>
+
+            <!-- TANK 1 (Upper Reservoir) -->
+            <!-- Tank Body -->
+            <rect x="70" y="160" width="160" height="220" fill="#E2E8F0" stroke="#475569" stroke-width="3" rx="4"/>
+            <!-- Tank 1 Water Level -->
+            <rect id="svgTank1Water" x="73" y="240" width="154" height="137" fill="url(#waterGrad)"/>
+            <!-- Water Meniscus -->
+            <line id="svgTank1Meniscus" x1="73" y1="240" x2="227" y2="240" stroke="#0284C7" stroke-width="3"/>
+            <text id="svgTank1Label" x="150" y="232" text-anchor="middle" fill="#0369A1" font-size="11" font-weight="bold">Z₁ = 1.50 m</text>
+            <text x="150" y="360" text-anchor="middle" fill="#1E293B" font-size="12" font-weight="bold">Tanque Superior</text>
+
+            <!-- TANK 2 (Lower Reservoir / Discharge) -->
+            <rect x="570" y="240" width="160" height="140" fill="#E2E8F0" stroke="#475569" stroke-width="3" rx="4"/>
+            <!-- Tank 2 Water Level -->
+            <rect id="svgTank2Water" x="573" y="330" width="154" height="47" fill="url(#waterGrad)"/>
+            <line id="svgTank2Meniscus" x1="573" y1="330" x2="727" y2="330" stroke="#0284C7" stroke-width="3"/>
+            <text id="svgTank2Label" x="650" y="322" text-anchor="middle" fill="#0369A1" font-size="11" font-weight="bold">Z₂ = 0.30 m</text>
+            <text x="650" y="365" text-anchor="middle" fill="#1E293B" font-size="12" font-weight="bold">Tanque Descarga</text>
+
+            <!-- SIPHON PIPE PATH -->
+            <!-- Outer pipe border -->
+            <path id="svgSiphonPipeOuter" d="M 180 340 L 180 80 Q 400 40 620 180 L 620 340" fill="none" stroke="#64748B" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Inner pipe water -->
+            <path id="svgSiphonPipeWater" d="M 180 340 L 180 80 Q 400 40 620 180 L 620 340" fill="none" stroke="#38BDF8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+            <!-- Moving Water Flow Dash Streamlines -->
+            <path id="svgFlowAnimation" d="M 180 340 L 180 80 Q 400 40 620 180 L 620 340" fill="none" stroke="#0284C7" stroke-width="6" stroke-linecap="round" stroke-dasharray="14 12">
+              <animate id="pipeFlowAnim" attributeName="stroke-dashoffset" from="0" to="-260" dur="2s" repeatCount="indefinite" />
+            </path>
+
+            <!-- Crest Vacuometer & Gauge -->
+            <g id="svgVacuometer" transform="translate(400, 60)">
+              <!-- Connection Stem -->
+              <rect x="-3" y="-20" width="6" height="20" fill="#94A3B8" stroke="#475569" stroke-width="1"/>
+              <!-- Dial Gauge Body -->
+              <circle cx="0" cy="-45" r="25" fill="#FFFFFF" stroke="#002855" stroke-width="3"/>
+              <!-- Gauge Markings -->
+              <circle cx="0" cy="-45" r="21" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              <!-- Needle -->
+              <line id="svgGaugeNeedle" x1="0" y1="-45" x2="-14" y2="-55" stroke="#C8102E" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="0" cy="-45" r="3" fill="#002855"/>
+              <text x="0" y="-30" text-anchor="middle" fill="#002855" font-size="7" font-weight="bold">VACÍO</text>
+              <text id="svgGaugeReading" x="0" y="-75" text-anchor="middle" fill="#C8102E" font-size="10" font-family="monospace" font-weight="bold">-5.2 m</text>
+            </g>
+
+            <!-- Crest Elevation Label -->
+            <g id="svgCrestPin" transform="translate(400, 45)">
+              <rect x="-45" y="15" width="90" height="20" rx="4" fill="#002855" opacity="0.9"/>
+              <text id="svgCrestZLabel" x="0" y="29" text-anchor="middle" fill="#FBBF24" font-size="10" font-family="monospace" font-weight="bold">Zc = 2.40 m</text>
+            </g>
+
+            <!-- Cavitation Bubbles Group (Shown on cavitation) -->
+            <g id="svgCavitationEffect" opacity="0" class="transition-opacity duration-300">
+              <circle cx="395" cy="58" r="16" fill="url(#bubbleGrad)"/>
+              <circle cx="410" cy="56" r="12" fill="url(#bubbleGrad)"/>
+              <circle cx="380" cy="62" r="10" fill="url(#bubbleGrad)"/>
+              <circle cx="400" cy="54" r="5" fill="#FFFFFF">
+                <animate attributeName="r" values="3;7;3" dur="0.8s" repeatCount="indefinite"/>
+              </circle>
+              <circle cx="412" cy="60" r="4" fill="#FFFFFF">
+                <animate attributeName="r" values="2;5;2" dur="0.6s" repeatCount="indefinite"/>
+              </circle>
+              <text x="400" y="92" text-anchor="middle" fill="#DC2626" font-size="11" font-weight="extrabold" filter="drop-shadow(0 1px 2px white)">
+                ⚠️ ¡CAVITACIÓN & DESCEBE!
+              </text>
+            </g>
+
+            <!-- HYDRAULIC GRADE LINE (HGL) & TOTAL ENERGY LINE (TEL) -->
+            <!-- TEL Line (Red Dashed) -->
+            <path id="svgTEL" d="M 150 240 L 400 248 L 650 256" fill="none" stroke="#DC2626" stroke-width="2.5" stroke-dasharray="6,4"/>
+            <!-- HGL Line (Cyan Solid) -->
+            <path id="svgHGL" d="M 150 240 L 400 265 L 650 290" fill="none" stroke="#0891B2" stroke-width="2.5"/>
+
+            <!-- Siphon Crest Vacuum Dimension Arrow (Distance from pipe to HGL) -->
+            <line id="svgVacuumArrow" x1="400" y1="58" x2="400" y2="265" stroke="#4F46E5" stroke-width="2" stroke-dasharray="3,3"/>
+            <text id="svgVacuumArrowLabel" x="415" y="160" fill="#4F46E5" font-size="11" font-family="monospace" font-weight="bold">P_vac / γ</text>
+
+            <!-- Head Difference H Arrow (Between Tank 1 and Tank 2) -->
+            <g transform="translate(740, 0)">
+              <line id="svgHArrow" x1="0" y1="240" x2="0" y2="330" stroke="#0F172A" stroke-width="2"/>
+              <line x1="-5" y1="240" x2="5" y2="240" stroke="#0F172A" stroke-width="2"/>
+              <line x1="-5" y1="330" x2="5" y2="330" stroke="#0F172A" stroke-width="2"/>
+              <text id="svgHText" x="-10" y="290" text-anchor="end" fill="#0F172A" font-size="11" font-family="monospace" font-weight="bold">H = 1.20 m</text>
+            </g>
+
+          </svg>
+        </div>
+      </div>
+
+      <!-- Real-time Telemetry Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <!-- Caudal Q -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-slate-200">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Caudal ($Q$)</p>
+          <p id="telemetryQ" class="text-xl font-extrabold font-mono text-blue-700 mt-1">0.421 <span class="text-xs font-medium text-slate-500">L/s</span></p>
+          <p id="telemetryQCm3" class="text-[10px] text-slate-500 font-mono mt-0.5">421.3 cm³/s</p>
+        </div>
+
+        <!-- Velocidad V -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-slate-200">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Velocidad ($V$)</p>
+          <p id="telemetryV" class="text-xl font-extrabold font-mono text-indigo-700 mt-1">1.48 <span class="text-xs font-medium text-slate-500">m/s</span></p>
+          <p id="telemetryHv" class="text-[10px] text-slate-500 font-mono mt-0.5">V²/2g = 0.112 m</p>
+        </div>
+
+        <!-- Presión en la Cresta (Manométrica) -->
+        <div class="bg-white rounded-xl p-3.5 shadow-sm border border-slate-200">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Presión Cresta ($P_c/\gamma$)</p>
+          <p id="telemetryPc" class="text-xl font-extrabold font-mono text-cyan-700 mt-1">-1.08 <span class="text-xs font-medium text-slate-500">m.c.a.</span></p>
+          <p id="telemetryPcKpa" class="text-[10px] text-slate-500 font-mono mt-0.5">-10.6 kPa (Vacío)</p>
+        </div>
+
+        <!-- Margen de Cavitación -->
+        <div id="cavMarginCard" class="bg-white rounded-xl p-3.5 shadow-sm border border-emerald-300">
+          <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Margen Cavitación</p>
+          <p id="telemetryMargen" class="text-xl font-extrabold font-mono text-emerald-600 mt-1">+7.09 <span class="text-xs font-medium text-slate-500">m</span></p>
+          <p id="telemetryPabs" class="text-[10px] text-slate-500 font-mono mt-0.5">P_abs = 7.33 m.c.a.</p>
+        </div>
+      </div>
+
+      <!-- Hydraulic Profile Chart (Chart.js) -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
+              Gradiente Hidráulico y Perfil Longitudinal del Sifón
+            </h3>
+            <p class="text-xs text-slate-500">
+              Evolución de cotas $Z(x)$, Línea Piezométrica (L.P.) y Línea de Energía Total (L.E.) a lo largo de la tubería.
+            </p>
+          </div>
+          <span class="text-[11px] font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded border border-slate-200">
+            L_total = <span id="chartLengthLabel" class="font-bold">5.0 m</span>
+          </span>
+        </div>
+
+        <div class="h-64 w-full">
+          <canvas id="siphonChartCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Theoretical Reference & Engineering Formulation -->
+      <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 text-xs text-slate-700 space-y-2">
+        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-unicauca-blue" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+          </svg>
+          Fundamento Físico de la Práctica VIII
+        </h4>
+        <p>
+          1. <strong>Ecuación de Bernoulli entre la superficie del depósito superior y la cresta ($C$):</strong>
+          $$\frac{P_c}{\gamma} = (Z_1 - Z_c) - \frac{V^2}{2g} - \sum h_{f, 1-c}$$
+          Dado que $Z_c > Z_1$, la presión manométrica en el vértice del sifón es <em>negativa</em> (subatmosférica).
+        </p>
+        <p>
+          2. <strong>Límite Físico de Cavitación:</strong> Para evitar la vaporización espontánea del agua a temperatura ambiente ($P_v \approx 0.24\text{ m.c.a.}$ a $20^\circ\text{C}$) en Popayán ($P_{atm} = 8.41\text{ m.c.a.}$), la presión absoluta debe cumplir:
+          $$P_{c,abs} = P_{atm} + \frac{P_c}{\gamma} > P_v \implies Z_c - Z_1 < P_{atm} - P_v - \frac{V^2}{2g} - \sum h_{f,1-c}$$
+          Si la cresta supera dicha cota crítica, se forman bolsas de vapor que cortan la columna de agua provocando el <strong>descebe instantáneo</strong>.
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Script Logic -->
+  <script>
+    // System Constants
+    const G = 9.80665;
+    const WATER_DENSITY = 1000;
+    const PV_WATER_20C = 0.238; // Vapor pressure in m.c.a. at 20°C (~2.34 kPa)
+
+    // Current State
+    let isPrimed = true;
+    let isCavitating = false;
+    let currentFlowAnimationRate = 2.0;
+
+    let chartInstance = null;
+
+    // Simulation Data Model
+    const sim = {
+      zc: 2.40,
+      z1: 1.50,
+      z2: 0.30,
+      dia: 0.0190,
+      patm: 8.41,
+      roughness: 0.0000015,
+      lengthTotal: 5.0,
+      lengthToCrest: 2.2,
+      // Results
+      hTotal: 1.20,
+      velocity: 0,
+      flowLps: 0,
+      flowCm3s: 0,
+      headLossTotal: 0,
+      pressureCrestMca: 0,
+      pressureCrestKpa: 0,
+      pressureCrestAbsMca: 0,
+      cavitationMargin: 0
+    };
+
+    function initSimulator() {
+      initChart();
+      updateSimulation();
+    }
+
+    function onDiaChange() {
+      sim.dia = parseFloat(document.getElementById('diaSelect').value);
+      document.getElementById('diaVal').innerText = (sim.dia * 1000).toFixed(1) + ' mm';
+      updateSimulation();
+    }
+
+    function calculateHydraulics() {
+      sim.zc = parseFloat(document.getElementById('zcSlider').value);
+      sim.z1 = parseFloat(document.getElementById('z1Slider').value);
+      sim.z2 = parseFloat(document.getElementById('z2Slider').value);
+      sim.patm = parseFloat(document.getElementById('patmSelect').value);
+      sim.roughness = parseFloat(document.getElementById('matSelect').value);
+
+      // Ensure Zc >= Z1
+      if (sim.zc < sim.z1 + 0.1) {
+        sim.zc = sim.z1 + 0.1;
+        document.getElementById('zcSlider').value = sim.zc.toFixed(1);
+      }
+      // Ensure Z1 >= Z2 + 0.05
+      if (sim.z1 < sim.z2 + 0.05) {
+        sim.z1 = sim.z2 + 0.05;
+        document.getElementById('z1Slider').value = sim.z1.toFixed(2);
+      }
+
+      sim.hTotal = sim.z1 - sim.z2;
+
+      // Pipe Area
+      const area = (Math.PI * Math.pow(sim.dia, 2)) / 4.0;
+
+      if (!isPrimed) {
+        // Siphon broken / descebado
+        sim.velocity = 0;
+        sim.flowLps = 0;
+        sim.flowCm3s = 0;
+        sim.headLossTotal = 0;
+        sim.pressureCrestMca = -(sim.zc - sim.z1);
+        sim.pressureCrestAbsMca = sim.patm + sim.pressureCrestMca;
+        sim.cavitationMargin = sim.pressureCrestAbsMca - PV_WATER_20C;
+        return;
+      }
+
+      // Minor loss coefficients
+      const kEntrance = 0.5;
+      const kCrestBend = 0.4 * 2; // 2 elbows
+      const kExit = 1.0;
+      const kMinor = kEntrance + kCrestBend + kExit;
+
+      // Friction factor approximation (Swamee-Jain iterative)
+      let f = 0.022; // initial seed
+      let v = 1.0;
+      const nu = 1.004e-6; // kinematic viscosity of water at 20°C
+
+      for (let i = 0; i < 5; i++) {
+        const denom = 1.0 + kMinor + (f * sim.lengthTotal / sim.dia);
+        v = Math.sqrt((2.0 * G * sim.hTotal) / denom);
+        const re = (v * sim.dia) / nu;
+        if (re > 4000) {
+          f = 0.25 / Math.pow(Math.log10((sim.roughness / (3.7 * sim.dia)) + (5.74 / Math.pow(re, 0.9))), 2);
+        } else if (re > 0) {
+          f = 64.0 / re;
+        }
+      }
+
+      sim.velocity = v;
+      sim.flowLps = (v * area) * 1000.0;
+      sim.flowCm3s = sim.flowLps * 1000.0;
+
+      // Energy line and Crest Pressure
+      const hv = Math.pow(sim.velocity, 2) / (2.0 * G);
+      const hfToCrest = (kEntrance + 0.4 + f * (sim.lengthToCrest / sim.dia)) * hv;
+
+      // Bernoulli Z1 - Zc - Hv - hf
+      sim.pressureCrestMca = (sim.z1 - sim.zc) - hv - hfToCrest;
+      sim.pressureCrestKpa = sim.pressureCrestMca * 9.80665;
+      sim.pressureCrestAbsMca = sim.patm + sim.pressureCrestMca;
+      sim.cavitationMargin = sim.pressureCrestAbsMca - PV_WATER_20C;
+
+      // Cavitation check: absolute pressure falls to vapor pressure
+      if (sim.pressureCrestAbsMca <= PV_WATER_20C + 0.05) {
+        isCavitating = true;
+        // Automatic flow breakdown if severely cavitating
+        if (sim.pressureCrestAbsMca <= PV_WATER_20C) {
+          isPrimed = false;
+        }
+      } else {
+        isCavitating = false;
+      }
+    }
+
+    function updateSimulation() {
+      calculateHydraulics();
+      renderUI();
+      updateSvgVisuals();
+      updateChart();
+    }
+
+    function renderUI() {
+      document.getElementById('zcVal').innerText = sim.zc.toFixed(2) + ' m';
+      document.getElementById('z1Val').innerText = sim.z1.toFixed(2) + ' m';
+      document.getElementById('z2Val').innerText = sim.z2.toFixed(2) + ' m';
+      document.getElementById('hTotLabel').innerText = sim.hTotal.toFixed(2) + ' m';
+      document.getElementById('patmVal').innerText = sim.patm.toFixed(2) + ' m.c.a.';
+
+      // Telemetry Cards
+      document.getElementById('telemetryQ').innerHTML = sim.flowLps.toFixed(3) + ' <span class="text-xs font-medium text-slate-500">L/s</span>';
+      document.getElementById('telemetryQCm3').innerText = sim.flowCm3s.toFixed(1) + ' cm³/s';
+
+      document.getElementById('telemetryV').innerHTML = sim.velocity.toFixed(2) + ' <span class="text-xs font-medium text-slate-500">m/s</span>';
+      document.getElementById('telemetryHv').innerText = 'V²/2g = ' + (Math.pow(sim.velocity, 2)/(2*G)).toFixed(3) + ' m';
+
+      document.getElementById('telemetryPc').innerHTML = sim.pressureCrestMca.toFixed(2) + ' <span class="text-xs font-medium text-slate-500">m.c.a.</span>';
+      document.getElementById('telemetryPcKpa').innerText = sim.pressureCrestKpa.toFixed(1) + ' kPa (' + (sim.pressureCrestMca < 0 ? 'Vacío' : 'Presión') + ')';
+
+      const cavCard = document.getElementById('cavMarginCard');
+      const telMargen = document.getElementById('telemetryMargen');
+      const telPabs = document.getElementById('telemetryPabs');
+
+      telPabs.innerText = 'P_abs = ' + Math.max(0, sim.pressureCrestAbsMca).toFixed(2) + ' m.c.a.';
+
+      // Status Badge
+      const badge = document.getElementById('statusBadge');
+      const statusText = document.getElementById('statusText');
+
+      if (!isPrimed) {
+        badge.className = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm bg-red-500/20 text-red-200 border border-red-400/40';
+        statusText.innerText = 'Sifón Descebado (Flujo Cortado)';
+        cavCard.className = 'bg-white rounded-xl p-3.5 shadow-sm border border-red-400';
+        telMargen.className = 'text-xl font-extrabold font-mono text-red-600 mt-1';
+        telMargen.innerHTML = '0.00 <span class="text-xs font-medium text-slate-500">m (Descebe)</span>';
+      } else if (isCavitating) {
+        badge.className = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm bg-amber-500/20 text-amber-200 border border-amber-400/40';
+        statusText.innerText = '¡Alerta de Cavitación!';
+        cavCard.className = 'bg-white rounded-xl p-3.5 shadow-sm border border-amber-400';
+        telMargen.className = 'text-xl font-extrabold font-mono text-amber-600 mt-1';
+        telMargen.innerHTML = sim.cavitationMargin.toFixed(2) + ' <span class="text-xs font-medium text-slate-500">m (Crítico)</span>';
+      } else {
+        badge.className = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm bg-emerald-500/20 text-emerald-200 border border-emerald-400/40';
+        statusText.innerText = 'Régimen Permanente Seguro';
+        cavCard.className = 'bg-white rounded-xl p-3.5 shadow-sm border border-emerald-300';
+        telMargen.className = 'text-xl font-extrabold font-mono text-emerald-600 mt-1';
+        telMargen.innerHTML = '+' + sim.cavitationMargin.toFixed(2) + ' <span class="text-xs font-medium text-slate-500">m</span>';
+      }
+    }
+
+    function updateSvgVisuals() {
+      // Map elevations to SVG coordinates
+      // Datum Z=0 is at Y=380. Scale: 1 meter = 32 pixels.
+      const yDatum = 380;
+      const scaleY = 32;
+
+      const yZ1 = yDatum - (sim.z1 * scaleY);
+      const yZ2 = yDatum - (sim.z2 * scaleY);
+      const yZc = yDatum - (sim.zc * scaleY);
+
+      // Tank 1 Water
+      const tank1 = document.getElementById('svgTank1Water');
+      tank1.setAttribute('y', yZ1);
+      tank1.setAttribute('height', Math.max(0, yDatum - yZ1 - 3));
+      document.getElementById('svgTank1Meniscus').setAttribute('y1', yZ1);
+      document.getElementById('svgTank1Meniscus').setAttribute('y2', yZ1);
+      document.getElementById('svgTank1Label').setAttribute('y', yZ1 - 8);
+      document.getElementById('svgTank1Label').textContent = 'Z₁ = ' + sim.z1.toFixed(2) + ' m';
+
+      // Tank 2 Water
+      const tank2 = document.getElementById('svgTank2Water');
+      tank2.setAttribute('y', yZ2);
+      tank2.setAttribute('height', Math.max(0, yDatum - yZ2 - 3));
+      document.getElementById('svgTank2Meniscus').setAttribute('y1', yZ2);
+      document.getElementById('svgTank2Meniscus').setAttribute('y2', yZ2);
+      document.getElementById('svgTank2Label').setAttribute('y', yZ2 - 8);
+      document.getElementById('svgTank2Label').textContent = 'Z₂ = ' + sim.z2.toFixed(2) + ' m';
+
+      // Siphon Pipe Path
+      // (180, yZ1+50) -> (180, yZc+15) -> Q(400, yZc) -> (620, yZc+15) -> (620, yZ2+50)
+      const pipePath = `M 180 ${yZ1 + 40} L 180 ${yZc + 20} Q 400 ${yZc - 10} 620 ${yZc + 60} L 620 ${yZ2 + 40}`;
+      document.getElementById('svgSiphonPipeOuter').setAttribute('d', pipePath);
+      document.getElementById('svgSiphonPipeWater').setAttribute('d', pipePath);
+      document.getElementById('svgFlowAnimation').setAttribute('d', pipePath);
+
+      // Vacuometer position
+      const vac = document.getElementById('svgVacuometer');
+      vac.setAttribute('transform', `translate(400, ${yZc - 5})`);
+      document.getElementById('svgGaugeReading').textContent = sim.pressureCrestMca.toFixed(2) + ' m';
+
+      // Gauge needle rotation
+      const needleAngle = Math.max(-130, Math.min(0, sim.pressureCrestMca * 14));
+      const rad = (needleAngle * Math.PI) / 180;
+      const nx = -16 * Math.cos(rad);
+      const ny = -45 - 16 * Math.sin(rad);
+      const needle = document.getElementById('svgGaugeNeedle');
+      needle.setAttribute('x2', nx);
+      needle.setAttribute('y2', ny);
+
+      // Crest label pin
+      document.getElementById('svgCrestPin').setAttribute('transform', `translate(400, ${yZc - 10})`);
+      document.getElementById('svgCrestZLabel').textContent = 'Zc = ' + sim.zc.toFixed(2) + ' m';
+
+      // Cavitation bubbles
+      const cavEffect = document.getElementById('svgCavitationEffect');
+      if (isCavitating || !isPrimed) {
+        cavEffect.setAttribute('opacity', '1');
+        cavEffect.setAttribute('transform', `translate(0, ${yZc - 60})`);
+      } else {
+        cavEffect.setAttribute('opacity', '0');
+      }
+
+      // Energy lines
+      // TEL: Starts at yZ1, drops linearly to yZ2 + Hv
+      const hv = isPrimed ? (Math.pow(sim.velocity, 2)/(2*G)) : 0;
+      const telY1 = yZ1;
+      const telYC = yZc - (sim.pressureCrestMca * scaleY) - (hv * scaleY);
+      const telY2 = yZ2 - (hv * scaleY);
+
+      document.getElementById('svgTEL').setAttribute('d', `M 150 ${telY1} L 400 ${telYC} L 620 ${telY2}`);
+
+      // HGL: Starts at yZ1, reaches (yZc - Pc) at crest, and yZ2 at discharge
+      const hglY1 = yZ1;
+      const hglYC = yZc - (sim.pressureCrestMca * scaleY);
+      const hglY2 = yZ2;
+      document.getElementById('svgHGL').setAttribute('d', `M 150 ${hglY1} L 400 ${hglYC} L 620 ${hglY2}`);
+
+      // Vacuum arrow
+      const vacArrow = document.getElementById('svgVacuumArrow');
+      vacArrow.setAttribute('y1', yZc);
+      vacArrow.setAttribute('y2', hglYC);
+      document.getElementById('svgVacuumArrowLabel').setAttribute('y', (yZc + hglYC) / 2);
+
+      // Total Head H arrow
+      const hArrow = document.getElementById('svgHArrow');
+      hArrow.setAttribute('y1', yZ1);
+      hArrow.setAttribute('y2', yZ2);
+      document.getElementById('svgHText').setAttribute('y', (yZ1 + yZ2) / 2);
+      document.getElementById('svgHText').textContent = 'H = ' + sim.hTotal.toFixed(2) + ' m';
+
+      // Pipe animation speed
+      const anim = document.getElementById('pipeFlowAnim');
+      if (!isPrimed || sim.velocity <= 0.01) {
+        anim.setAttribute('dur', '9999s');
+      } else {
+        const dur = Math.max(0.4, 3.0 / sim.velocity);
+        anim.setAttribute('dur', dur.toFixed(2) + 's');
+      }
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('siphonChartCanvas').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['0.0m (Embalse 1)', '1.0m (Ascenso)', '2.2m (Cresta C)', '3.6m (Descenso)', '5.0m (Descarga 2)'],
+          datasets: [
+            {
+              label: 'Línea de Energía Total (L.E.)',
+              data: [0, 0, 0, 0, 0],
+              borderColor: '#DC2626',
+              borderDash: [5, 5],
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              tension: 0.1,
+              pointRadius: 4
+            },
+            {
+              label: 'Línea Piezométrica (L.P. / HGL)',
+              data: [0, 0, 0, 0, 0],
+              borderColor: '#0891B2',
+              backgroundColor: 'rgba(8, 145, 178, 0.08)',
+              borderWidth: 2.5,
+              tension: 0.1,
+              fill: true,
+              pointRadius: 4
+            },
+            {
+              label: 'Cota del Tubo Z(x)',
+              data: [0, 0, 0, 0, 0],
+              borderColor: '#002855',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              tension: 0.2,
+              pointRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                boxWidth: 12,
+                font: { size: 11, family: 'Inter' }
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: function(ctx) {
+                  return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + ' m';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: 'Distancia a lo largo de la tubería x (m)', font: { size: 11 } }
+            },
+            y: {
+              title: { display: true, text: 'Cota de Energía / Piezométrica (m)', font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    function updateChart() {
+      if (!chartInstance) return;
+
+      const hv = isPrimed ? (Math.pow(sim.velocity, 2) / (2.0 * G)) : 0;
+      const hfTot = isPrimed ? (sim.hTotal - hv) : 0;
+
+      // Stations: x = 0, 1.0, 2.2 (crest), 3.6, 5.0
+      const xRatios = [0, 1.0/5.0, 2.2/5.0, 3.6/5.0, 1.0];
+
+      // Tube elevations
+      const zProfile = [
+        sim.z1,
+        sim.z1 + (sim.zc - sim.z1) * 0.7,
+        sim.zc,
+        sim.zc - (sim.zc - sim.z2) * 0.5,
+        sim.z2
+      ];
+
+      // Total Energy Line
+      const eProfile = xRatios.map(r => sim.z1 - (r * hfTot));
+
+      // Hydraulic Grade Line
+      const hglProfile = eProfile.map(e => e - hv);
+
+      chartInstance.data.datasets[0].data = eProfile;
+      chartInstance.data.datasets[1].data = hglProfile;
+      chartInstance.data.datasets[2].data = zProfile;
+      chartInstance.update('none');
+    }
+
+    function primeSiphon() {
+      isPrimed = true;
+      isCavitating = false;
+      // Adjust Zc if it was at extreme cavitation
+      if (sim.zc > sim.patm - PV_WATER_20C + sim.z1) {
+        sim.zc = 2.40;
+        document.getElementById('zcSlider').value = 2.40;
+      }
+      updateSimulation();
+    }
+
+    function triggerCavitationTest() {
+      // Set crest to 9.2 meters to provoke severe cavitation
+      document.getElementById('zcSlider').value = 9.2;
+      isPrimed = true;
+      updateSimulation();
+    }
+
+    function loadPreset(type) {
+      if (type === 'ensayo1') {
+        // From Tabla VIII.2
+        document.getElementById('diaSelect').value = '0.0190';
+        document.getElementById('z1Slider').value = 1.50;
+        document.getElementById('z2Slider').value = 0.30;
+        document.getElementById('zcSlider').value = 2.40;
+        document.getElementById('patmSelect').value = '8.41';
+      } else if (type === 'ensayo2') {
+        document.getElementById('diaSelect').value = '0.0190';
+        document.getElementById('z1Slider').value = 1.40;
+        document.getElementById('z2Slider').value = 0.30;
+        document.getElementById('zcSlider').value = 2.40;
+        document.getElementById('patmSelect').value = '8.41';
+      } else if (type === 'cav_limit') {
+        document.getElementById('diaSelect').value = '0.0190';
+        document.getElementById('z1Slider').value = 1.50;
+        document.getElementById('z2Slider').value = 0.30;
+        document.getElementById('zcSlider').value = 7.80;
+        document.getElementById('patmSelect').value = '8.41';
+      } else if (type === 'descebe') {
+        triggerCavitationTest();
+        return;
+      }
+      onDiaChange();
+      primeSiphon();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initSimulator();
+    });
+  </script>
+</body>
+</html>
