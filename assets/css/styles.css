@@ -1620,6 +1620,7 @@ h4 {
 
 .contact-photo {
   margin: 1.5rem 0 0;
+  max-width: 320px;
 }
 
 .contact-photo img {
