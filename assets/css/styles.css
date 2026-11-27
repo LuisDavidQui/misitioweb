@@ -1617,3 +1617,23 @@ h4 {
     transition: none;
   }
 }
+
+.contact-photo {
+  margin: 1.5rem 0 0;
+}
+
+.contact-photo img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  filter: saturate(0.92) contrast(1.02);
+}
+
+.contact-photo figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-mute);
+}

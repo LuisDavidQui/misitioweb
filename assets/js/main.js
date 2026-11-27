@@ -210,6 +210,7 @@
       }
     });
 
+    updateMeta(slides[0]);
     setPauseLabel();
     startMosaic();
   }
