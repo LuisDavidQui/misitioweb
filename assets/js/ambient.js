@@ -46,10 +46,12 @@
     var theme = styles.getPropertyValue("--theme-color").trim();
     var accent = styles.getPropertyValue("--aqua").trim();
     var yellow = styles.getPropertyValue("--bh-yellow").trim();
+    var ink = styles.getPropertyValue("--theme-ink").trim();
     return {
       theme: theme || "#0b4f9c",
       accent: accent || "#c62828",
       yellow: yellow || "#e8b400",
+      ink: ink || theme || "#0b4f9c",
       dark: document.documentElement.getAttribute("data-theme") === "dark"
     };
   }
@@ -154,7 +156,7 @@
           h: rand(24, 80),
           angle: rand(-0.4, 0.4),
           speed: rand(0.08, 0.25),
-          color: c % 4 === 0 ? colors.accent : colors.theme
+          color: c % 4 === 0 ? colors.accent : colors.ink
         });
       }
     }
@@ -178,7 +180,7 @@
   function pointerGlow() {
     if (!pointer.active || reduce.matches) return;
     glow(pointer.x, pointer.y, Math.min(width, height) * 0.32, colors.theme, colors.dark ? 0.13 : 0.07);
-    glow(pointer.x, pointer.y, Math.min(width, height) * 0.12, colors.yellow, colors.dark ? 0.1 : 0.055);
+    glow(pointer.x, pointer.y, Math.min(width, height) * 0.12, colors.accent, colors.dark ? 0.1 : 0.045);
   }
 
   function drawFlow() {
@@ -186,7 +188,7 @@
       var b = blobs[i];
       var x = (b.x + Math.sin(time * 0.00007 + b.phase) * 0.13) * width;
       var y = (b.y + Math.cos(time * 0.00005 + b.phase * 1.7) * 0.1) * height;
-      glow(x, y, b.r, b.color, colors.dark ? 0.12 : 0.065);
+      glow(x, y, b.r, b.color, colors.dark ? 0.14 : 0.08);
     }
     pointerGlow();
   }
@@ -197,7 +199,7 @@
     ctx.lineWidth = 1;
     for (var i = 0; i < 12; i++) {
       var radius = 55 + i * 38;
-      ctx.strokeStyle = rgba(i % 3 === 0 ? colors.accent : colors.theme, colors.dark ? 0.14 : 0.075);
+      ctx.strokeStyle = rgba(i % 3 === 0 ? colors.accent : colors.ink, colors.dark ? 0.16 : 0.095);
       ctx.beginPath();
       ctx.ellipse(cx, cy, radius, radius * 0.62, Math.sin(time * 0.0001) * 0.12, 0, Math.PI * 2);
       ctx.stroke();
@@ -256,8 +258,8 @@
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
-      ctx.strokeStyle = rgba(row % 3 === 1 ? colors.accent : colors.theme, colors.dark ? 0.16 : 0.09);
-      ctx.lineWidth = 1.15;
+      ctx.strokeStyle = rgba(row % 3 === 1 ? colors.accent : colors.ink, colors.dark ? 0.18 : 0.11);
+      ctx.lineWidth = 1.25;
       ctx.stroke();
     }
     pointerGlow();
@@ -285,8 +287,8 @@
       if (p.x > width + 20) p.x = -20;
       if (p.y < -20) p.y = height + 20;
       if (p.y > height + 20) p.y = -20;
-      ctx.strokeStyle = rgba(i % 4 === 0 ? colors.yellow : colors.theme, colors.dark ? 0.22 : 0.12);
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = rgba(i % 4 === 0 ? colors.accent : colors.ink, colors.dark ? 0.25 : 0.18);
+      ctx.lineWidth = 1.2;
       ctx.beginPath();
       ctx.moveTo(p.px, p.py);
       ctx.lineTo(p.x, p.y);
@@ -331,7 +333,7 @@
       for (var x = spacing / 2; x < width; x += spacing) {
         var px = x;
         var py = y;
-        var radius = 1.2;
+        var radius = 1.45;
         if (pointer.active) {
           var dx = x - pointer.x;
           var dy = y - pointer.y;
@@ -343,7 +345,7 @@
             radius += force * 1.7;
           }
         }
-        ctx.fillStyle = rgba(colors.theme, colors.dark ? 0.2 : 0.11);
+        ctx.fillStyle = rgba(colors.ink, colors.dark ? 0.22 : 0.14);
         ctx.beginPath();
         ctx.arc(px, py, radius, 0, Math.PI * 2);
         ctx.fill();
