@@ -266,6 +266,24 @@
   }
 
   function drawStreamlines() {
+    ctx.save();
+    for (var row = 0; row < 8; row++) {
+      var baseY = height * (0.14 + row * 0.105);
+      ctx.beginPath();
+      for (var x = -20; x <= width + 20; x += 28) {
+        var y =
+          baseY +
+          Math.sin(x * 0.004 + time * 0.00022 + row * 1.3) * (16 + row * 3) +
+          Math.cos(x * 0.0017 - time * 0.00016 + row) * 8;
+        if (x === -20) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = rgba(colors.ink, colors.dark ? 0.16 : 0.11);
+      ctx.lineWidth = 1.15;
+      ctx.stroke();
+    }
+    ctx.restore();
+
     for (var i = 0; i < particles.length; i++) {
       var p = particles[i];
       var angle =
