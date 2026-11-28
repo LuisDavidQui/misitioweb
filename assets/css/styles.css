@@ -1795,3 +1795,45 @@ h4 {
     columns: 1;
   }
 }
+
+
+.video-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.video-card {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.video-card video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+  background: #111;
+}
+
+.video-card figcaption {
+  padding: 0.8rem 1rem 0.95rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--text-mute);
+}
+
+.video-card figcaption strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .video-pair {
+    grid-template-columns: 1fr;
+  }
+}
