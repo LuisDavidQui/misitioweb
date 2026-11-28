@@ -134,7 +134,7 @@
     }
 
     if (effect === "streamlines") {
-      var countStream = width < 700 ? 26 : 44;
+      var countStream = width < 700 ? 40 : 74;
       for (var k = 0; k < countStream; k++) {
         particles.push({
           x: rand(0, width),
@@ -179,8 +179,8 @@
 
   function pointerGlow() {
     if (!pointer.active || reduce.matches) return;
-    glow(pointer.x, pointer.y, Math.min(width, height) * 0.32, colors.theme, colors.dark ? 0.13 : 0.07);
-    glow(pointer.x, pointer.y, Math.min(width, height) * 0.12, colors.accent, colors.dark ? 0.1 : 0.045);
+    glow(pointer.x, pointer.y, Math.min(width, height) * 0.34, colors.theme, colors.dark ? 0.18 : 0.1);
+    glow(pointer.x, pointer.y, Math.min(width, height) * 0.14, colors.accent, colors.dark ? 0.14 : 0.07);
   }
 
   function drawFlow() {
@@ -188,7 +188,7 @@
       var b = blobs[i];
       var x = (b.x + Math.sin(time * 0.00007 + b.phase) * 0.13) * width;
       var y = (b.y + Math.cos(time * 0.00005 + b.phase * 1.7) * 0.1) * height;
-      glow(x, y, b.r, b.color, colors.dark ? 0.14 : 0.08);
+      glow(x, y, b.r, b.color, colors.dark ? 0.16 : 0.095);
     }
     pointerGlow();
   }
@@ -258,8 +258,8 @@
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
-      ctx.strokeStyle = rgba(row % 3 === 1 ? colors.accent : colors.ink, colors.dark ? 0.18 : 0.11);
-      ctx.lineWidth = 1.25;
+      ctx.strokeStyle = rgba(row % 3 === 1 ? colors.accent : colors.ink, colors.dark ? 0.22 : 0.15);
+      ctx.lineWidth = 1.4;
       ctx.stroke();
     }
     pointerGlow();
@@ -287,9 +287,9 @@
       if (p.x > width + 20) p.x = -20;
       if (p.y < -20) p.y = height + 20;
       if (p.y > height + 20) p.y = -20;
-      var streak = 16 + p.speed * 14;
-      ctx.strokeStyle = rgba(i % 4 === 0 ? colors.accent : colors.ink, colors.dark ? 0.3 : 0.22);
-      ctx.lineWidth = 1.3;
+      var streak = 28 + p.speed * 24;
+      ctx.strokeStyle = rgba(i % 4 === 0 ? colors.accent : colors.ink, colors.dark ? 0.34 : 0.27);
+      ctx.lineWidth = 1.45;
       ctx.beginPath();
       ctx.moveTo(p.x - Math.cos(angle) * streak, p.y - Math.sin(angle) * streak);
       ctx.lineTo(p.x, p.y);
@@ -336,12 +336,12 @@
   }
 
   function drawGrid() {
-    var spacing = width < 700 ? 34 : 46;
+    var spacing = width < 700 ? 30 : 38;
     for (var y = spacing / 2; y < height; y += spacing) {
       for (var x = spacing / 2; x < width; x += spacing) {
         var px = x;
         var py = y;
-        var radius = 1.45;
+        var radius = 1.8;
         if (pointer.active) {
           var dx = x - pointer.x;
           var dy = y - pointer.y;
@@ -353,7 +353,7 @@
             radius += force * 1.7;
           }
         }
-        ctx.fillStyle = rgba(colors.ink, colors.dark ? 0.22 : 0.14);
+        ctx.fillStyle = rgba(colors.ink, colors.dark ? 0.26 : 0.18);
         ctx.beginPath();
         ctx.arc(px, py, radius, 0, Math.PI * 2);
         ctx.fill();
