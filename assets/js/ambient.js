@@ -119,8 +119,8 @@
       }
     }
 
-    if (effect === "bubbles" || effect === "droplets") {
-      var count = width < 700 ? 22 : 38;
+    if (effect === "bubbles") {
+      var count = width < 700 ? 42 : 72;
       for (var j = 0; j < count; j++) {
         bubbles.push({
           x: rand(0, width),
@@ -129,6 +129,20 @@
           speed: rand(0.18, 0.55),
           wobble: rand(0, Math.PI * 2),
           depth: rand(0.4, 1)
+        });
+      }
+    }
+
+    if (effect === "drift") {
+      var countDrift = width < 700 ? 28 : 48;
+      for (var jd = 0; jd < countDrift; jd++) {
+        bubbles.push({
+          x: rand(0, width),
+          y: rand(0, height),
+          r: rand(2, 7),
+          speed: rand(0.14, 0.42),
+          wobble: rand(0, Math.PI * 2),
+          depth: rand(0.35, 0.95)
         });
       }
     }
@@ -214,7 +228,7 @@
     }
   }
 
-  function drawBubbles() {
+  function drawBubbleField() {
     for (var i = 0; i < bubbles.length; i++) {
       var b = bubbles[i];
       b.y -= b.speed;
@@ -240,6 +254,10 @@
       ctx.fill();
       ctx.stroke();
     }
+  }
+
+  function drawBubbles() {
+    drawBubbleField();
     pointerGlow();
   }
 
@@ -324,6 +342,7 @@
   }
 
   function drawDrift() {
+    drawBubbleField();
     for (var i = 0; i < cards.length; i++) {
       var c = cards[i];
       c.y += c.speed;
