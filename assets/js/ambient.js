@@ -429,11 +429,22 @@
     drawRipples();
   }
 
+  function drawBase() {
+    var radius = Math.min(width, height) * 0.72;
+    var x1 = width * (0.22 + Math.sin(time * 0.00006) * 0.08);
+    var y1 = height * (0.2 + Math.cos(time * 0.00005) * 0.08);
+    var x2 = width * (0.82 + Math.cos(time * 0.000045) * 0.07);
+    var y2 = height * (0.78 + Math.sin(time * 0.000055) * 0.07);
+    glow(x1, y1, radius, colors.theme, colors.dark ? 0.09 : 0.045);
+    glow(x2, y2, radius * 0.82, colors.accent, colors.dark ? 0.07 : 0.032);
+  }
+
   function draw() {
     ctx.clearRect(0, 0, width, height);
     pointer.x += (pointer.tx - pointer.x) * 0.08;
     pointer.y += (pointer.ty - pointer.y) * 0.08;
 
+    if (effect !== "flow") drawBase();
     if (effect === "flow") drawFlow();
     else if (effect === "contours") drawContours();
     else if (effect === "bubbles") drawBubbles();
