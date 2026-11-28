@@ -356,13 +356,13 @@ strong {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--brand-deep);
-  color: #eafaf9;
+  background: var(--bh-blue-deep);
+  color: #ffffff;
 }
 
 [data-theme="dark"] .brand__mark {
-  background: var(--aqua-soft);
-  color: var(--brand-deep);
+  background: var(--bh-blue);
+  color: #ffffff;
 }
 
 .brand__mark svg {
