@@ -230,7 +230,7 @@ strong {
 }
 
 .section--soft {
-  background: var(--bg-soft);
+  background: color-mix(in srgb, var(--theme-color) 7%, var(--bg));
   border-block: 1px solid var(--line);
 }
 
@@ -416,8 +416,8 @@ strong {
 }
 
 .nav__links a[aria-current="page"] {
-  color: var(--brand);
-  background: var(--aqua-soft);
+  color: var(--theme-ink);
+  background: var(--theme-soft);
 }
 
 .nav__actions {
@@ -517,7 +517,7 @@ strong {
   overflow: hidden;
   padding-block: clamp(3.5rem, 9vw, 6.5rem) clamp(3rem, 7vw, 5rem);
   background:
-    radial-gradient(60rem 30rem at 85% -10%, var(--aqua-soft) 0%, transparent 60%),
+    radial-gradient(60rem 30rem at 85% -10%, var(--theme-soft) 0%, transparent 60%),
     linear-gradient(180deg, var(--bg) 0%, var(--bg) 70%, var(--bg-soft) 100%);
 }
 
@@ -936,8 +936,8 @@ strong {
   position: relative;
   padding-block: clamp(2.75rem, 6vw, 4.5rem) clamp(2rem, 4vw, 2.75rem);
   background:
-    radial-gradient(45rem 22rem at 90% -20%, var(--aqua-soft) 0%, transparent 65%),
-    var(--bg-soft);
+    radial-gradient(45rem 22rem at 90% -20%, var(--theme-soft) 0%, transparent 65%),
+    var(--bg);
   border-bottom: 1px solid var(--line);
 }
 
@@ -1184,7 +1184,7 @@ strong {
 
 .site-footer {
   background: var(--bg);
-  border-top: 1px solid var(--line);
+  border-top: 4px solid var(--theme-color);
   padding-block: clamp(2.25rem, 5vw, 3.25rem) 1.5rem;
   font-size: 0.92rem;
   color: var(--text-mute);
