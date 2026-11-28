@@ -287,12 +287,20 @@
       if (p.x > width + 20) p.x = -20;
       if (p.y < -20) p.y = height + 20;
       if (p.y > height + 20) p.y = -20;
-      ctx.strokeStyle = rgba(i % 4 === 0 ? colors.accent : colors.ink, colors.dark ? 0.25 : 0.18);
-      ctx.lineWidth = 1.2;
+      var streak = 16 + p.speed * 14;
+      ctx.strokeStyle = rgba(i % 4 === 0 ? colors.accent : colors.ink, colors.dark ? 0.3 : 0.22);
+      ctx.lineWidth = 1.3;
       ctx.beginPath();
-      ctx.moveTo(p.px, p.py);
+      ctx.moveTo(p.x - Math.cos(angle) * streak, p.y - Math.sin(angle) * streak);
       ctx.lineTo(p.x, p.y);
       ctx.stroke();
+
+      if (i % 5 === 0) {
+        ctx.fillStyle = rgba(colors.accent, colors.dark ? 0.35 : 0.25);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     pointerGlow();
   }
